@@ -4,8 +4,8 @@
 # ===========================================
 # 🔐 DADOS SENSÍVEIS E CONFIGURAÇÕES
 # ===========================================
-# Pasta de configurações com senhas e dados da VPS
-dados-config/
+# Proteger apenas arquivos com senhas e dados críticos
+# Permitir documentação geral
 
 # Arquivos de ambiente com senhas
 .env
@@ -19,6 +19,11 @@ dados-config/
 *.sql.gz
 *.backup
 *.dump
+
+# Scripts com credenciais
+scripts/backup-*
+scripts/deploy-*.sh
+scripts/migrar-*.sh
 
 # ===========================================
 # 📁 DEPENDÊNCIAS E NODE.JS
@@ -66,7 +71,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
-.postgresql.conf.swp
 
 # ===========================================
 # 🔧 FERRAMENTAS E BUILD
@@ -177,7 +181,7 @@ Desktop.ini
 # ===========================================
 # 📝 NOTAS FINAIS
 # ===========================================
-# - Este .gitignore protege dados sensíveis
-# - Evita upload de senhas, configs da VPS e backups
+# - Este .gitignore protege dados sensíveis específicos
+# - Permite documentação geral em dados-config/
 # - Mantém o repositório limpo e seguro
 # - Permite apenas código fonte e documentação pública
