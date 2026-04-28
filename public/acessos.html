@@ -1,0 +1,350 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Acessos | Nordeste RH+</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nordeste: { red: '#D32F2F', darkRed: '#B71C1C', black: '#121212', gray: '#F4F7F9' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/global.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F4F7F9; }
+        .perm-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .perm-card:hover { border-color: #D32F2F; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e2e8f0; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #D32F2F; }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .tab-btn { transition: all 0.2s; }
+        .tab-btn.active { background: #D32F2F; color: white; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+    <header class="bg-nordeste-black text-white px-8 py-5 flex justify-between items-center shadow-xl flex-shrink-0">
+        <div class="flex items-center gap-6">
+            <a href="/" class="p-2 hover:bg-white/10 rounded-xl transition-all">🏠</a>
+            <div>
+                <h1 class="text-xl font-black italic uppercase tracking-tighter">Gestão de <span class="text-nordeste-red">Acessos</span></h1>
+                <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Controle de usuários e permissões</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="openNewUserModal()" class="bg-nordeste-red hover:bg-red-700 text-white px-5 py-2 rounded-xl font-black text-[10px] uppercase shadow-lg transition-all flex items-center gap-2">
+                <span>+</span> Novo
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        <!-- MÓDULO DE USUÁRIOS -->
+        <div id="tab-users" class="flex w-full">
+            <aside class="w-96 bg-white border-r border-gray-200 flex flex-col p-6 flex-shrink-0">
+                <div class="mb-4">
+                    <label class="pro-label uppercase font-black text-[10px] text-gray-400 mb-2 block">Buscar</label>
+                    <input type="text" id="user-search" oninput="renderUsers()" placeholder="Nome ou username..." class="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-nordeste-red">
+                </div>
+                <div class="bg-gray-100 p-1 rounded-2xl flex mb-4">
+                    <button onclick="setRoleFilter('all', this)" class="flex-1 px-3 py-2 rounded-xl text-[10px] font-black uppercase tab-btn active">Todos</button>
+                    <button onclick="setRoleFilter('GESTOR', this)" class="flex-1 px-3 py-2 rounded-xl text-[10px] font-black uppercase tab-btn">Admin</button>
+                    <button onclick="setRoleFilter('OPERADOR', this)" class="flex-1 px-3 py-2 rounded-xl text-[10px] font-black uppercase tab-btn">Oper</button>
+                </div>
+                <div id="users-list" class="flex-1 overflow-y-auto custom-scroll space-y-2"></div>
+            </aside>
+
+            <div id="perms-config" class="flex-1 overflow-y-auto p-8 bg-[#F8FAFC] custom-scroll hidden">
+                <div class="max-w-5xl mx-auto space-y-6">
+                    <div class="flex justify-between items-center bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100">
+                        <div class="flex items-center gap-5">
+                            <img id="sel-user-avatar" src="" class="w-16 h-16 rounded-3xl object-cover border-4 border-gray-50 shadow-md">
+                            <div>
+                                <h3 id="sel-user-name" class="text-xl font-black text-gray-800 uppercase italic">...</h3>
+                                <p id="sel-user-email" class="text-[10px] text-gray-400 font-bold">@...</p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span id="sel-user-role-badge" class="px-2 py-0.5 bg-nordeste-red text-white text-[8px] font-black uppercase rounded-lg">...</span>
+                                    <span id="sel-user-status" class="text-[8px] font-bold text-green-600 uppercase">● Ativo</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="openEditUserModal()" class="bg-nordeste-black text-white px-4 py-2 rounded-xl font-black text-[9px] uppercase shadow hover:scale-105">✏️ Editar</button>
+                            <button onclick="resetUserPassword()" class="bg-amber-500 text-white px-4 py-2 rounded-xl font-black text-[9px] uppercase shadow hover:scale-105">🔑 Senha</button>
+                            <button onclick="deleteUser()" class="bg-red-50 text-red-600 px-4 py-2 rounded-xl font-black text-[9px] uppercase border border-red-200 hover:bg-red-100">🗑️</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100">
+                            <p class="text-[8px] font-black text-gray-400 uppercase">Último Acesso</p>
+                            <p id="user-last-login" class="text-sm font-black text-gray-800 mt-1">--</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100">
+                            <p class="text-[8px] font-black text-gray-400 uppercase">Criado em</p>
+                            <p id="user-created-at" class="text-sm font-black text-gray-800 mt-1">--</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100">
+                            <p class="text-[8px] font-black text-gray-400 uppercase">Módulos Ativos</p>
+                            <p id="user-active-modules" class="text-xl font-black text-nordeste-red mt-1">0</p>
+                        </div>
+                    </div>
+
+                    <div id="user-stats-container" class="grid grid-cols-3 gap-4 hidden">
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100">
+                            <p class="text-[8px] font-black text-gray-400 uppercase">Ações Hoje</p>
+                            <p id="user-today-actions" class="text-lg font-black text-gray-800 mt-1">--</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100">
+                            <p class="text-[8px] font-black text-gray-400 uppercase">Total Ações</p>
+                            <p id="user-total-actions" class="text-lg font-black text-gray-800 mt-1">--</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100">
+                            <p class="text-[8px] font-black text-gray-400 uppercase">Tempo Total</p>
+                            <p id="user-total-time" class="text-lg font-black text-gray-800 mt-1">--</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-black text-gray-800 text-sm uppercase italic">Permissões de Acesso</h4>
+                            <button onclick="savePermissions()" class="bg-nordeste-red text-white px-6 py-2 rounded-xl font-black text-[9px] uppercase shadow-lg hover:scale-105">Salvar</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="perms-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="welcome-msg" class="flex-1 flex flex-col items-center justify-center text-gray-300">
+                <svg class="w-24 h-24 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <p class="font-black uppercase text-xs tracking-widest italic">Selecione um usuário</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL USUÁRIO -->
+    <div id="user-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden">
+            <div class="bg-nordeste-black p-6 text-white flex justify-between items-center">
+                <div>
+                    <h3 id="user-modal-title" class="text-lg font-black uppercase italic">Novo Usuário</h3>
+                    <p id="user-modal-subtitle" class="text-[10px] text-gray-400">Preencha os dados</p>
+                </div>
+                <button onclick="closeUserModal()" class="text-2xl">×</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="user-id">
+                <div><label class="pro-label">Nome</label><input type="text" id="user-name" class="pro-input"></div>
+                <div><label class="pro-label">Username</label><input type="text" id="user-username" class="pro-input"></div>
+                <div id="password-field"><label class="pro-label">Senha</label><input type="password" id="user-password" class="pro-input"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="pro-label">Função</label><select id="user-role" class="pro-input"><option value="OPERADOR">Operador</option><option value="GESTOR">Admin</option><option value="DEV">Dev</option></select></div>
+                    <div><label class="pro-label">Status</label><select id="user-status" class="pro-input"><option value="active">Ativo</option><option value="inactive">Inativo</option></select></div>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeUserModal()" class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase">Cancelar</button>
+                    <button onclick="saveUser()" class="flex-1 py-3 bg-nordeste-red text-white rounded-xl font-black text-xs uppercase shadow">💾 Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        let allUsers = [];
+        let selectedUserId = null;
+        let currentUserPermissions = {};
+        let roleFilter = 'all';
+
+        const MODULES = [
+            { id: 'employees-pro', name: 'Mestre Colaboradores', desc: 'Prontuários e documentos' },
+            { id: 'uniforms', name: 'Fardamento', desc: 'Controle de uniformes' },
+            { id: 'career', name: 'Carreira', desc: 'Promoções e bonificações' },
+            { id: 'vacation', name: 'Férias', desc: 'Controle de férias' },
+            { id: 'aso', name: 'Saúde (ASO)', desc: 'ASOs e atestados' },
+            { id: 'tools', name: 'Ativos', desc: 'Ferramentas' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const me = Auth?.check();
+            if (!me) return;
+            if (me.role !== 'DEV' && me.role !== 'GESTOR') { window.location.href = '/'; return; }
+            await loadUsers();
+        });
+
+
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/profile/all-users');
+                allUsers = await res.json();
+                renderUsers();
+            } catch (e) { console.error(e); }
+        }
+
+        window.setRoleFilter = (role, btn) => {
+            roleFilter = role;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderUsers();
+        };
+
+        function renderUsers() {
+            const search = document.getElementById('user-search').value.toLowerCase();
+            const filtered = allUsers.filter(u => {
+                const matchesSearch = !search || (u.name || '').toLowerCase().includes(search) || (u.username || '').toLowerCase().includes(search);
+                const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+                return matchesSearch && matchesRole;
+            });
+
+            document.getElementById('users-list').innerHTML = filtered.map(u => `
+                <div onclick="selectUser('${u.id}')" class="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-gray-50 ${selectedUserId === u.id ? 'bg-white !border-nordeste-red shadow border' : 'border border-transparent'}">
+                    <img src="${u.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'U')}&background=D32F2F&color=fff`}" class="w-10 h-10 rounded-xl object-cover">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[10px] font-black text-gray-800 uppercase truncate">${u.name || '--'}</p>
+                        <p class="text-[8px] text-gray-400">@${u.username || '--'}</p>
+                    </div>
+                    <span class="text-[7px] font-black px-2 py-0.5 rounded uppercase ${u.role === 'GESTOR' ? 'bg-nordeste-red/10 text-nordeste-red' : 'bg-gray-100 text-gray-500'}">${u.role === 'GESTOR' ? 'ADM' : 'OP'}</span>
+                </div>
+            `).join('') || '<p class="text-center py-8 text-gray-300 text-xs">Nenhum usuário</p>';
+        }
+
+        window.selectUser = (id) => {
+            selectedUserId = id;
+            const user = allUsers.find(u => u.id === id);
+            if (!user) return;
+
+            try { currentUserPermissions = JSON.parse(user.permissions || '{}'); } catch(e) { currentUserPermissions = {}; }
+
+            document.getElementById('perms-config').classList.remove('hidden');
+            document.getElementById('welcome-msg').classList.add('hidden');
+            
+            document.getElementById('sel-user-name').innerText = user.name || '--';
+            document.getElementById('sel-user-email').innerText = '@' + (user.username || '--');
+            document.getElementById('sel-user-avatar').src = user.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'U')}&background=D32F2F&color=fff`;
+            document.getElementById('sel-user-role-badge').innerText = user.role === 'DEV' ? 'DEV' : user.role === 'GESTOR' ? 'ADMIN' : 'OPERADOR';
+            document.getElementById('sel-user-status').innerText = user.status === 'active' ? '● Ativo' : '○ Inativo';
+            document.getElementById('sel-user-status').className = user.status === 'active' ? 'text-[8px] font-bold text-green-600 uppercase' : 'text-[8px] font-bold text-gray-400 uppercase';
+            
+            document.getElementById('user-created-at').innerText = user.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : '--';
+            document.getElementById('user-active-modules').innerText = Object.values(currentUserPermissions).filter(v => v !== false).length;
+
+            loadUserStats(user.id);
+
+            document.getElementById('perms-grid').innerHTML = MODULES.map(mod => `
+                <div class="bg-gray-50 p-4 rounded-xl border flex justify-between items-center">
+                    <div class="max-w-[80%]">
+                        <p class="text-[10px] font-black text-gray-800 uppercase">${mod.name}</p>
+                        <p class="text-[8px] text-gray-400">${mod.desc}</p>
+                    </div>
+                    <label class="switch"><input type="checkbox" data-mod="${mod.id}" ${currentUserPermissions[mod.id] !== false ? 'checked' : ''}><span class="slider"></span></label>
+                </div>
+            `).join('');
+
+            renderUsers();
+        };
+
+        async function loadUserStats(userId) {
+            try {
+                // Estatísticas de auditoria removidas
+                document.getElementById('user-last-login').innerText = '--';
+            } catch(e) {
+                document.getElementById('user-last-login').innerText = '--';
+            }
+        }
+
+        window.savePermissions = async () => {
+            const perms = {};
+            document.querySelectorAll('#perms-grid input[type="checkbox"]').forEach(s => perms[s.dataset.mod] = s.checked);
+            try {
+                await fetch(`/api/profile/${selectedUserId}/permissions`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ permissions: perms }) });
+                alert('Salvo com sucesso!');
+                await loadUsers();
+            } catch(e) { alert('Erro ao salvar'); }
+        };
+
+        window.openNewUserModal = () => {
+            document.getElementById('user-modal-title').innerText = 'Novo Usuário';
+            document.getElementById('user-id').value = '';
+            document.getElementById('user-name').value = '';
+            document.getElementById('user-username').value = '';
+            document.getElementById('user-password').value = '';
+            document.getElementById('user-role').value = 'OPERADOR';
+            document.getElementById('user-status').value = 'active';
+            document.getElementById('password-field').classList.remove('hidden');
+            document.getElementById('user-modal').classList.remove('hidden');
+        };
+
+        window.openEditUserModal = () => {
+            const user = allUsers.find(u => u.id === selectedUserId);
+            document.getElementById('user-modal-title').innerText = 'Editar Usuário';
+            document.getElementById('user-id').value = user.id;
+            document.getElementById('user-name').value = user.name || '';
+            document.getElementById('user-username').value = user.username || '';
+            document.getElementById('user-role').value = user.role || 'OPERADOR';
+            document.getElementById('user-status').value = user.status || 'active';
+            document.getElementById('password-field').classList.add('hidden');
+            document.getElementById('user-modal').classList.remove('hidden');
+        };
+
+        window.closeUserModal = () => document.getElementById('user-modal').classList.add('hidden');
+
+        window.saveUser = async () => {
+            const id = document.getElementById('user-id').value;
+            const payload = {
+                name: document.getElementById('user-name').value,
+                username: document.getElementById('user-username').value,
+                role: document.getElementById('user-role').value,
+                status: document.getElementById('user-status').value
+            };
+            if (!id) payload.password = document.getElementById('user-password').value;
+            if (!payload.password && !id) { alert('Senha obrigatória'); return; }
+
+            try {
+                const res = id ? await fetch(`/api/profile/${id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }) : await fetch('/api/profile', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                if (res.ok) { closeUserModal(); await loadUsers(); if(id) selectUser(id); }
+                else alert('Erro');
+            } catch(e) { alert('Erro'); }
+        };
+
+        window.resetUserPassword = async () => {
+            const p = prompt('Nova senha:');
+            if (!p) return;
+            try {
+                await fetch(`/api/profile/${selectedUserId}/password`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ password: p }) });
+                alert('Senha alterada!');
+            } catch(e) { alert('Erro'); }
+        };
+
+        window.deleteUser = async () => {
+            if (!confirm('Excluir usuário?')) return;
+            try {
+                await fetch(`/api/profile/${selectedUserId}`, { method: 'DELETE' });
+                selectedUserId = null;
+                document.getElementById('perms-config').classList.add('hidden');
+                document.getElementById('welcome-msg').classList.remove('hidden');
+                await loadUsers();
+            } catch(e) { alert('Erro'); }
+        };
+
+        function formatDuration(seconds) {
+            if (!seconds) return '0m';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            if (h > 0) return `${h}h ${m}m`;
+            return `${m}m`;
+        }
+    </script>
+</body>
+</html>

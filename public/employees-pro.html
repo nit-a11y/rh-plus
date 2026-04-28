@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mestre de Colaboradores | Nordeste RH+</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nordeste: { red: '#D32F2F', darkRed: '#B71C1C', black: '#212121', gray: '#F5F5F5' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/employees-pro.css">
+    <link rel="stylesheet" href="css/tutorial.css">
+</head>
+
+<body class="bg-gray-100 h-screen flex flex-col overflow-hidden">
+    <header
+        class="bg-nordeste-black text-white px-6 py-3 flex justify-between items-center shadow-lg z-[100] flex-shrink-0 print:hidden">
+        <div class="flex items-center gap-4">
+            <div class="bg-nordeste-red p-2 rounded-lg shadow-md"><svg class="w-6 h-6" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-width="2.5"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg></div>
+            <div>
+                <h1 class="font-black uppercase italic tracking-tighter text-sm">Mestre de <span
+                        class="text-nordeste-red">Colaboradores</span></h1>
+                <p class="text-[8px] text-gray-400 font-bold uppercase tracking-widest">Prontuário Digital Unificado</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="window.bulkAddVA()"
+                class="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase shadow-lg transition-all flex items-center gap-2"
+                title="Adiciona VA a quem não tem">Inicializar VA Geral</button>
+            <button onclick="window.toggleModule('roles')"
+                class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase shadow-lg transition-all flex items-center gap-2"><svg
+                    class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="3"
+                        d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>Matriz de Cargos</button>
+            <button id="btn-companies-mgmt" onclick="window.toggleModule('companies')"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase shadow-lg transition-all flex items-center gap-2"><svg
+                    class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="3"
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5" />
+                </svg>Empresas & Unidades</button>
+            <button id="btn-save-master"
+                class="hidden bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase shadow-lg transition-all flex items-center gap-2"><svg
+                    class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>Gravar Prontuário</button>
+            <button id="btn-back-to-list"
+                class="hidden bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase transition-all flex items-center gap-2 border border-white/10"><svg
+                    class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="3" d="M15 19l-7-7 7-7" />
+                </svg>Lista</button>
+            <a href="/"
+                class="bg-nordeste-red hover:bg-red-700 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase transition-all flex items-center gap-2 shadow-lg"><svg
+                    class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="3"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>Início</a>
+        </div>
+    </header>
+    <main id="main-container" class="flex-1 overflow-hidden relative">
+        <section id="module-list" class="h-full flex flex-col p-8 animate-fade-in print:hidden">
+            <div class="max-w-screen-2xl mx-auto w-full">
+                <div
+                    class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 bg-white p-5 rounded-[2rem] border border-gray-200 shadow-sm">
+                    <div class="flex items-center gap-4 flex-1">
+                        <div class="relative w-full md:w-96"><input type="text" id="list-search"
+                                placeholder="Buscar por Nome, Matrícula ou Cargo..."
+                                class="w-full pl-10 pr-4 py-3 rounded-2xl border border-gray-200 outline-none focus:ring-2 focus:ring-nordeste-red text-sm font-bold shadow-inner"><svg
+                                class="w-5 h-5 text-gray-300 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg></div>
+                        <button onclick="window.openNewEmployeePro()"
+                            class="bg-nordeste-black text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg hover:scale-105 transition-transform flex items-center gap-2 whitespace-nowrap"><svg
+                                class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-width="3" d="M12 4v16m8-8H4" />
+                            </svg>Novo Colaborador</button>
+                    </div>
+                    <div class="flex items-center gap-4"><select id="list-filter-sector"
+                            class="bg-gray-100 border-none rounded-xl px-4 py-2.5 text-[10px] font-black uppercase text-gray-500 outline-none cursor-pointer"></select>
+                        <div class="bg-gray-100 p-1 rounded-2xl flex text-[10px] font-black uppercase"><button
+                                id="list-tab-active"
+                                class="px-5 py-2 rounded-xl bg-white shadow-sm text-gray-800 font-black">Ativos</button><button
+                                id="list-tab-inactive"
+                                class="px-5 py-2 rounded-xl text-gray-400 font-black">Inativos</button></div>
+                    </div>
+                </div>
+                <div id="grid-container"
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 overflow-y-auto pb-12 custom-scroll"
+                    style="max-height: calc(100vh - 220px);"></div>
+            </div>
+        </section>
+        <section id="module-roles"
+            class="hidden h-full flex flex-col animate-fade-in p-12 bg-gray-50 print:hidden overflow-y-auto custom-scroll">
+            <div class="max-w-5xl mx-auto w-full space-y-8 pb-20">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-3xl font-black text-gray-800 uppercase italic">Matriz de Cargos & CBO</h2>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">Defina a estrutura
+                            organizacional para automação de fichas</p>
+                    </div><button onclick="window.openNewRoleModal()"
+                        class="bg-amber-600 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase shadow-xl hover:scale-105 transition-transform">+
+                        Novo Cargo</button>
+                </div>
+                <div id="roles-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </section>
+        <section id="module-editor" class="hidden h-full flex animate-fade-in print:hidden">
+            <aside class="w-[280px] bg-white border-r border-gray-200 flex flex-col p-6 flex-shrink-0">
+                <div
+                    class="p-6 bg-gray-50 rounded-[2rem] border border-gray-100 mb-8 flex flex-col items-center shadow-inner">
+                    <div class="editor-avatar-container"
+                        onclick="document.getElementById('editor-photo-input').click()"><img id="editor-avatar" src=""
+                            class="w-24 h-24 rounded-full border-4 border-white shadow-xl object-cover bg-white">
+                        <div class="avatar-overlay"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-width="2.5"
+                                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z">
+                                </path>
+                                <path stroke-width="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg></div><input type="file" id="editor-photo-input" class="hidden" accept="image/*"
+                            onchange="window.previewEditorImage(this)">
+                    </div>
+                    <h3 id="editor-name" class="font-black text-gray-800 text-xs text-center uppercase leading-tight">
+                        ...</h3>
+                    <p id="editor-reg"
+                        class="text-[9px] font-mono text-gray-400 font-bold bg-white px-3 py-1 rounded-lg border border-gray-100 mt-2 tracking-widest">
+                        #0000</p>
+                </div>
+                <nav id="editor-nav" class="space-y-1.5 flex-1 overflow-y-auto pr-2 custom-scroll">
+                    <div data-tab="identity" class="nav-tab-pro active"><span>👤</span> Identidade & Vínculos</div>
+                    <div data-tab="documents" class="nav-tab-pro"><span>📄</span> Documentação</div>
+                    <div data-tab="contract" class="nav-tab-pro"><span>💼</span> Contrato & Jornada</div>
+                    <div data-tab="benefits" class="nav-tab-pro"><span>🎁</span> Benefícios</div>
+                    <div data-tab="family" class="nav-tab-pro"><span>👨‍👩‍👧</span> Família & Filhos</div>
+                    <div data-tab="history" class="nav-tab-pro"><span>📈</span> Histórico</div>
+                </nav>
+                <div class="p-4 border-t bg-gray-50 space-y-2">
+                    <p class="text-[8px] font-black text-gray-400 uppercase text-center">Acesso Rápido</p>
+                    <button onclick="window.openModuleFromEditor('carreira')" class="w-full bg-amber-600 text-white py-2 rounded-lg font-black text-[9px] uppercase shadow hover:scale-105 transition-flex flex items-center justify-center gap-1"><span>📈</span> Carreira</button>
+                    <button onclick="window.openModuleFromEditor('vacation')" class="w-full bg-orange-500 text-white py-2 rounded-lg font-black text-[9px] uppercase shadow hover:scale-105 transition-flex flex items-center justify-center gap-1"><span>🏖️</span> Férias</button>
+                    <button onclick="window.openModuleFromEditor('aso')" class="w-full bg-green-600 text-white py-2 rounded-lg font-black text-[9px] uppercase shadow hover:scale-105 transition-flex flex items-center justify-center gap-1"><span>🩺</span> Saúde</button>
+                    <button onclick="window.openModuleFromEditor('uniforms')" class="w-full bg-blue-600 text-white py-2 rounded-lg font-black text-[9px] uppercase shadow hover:scale-105 transition-flex flex items-center justify-center gap-1"><span>🎽</span> Fardamento</button>
+                    <button onclick="window.openModuleFromEditor('tools')" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-black text-[9px] uppercase shadow hover:scale-105 transition-flex flex items-center justify-center gap-1"><span>💻</span> Ativos</button>
+                </div>
+            </aside>
+            <main class="flex-1 overflow-y-auto p-12 bg-gray-50/50 custom-scroll">
+                <div id="editor-content-area" class="max-w-4xl mx-auto pb-20"></div>
+            </main>
+        </section>
+        <section id="module-companies"
+            class="hidden h-full flex flex-col animate-fade-in p-12 bg-gray-50 print:hidden overflow-y-auto custom-scroll">
+            <div class="max-w-6xl mx-auto w-full space-y-8 pb-20">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-3xl font-black text-gray-800 uppercase italic">Gestão de Empresas & Unidades
+                        </h2>
+                        <p class="text-xs text-gray-400 font-bold uppercase">Cadastre empregadores (Legal) e locais de
+                            atuação (Físico)</p>
+                    </div><button onclick="window.openNewCompanyModal()"
+                        class="bg-nordeste-red text-white px-8 py-3 rounded-2xl font-black text-xs uppercase shadow-xl hover:scale-105 transition-transform">+
+                        Nova Empresa</button>
+                </div>
+                <div id="companies-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </section>
+        <section id="module-dossier" class="hidden h-full flex flex-col animate-fade-in bg-[#f0f2f5]">
+            <header class="bg-white border-b px-12 py-6 flex justify-between items-center shadow-sm print:hidden">
+                <div class="flex items-center gap-6"><img id="dossier-avatar" src=""
+                        class="w-16 h-16 rounded-2xl object-cover shadow-lg border-2 border-white">
+                    <div>
+                        <h2 id="dossier-name" class="text-2xl font-black text-gray-800 uppercase italic leading-none">
+                            ...</h2>
+                        <div class="flex items-center gap-3 mt-2"><span id="dossier-role-sector"
+                                class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">CARGO •
+                                SETOR</span><span id="dossier-reg-tag"
+                                class="bg-gray-100 px-2 py-0.5 rounded text-[9px] font-mono font-bold text-gray-500">#0000</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3"><button onclick="window.printDossier()"
+                        class="bg-nordeste-black text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg flex items-center gap-2 hover:scale-105 transition-transform"><svg
+                            class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-width="2.5"
+                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>Imprimir Dossiê Completo</button></div>
+            </header>
+            <div class="flex-1 flex overflow-hidden">
+                <aside
+                    class="w-72 bg-white border-r p-8 space-y-2 flex-shrink-0 print:hidden overflow-y-auto custom-scroll">
+                    <h4 class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6 border-b pb-2">Seções
+                        do Prontuário</h4>
+                    <nav id="dossier-tabs-nav" class="space-y-1">
+                        <div data-dtab="master" class="nav-tab-pro active"><span>📑</span> Ficha Mestra</div>
+                        <div data-dtab="financial" class="nav-tab-pro"><span>💰</span> Benefícios & Verbas</div>
+                        <div data-dtab="vacations" class="nav-tab-pro"><span>📅</span> Gestão de Férias</div>
+                        <div data-dtab="absence" class="nav-tab-pro"><span>🏥</span> Absenteísmo</div>
+                        <div data-dtab="uniforms" class="nav-tab-pro"><span>🎽</span> Enxoval de Fardamento</div>
+                        <div data-dtab="tools" class="nav-tab-pro"><span>💻</span> Inventário de Ativos</div>
+                        <div data-dtab="career" class="nav-tab-pro"><span>📈</span> Jornada Profissional</div>
+                        <div data-dtab="discipline" class="nav-tab-pro"><span>⚖️</span> Histórico Disciplinar</div>
+                        <div data-dtab="health" class="nav-tab-pro"><span>🩺</span> Saúde Ocupacional</div>
+                    </nav>
+                </aside>
+                <main id="dossier-pages-container"
+                    class="flex-1 p-12 overflow-y-auto bg-[#f8f9fa] print:bg-white print:p-0 print:overflow-visible custom-scroll">
+                </main>
+            </div>
+        </section>
+        <section id="module-kits"
+            class="hidden h-full flex flex-col animate-fade-in p-12 bg-gray-50 overflow-y-auto custom-scroll">
+            <div class="max-w-6xl mx-auto w-full space-y-8 pb-20">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-3xl font-black text-gray-800 uppercase italic">Kits de Enxoval por Cargo</h2>
+                        <p class="text-xs text-gray-400 font-bold uppercase">Defina Fardamento, EPIs e Ferramentas para
+                            injeção automática na admissão</p>
+                    </div><button onclick="window.openNewKitModal()"
+                        class="bg-nordeste-black text-white px-8 py-3 rounded-2xl font-black text-xs uppercase shadow-xl hover:scale-105 transition-transform">+
+                        Configurar Novo Kit</button>
+                </div>
+                <div id="kits-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </section>
+    </main>
+    <div id="pro-modal-container"
+        class="hidden fixed inset-0 z-[200] bg-black/70 backdrop-blur-md flex items-center justify-center p-4 print:hidden">
+        <div id="pro-modal-content"
+            class="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-pop border border-white/20">
+        </div>
+    </div>
+    <script src="js/auth.js"></script>
+    <script type="module" src="js/tutorial/engine.js"></script>
+    <script type="module" src="js/pages/employees-pro-list.js"></script>
+    <script type="module" src="js/pages/employees-pro-editor.js"></script>
+    <script type="module" src="js/pages/companies-pro.js"></script>
+    <script type="module" src="js/pages/roles-pro.js"></script>
+    <script type="module" src="js/pages/kits-pro.js"></script>
+    <script type="module" src="js/pages/employees-pro-dossier.js?nocache=${Date.now()}"></script>
+    <script type="module">
+        import { initList } from './js/pages/employees-pro-list.js';
+        import { initEditor } from './js/pages/employees-pro-editor.js';
+        import { initCompanies } from './js/pages/companies-pro.js';
+        import { initRoles } from './js/pages/roles-pro.js';
+        import { initKits } from './js/pages/kits-pro.js';
+        import { initDossier } from './js/pages/employees-pro-dossier.js';
+        window.openProModal = () => document.getElementById('pro-modal-container').classList.remove('hidden');
+        window.closeProModal = () => document.getElementById('pro-modal-container').classList.add('hidden');
+        window.uiAlert = (message) => window.alert(message);
+        window.uiConfirm = (message) => window.confirm(message);
+        window.toggleModule = (mode) => {
+            const listModule = document.getElementById('module-list');
+            const editorModule = document.getElementById('module-editor');
+            const companiesModule = document.getElementById('module-companies');
+            const dossierModule = document.getElementById('module-dossier');
+            const rolesModule = document.getElementById('module-roles');
+            const kitsModule = document.getElementById('module-kits');
+            const btnSave = document.getElementById('btn-save-master');
+            const btnBack = document.getElementById('btn-back-to-list');
+            const btnComp = document.getElementById('btn-companies-mgmt');
+            [listModule, editorModule, companiesModule, dossierModule, rolesModule, kitsModule].forEach(m => m.classList.add('hidden'));
+            btnSave.classList.add('hidden'); btnBack.classList.add('hidden'); btnComp.classList.remove('hidden');
+            if (mode === 'editor') { editorModule.classList.remove('hidden'); btnSave.classList.remove('hidden'); btnBack.classList.remove('hidden'); btnComp.classList.add('hidden'); }
+            else if (mode === 'companies') { companiesModule.classList.remove('hidden'); btnBack.classList.remove('hidden'); btnComp.classList.add('hidden'); initCompanies(); }
+            else if (mode === 'roles') { rolesModule.classList.remove('hidden'); btnBack.classList.remove('hidden'); btnComp.classList.add('hidden'); initRoles(); }
+            else if (mode === 'kits') { kitsModule.classList.remove('hidden'); btnBack.classList.remove('hidden'); initKits(); }
+            else if (mode === 'dossier') { dossierModule.classList.remove('hidden'); btnBack.classList.remove('hidden'); btnComp.classList.add('hidden'); initDossier(); }
+            else { listModule.classList.remove('hidden'); initList(); }
+        };
+        document.getElementById('btn-back-to-list').onclick = () => window.toggleModule('list');
+        document.addEventListener('DOMContentLoaded', () => {
+            initList();
+            initEditor();
+
+            // Suporte para abertura direta via Dashboard (Audit Record)
+            const urlParams = new URLSearchParams(window.location.search);
+            const auditId = urlParams.get('audit_id');
+            if (auditId) {
+                setTimeout(() => window.openEmployeeEditor(auditId), 500);
+            }
+        });
+    </script>
+</body>
+
+</html>

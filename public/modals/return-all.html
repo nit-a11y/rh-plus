@@ -1,0 +1,27 @@
+<div class="modal-content-animated bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+        <h3 class="text-lg font-bold text-red-700 uppercase tracking-tight">Desligamento / Devolução Total</h3>
+        <button onclick="window.modules.uniforms.closeReturnAllModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <form onsubmit="window.modules.uniforms.submitReturnAll(event)" class="p-6 space-y-4">
+        <div class="bg-red-50 p-4 rounded-xl border border-red-100 text-red-800 text-xs font-medium leading-relaxed">
+            Atenção: Esta ação marcará <strong>TODOS</strong> os itens ativos como devolvidos. Se o motivo for "Desligamento", o perfil do colaborador será arquivado automaticamente.
+        </div>
+        <div>
+            <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Motivo da Devolução</label>
+            <select id="return-all-reason" class="input-field bg-white">
+                <option value="Desligamento">Desligamento (Demissão/Rescisão)</option>
+                <option value="Troca de Função">Troca de Função (Kit Completo)</option>
+                <option value="Outros">Outros</option>
+            </select>
+        </div>
+        <div>
+            <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Observações Adicionais</label>
+            <textarea id="return-all-obs" rows="2" class="input-field"></textarea>
+        </div>
+        <div class="flex gap-3 pt-2">
+            <button type="button" onclick="window.modules.uniforms.closeReturnAllModal()" class="flex-1 btn btn-outline">Cancelar</button>
+            <button type="submit" class="flex-1 btn btn-danger">Confirmar Baixa Total</button>
+        </div>
+    </form>
+</div>

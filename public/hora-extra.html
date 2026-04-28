@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hora Extra | Nordeste RH+</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nordeste: { red: '#D32F2F', darkRed: '#B71C1C', black: '#121212', gray: '#F4F7F9' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/carreira.css">
+    <style>
+        .overtime-card { background: white; border-radius: 1.5rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .overtime-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .overtime-table th { background: #F9FAFB; padding: 12px 16px; text-align: left; font-size: 10px; font-weight: 800; text-transform: uppercase; color: #6B7280; letter-spacing: 0.05em; border-bottom: 2px solid #E5E7EB; }
+        .overtime-table td { padding: 16px; border-bottom: 1px solid #F3F4F6; font-size: 13px; }
+        .overtime-table tr:hover { background: #F9FAFB; }
+        .time-badge { font-family: monospace; font-weight: 700; color: #DC2626; background: #FEE2E2; padding: 4px 10px; border-radius: 6px; font-size: 12px; }
+        .value-badge { font-weight: 700; color: #059669; background: #D1FAE5; padding: 4px 10px; border-radius: 6px; font-size: 12px; }
+        .emp-item { 
+            margin: 8px 12px; 
+            padding: 12px; 
+            cursor: pointer; 
+            border-radius: 16px; 
+            transition: all 0.2s;
+            background: white;
+            border: 1px solid #E5E7EB;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .emp-item:hover { 
+            background: #F9FAFB; 
+            border-color: #D1D5DB;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .emp-item.active { 
+            background: #FEE2E2; 
+            border-color: #DC2626;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
+        }
+        .emp-item .emp-photo { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 12px; 
+            object-fit: cover;
+            border: 2px solid #F3F4F6;
+            flex-shrink: 0;
+        }
+        .emp-item .emp-content { flex: 1; min-width: 0; }
+        .emp-item .emp-name { 
+            font-weight: 700; 
+            font-size: 12px; 
+            color: #111827; 
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            box-orient: vertical;
+            overflow: hidden;
+            text-transform: uppercase;
+        }
+        .emp-item .emp-info { 
+            font-size: 10px; 
+            color: #6B7280; 
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .emp-item .emp-badge {
+            background: #F3F4F6;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 9px;
+            font-weight: 600;
+            color: #374151;
+            white-space: nowrap;
+        }
+        .summary-card { background: white; border-radius: 1.5rem; padding: 1.5rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid; }
+        .summary-card.records { border-color: #3B82F6; }
+        .summary-card.hours { border-color: #DC2626; }
+        .summary-card.value { border-color: #059669; }
+        .summary-card h3 { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #9CA3AF; margin-bottom: 8px; letter-spacing: 0.05em; }
+        .summary-card .value { font-size: 28px; font-weight: 800; color: #111827; }
+        .form-input { width: 100%; padding: 12px 16px; border: 2px solid #E5E7EB; border-radius: 12px; font-size: 13px; outline: none; transition: all 0.2s; }
+        .form-input:focus { border-color: #D32F2F; }
+        .form-label { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; color: #6B7280; margin-bottom: 6px; letter-spacing: 0.05em; }
+    </style>
+</head>
+<body class="bg-nordeste-gray h-screen flex overflow-hidden">
+    <!-- Sidebar com lista de colaboradores -->
+    <aside class="sidebar-nav">
+        <div class="p-6 border-b bg-white">
+            <div class="flex items-center gap-3 mb-6">
+                <a href="/" class="p-2 bg-nordeste-black text-white rounded-lg">🏠</a>
+                <h1 class="text-xs font-black uppercase italic text-gray-800 leading-none">
+                    Registro de <span class="text-nordeste-red">Hora Extra</span>
+                </h1>
+            </div>
+            <div class="relative">
+                <label for="emp-search" class="sr-only">Buscar colaborador</label>
+                <input type="text" id="emp-search" oninput="filterEmployeeList()" placeholder="Buscar nome ou matrícula..." 
+                    class="w-full pl-10 pr-4 py-3 bg-gray-100 border-none rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-nordeste-red transition-all">
+                <svg class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+            </div>
+        </div>
+        <div id="employees-list" class="flex-1 overflow-y-auto custom-scroll bg-white"></div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-container flex-1 overflow-y-auto custom-scroll">
+        <!-- Mensagem de boas-vindas (sem colaborador selecionado) -->
+        <div id="welcome-msg" class="h-full flex flex-col items-center justify-center text-gray-300">
+            <div class="w-24 h-24 bg-gray-200 rounded-[2.5rem] flex items-center justify-center mb-6 opacity-40">
+                <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <p class="font-black uppercase text-xs tracking-widest italic">Selecione um colaborador para gerenciar horas extra</p>
+        </div>
+
+        <!-- Painel do colaborador selecionado -->
+        <div id="employee-view" class="hidden animate-fade max-w-6xl mx-auto w-full p-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <!-- Card do colaborador -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-[2.5rem] p-8 border-2 border-nordeste-red shadow-xl flex flex-col items-center">
+                        <img id="view-photo" src="" class="w-32 h-32 rounded-[2rem] object-cover border-4 border-white shadow-2xl mb-6">
+                        <h2 id="view-name" class="text-lg font-black text-gray-800 uppercase italic text-center leading-tight">...</h2>
+                        <span id="view-reg" class="bg-gray-100 px-3 py-1 rounded-lg text-[9px] font-mono font-bold text-gray-400 mt-2">#0000</span>
+                        <div class="w-full mt-8 pt-8 border-t border-gray-50 space-y-4">
+                            <div>
+                                <p class="text-[8px] font-black text-gray-400 uppercase">Cargo</p>
+                                <p id="view-role" class="text-xs font-black text-nordeste-red uppercase italic leading-tight">...</p>
+                            </div>
+                            <div>
+                                <p class="text-[8px] font-black text-gray-400 uppercase">Setor</p>
+                                <p id="view-sector" class="text-xs font-black text-gray-800">...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Resumo do colaborador -->
+                    <div class="bg-nordeste-black rounded-[2rem] p-8 text-white shadow-2xl relative overflow-hidden">
+                        <div class="absolute top-[-10px] right-[-10px] text-6xl opacity-10 rotate-12">⏰</div>
+                        <p class="text-[9px] font-black text-nordeste-red uppercase tracking-widest mb-1">Total em Horas Extra</p>
+                        <h3 id="emp-total-hours" class="text-4xl font-black italic">00:00</h3>
+                        <p class="text-[8px] text-gray-400 font-bold uppercase mt-2">Valor total: <span id="emp-total-value">R$ 0,00</span></p>
+                    </div>
+                    
+                    <button onclick="openModal()" class="w-full bg-nordeste-red text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-nordeste-darkRed transition-all">
+                        ➕ Adicionar Hora Extra
+                    </button>
+                </div>
+
+                <!-- Lista de horas extra -->
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-black uppercase italic text-gray-800">Histórico de Horas Extra</h2>
+                        <div class="flex gap-2">
+                            <label for="filter-month" class="sr-only">Filtrar por mês</label>
+                            <select id="filter-month" onchange="loadEmployeeOvertime()" class="form-input w-40">
+                                <option value="">Todos os meses</option>
+                            </select>
+                            <button onclick="exportEmployeeData()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-bold text-[10px] uppercase hover:bg-gray-200 transition-all">
+                                📥 Exportar
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="overtime-card">
+                        <table class="overtime-table">
+                            <thead>
+                                <tr>
+                                    <th>Mês/Ano</th>
+                                    <th>Tempo</th>
+                                    <th>Valor</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overtime-list">
+                                <tr><td colspan="4" class="text-center py-8 text-gray-400">Carregando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel Geral (quando nenhum colaborador selecionado) -->
+        <div id="general-view" class="hidden animate-fade max-w-6xl mx-auto w-full p-8">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="summary-card records">
+                    <h3>Total de Registros</h3>
+                    <div class="value" id="total-records">0</div>
+                </div>
+                <div class="summary-card hours">
+                    <h3>Total de Horas</h3>
+                    <div class="value" id="total-hours">00:00</div>
+                </div>
+                <div class="summary-card value">
+                    <h3>Valor Total</h3>
+                    <div class="value" id="total-value">R$ 0,00</div>
+                </div>
+            </div>
+
+            <!-- Tabela Geral -->
+            <div class="overtime-card">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-sm font-black uppercase italic text-gray-800">Todos os Registros de Hora Extra</h2>
+                    <div class="flex gap-2">
+                        <label for="general-month-filter" class="sr-only">Filtrar por mês</label>
+                        <select id="general-month-filter" onchange="loadGeneralData()" class="form-input w-40">
+                            <option value="">Todos os meses</option>
+                        </select>
+                        <button onclick="exportGeneralData()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-bold text-[10px] uppercase hover:bg-gray-200 transition-all">
+                            📥 Exportar
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="overtime-table">
+                        <thead>
+                            <tr>
+                                <th>Mês/Ano</th>
+                                <th>Colaborador</th>
+                                <th>Matrícula</th>
+                                <th>Cargo</th>
+                                <th>Tempo</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="general-table-body">
+                            <tr><td colspan="6" class="text-center py-8 text-gray-400">Carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal-overlay" class="hidden fixed inset-0 z-[200] bg-nordeste-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden animate-pop">
+            <div class="bg-nordeste-black p-6 text-white">
+                <h2 id="modal-title" class="text-lg font-black uppercase italic">Nova Hora Extra</h2>
+                <p id="modal-subtitle" class="text-xs text-gray-400 mt-1">...</p>
+            </div>
+            <form id="overtime-form" onsubmit="saveRecord(event)" class="p-6 space-y-4">
+                <input type="hidden" id="record-id">
+                <input type="hidden" id="record-emp-id">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="mes" class="form-label">Mês *</label>
+                        <select id="mes" class="form-input uppercase" required>
+                            <option value="">SELECIONE...</option>
+                            <option value="JANEIRO">JANEIRO</option>
+                            <option value="FEVEREIRO">FEVEREIRO</option>
+                            <option value="MARCO">MARÇO</option>
+                            <option value="ABRIL">ABRIL</option>
+                            <option value="MAIO">MAIO</option>
+                            <option value="JUNHO">JUNHO</option>
+                            <option value="JULHO">JULHO</option>
+                            <option value="AGOSTO">AGOSTO</option>
+                            <option value="SETEMBRO">SETEMBRO</option>
+                            <option value="OUTUBRO">OUTUBRO</option>
+                            <option value="NOVEMBRO">NOVEMBRO</option>
+                            <option value="DEZEMBRO">DEZEMBRO</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="ano" class="form-label">Ano *</label>
+                        <input type="number" id="ano" class="form-input uppercase" placeholder="2025" min="2020" max="2099" required>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label for="hora" class="form-label">Horas</label>
+                        <input type="number" id="hora" class="form-input uppercase" placeholder="00" min="0" max="23" step="1">
+                    </div>
+                    <div>
+                        <label for="minuto" class="form-label">Minutos</label>
+                        <input type="number" id="minuto" class="form-input uppercase" placeholder="00" min="0" max="59" step="1">
+                    </div>
+                    <div>
+                        <label for="segundo" class="form-label">Segundos</label>
+                        <input type="number" id="segundo" class="form-input uppercase" placeholder="00" min="0" max="59" step="1">
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="valor-monetario" class="form-label">Valor (R$)</label>
+                    <input type="text" id="valor-monetario" class="form-input uppercase text-right" placeholder="0,00" 
+                        oninput="maskCurrency(this)" onfocus="this.select()">
+                    <p class="text-[10px] text-gray-400 mt-1">DIGITE OS NÚMEROS - OS 2 ÚLTIMOS SÃO CENTAVOS</p>
+                </div>
+                
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-black text-[10px] uppercase hover:bg-gray-200 transition-all">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="flex-1 bg-nordeste-red text-white py-3 rounded-xl font-black text-[10px] uppercase hover:bg-nordeste-darkRed transition-all">
+                        Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        // Variáveis globais
+        let allEmployees = [];
+        let allOvertime = [];
+        let currentEmployeeId = null;
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadEmployees();
+            await loadAllOvertime();
+        });
+
+        // Carregar lista de colaboradores
+        async function loadEmployees() {
+            try {
+                const res = await fetch('/api/employees');
+                allEmployees = await res.json();
+                
+                // Mostrar apenas ativos
+                const ativos = allEmployees.filter(e => e.type !== 'Desligado');
+                renderEmployeeList(ativos);
+            } catch (e) {
+                console.error('Erro ao carregar colaboradores:', e);
+                document.getElementById('employees-list').innerHTML = 
+                    '<div class="p-4 text-center text-red-400 text-xs">Erro ao carregar colaboradores</div>';
+            }
+        }
+
+        // Renderizar lista de colaboradores
+        function renderEmployeeList(employees) {
+            const container = document.getElementById('employees-list');
+            
+            if (employees.length === 0) {
+                container.innerHTML = '<div class="p-4 text-center text-gray-400 text-xs">Nenhum colaborador encontrado</div>';
+                return;
+            }
+            
+            // Ordenar por nome
+            employees.sort((a, b) => a.name.localeCompare(b.name));
+            
+            container.innerHTML = employees.map(emp => {
+                const photoUrl = emp.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}&background=D32F2F&color=fff&size=96`;
+                // Limitar matrícula para não ficar muito longa
+                const matricula = emp.registrationNumber ? emp.registrationNumber.substring(0, 10) + (emp.registrationNumber.length > 10 ? '...' : '') : 'Sem matrícula';
+                
+                return `
+                <div class="emp-item ${emp.id === currentEmployeeId ? 'active' : ''}" onclick="selectEmployee('${emp.id}')" data-emp-id="${emp.id}">
+                    <img src="${photoUrl}" class="emp-photo" alt="${emp.name}">
+                    <div class="emp-content">
+                        <div class="emp-name">${emp.name}</div>
+                        <div class="emp-info">
+                            <span class="emp-badge">#${matricula}</span>
+                            <span>${emp.role || 'Sem cargo'}</span>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // Filtrar lista de colaboradores
+        function filterEmployeeList() {
+            const search = document.getElementById('emp-search').value.toLowerCase();
+            const ativos = allEmployees.filter(e => e.type !== 'Desligado');
+            
+            const filtered = ativos.filter(emp => 
+                emp.name?.toLowerCase().includes(search) ||
+                emp.registrationNumber?.includes(search)
+            );
+            
+            renderEmployeeList(filtered);
+        }
+
+        // Selecionar/desselecionar colaborador
+        function selectEmployee(empId) {
+            // Se já está selecionado, desseleciona e mostra dados gerais
+            if (currentEmployeeId === empId) {
+                currentEmployeeId = null;
+                
+                // Remover classe ativa
+                document.querySelectorAll('.emp-item').forEach(el => el.classList.remove('active'));
+                
+                // Mostrar dados gerais
+                showGeneralView();
+                return;
+            }
+            
+            currentEmployeeId = empId;
+            
+            // Atualizar classe ativa
+            document.querySelectorAll('.emp-item').forEach(el => el.classList.remove('active'));
+            document.querySelector(`[data-emp-id="${empId}"]`)?.classList.add('active');
+            
+            const emp = allEmployees.find(e => e.id === empId);
+            if (!emp) return;
+            
+            // Mostrar painel do colaborador
+            document.getElementById('welcome-msg').classList.add('hidden');
+            document.getElementById('general-view').classList.add('hidden');
+            document.getElementById('employee-view').classList.remove('hidden');
+            
+            // Preencher dados
+            document.getElementById('view-photo').src = emp.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}&background=D32F2F&color=fff`;
+            document.getElementById('view-name').textContent = emp.name;
+            document.getElementById('view-reg').textContent = '#' + (emp.registrationNumber || '0000');
+            document.getElementById('view-role').textContent = emp.role || '-';
+            document.getElementById('view-sector').textContent = emp.sector || '-';
+            
+            // Carregar horas extra do colaborador
+            loadEmployeeOvertime();
+        }
+
+        // Carregar todas as horas extra
+        async function loadAllOvertime() {
+            try {
+                const res = await fetch('/api/overtime');
+                const data = await res.json();
+                allOvertime = data.data || [];
+                populateMonthFilters();
+                
+                // Se não houver colaborador selecionado, mostrar dados gerais
+                if (!currentEmployeeId) {
+                    showGeneralView();
+                }
+            } catch (e) {
+                console.error('Erro ao carregar horas extra:', e);
+            }
+        }
+
+        // Funções de máscara monetária
+        function maskCurrency(input) {
+            // Remove tudo que não é número
+            let value = input.value.replace(/\D/g, '');
+            
+            // Se vazio, zera
+            if (!value) value = '0';
+            
+            // Completa com zeros à esquerda para ter pelo menos 3 dígitos (1 real + 2 centavos)
+            value = value.padStart(3, '0');
+            
+            // Separa reais e centavos (últimos 2 dígitos são centavos)
+            const centavos = value.slice(-2);
+            const reais = value.slice(0, -2);
+            
+            // Remove zeros à esquerda dos reais
+            const reaisLimpo = parseInt(reais, 10).toString();
+            
+            // Formata com separador de milhar
+            const reaisFormatado = reaisLimpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            
+            // Atualiza o input
+            input.value = reaisFormatado + ',' + centavos;
+        }
+        
+        function parseCurrency(valueStr) {
+            if (!valueStr) return 0;
+            // Remove pontos de milhar e substitui vírgula por ponto
+            const clean = valueStr.replace(/\./g, '').replace(',', '.');
+            return parseFloat(clean) || 0;
+        }
+        
+        function formatCurrency(valueNum) {
+            if (valueNum === undefined || valueNum === null || isNaN(valueNum)) return '0,00';
+            const valueStr = valueNum.toFixed(2);
+            const [reais, centavos] = valueStr.split('.');
+            const reaisFormatado = parseInt(reais, 10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            return reaisFormatado + ',' + centavos;
+        }
+
+        // Mostrar visão geral
+        function showGeneralView() {
+            document.getElementById('welcome-msg').classList.remove('hidden');
+            document.getElementById('employee-view').classList.add('hidden');
+            document.getElementById('general-view').classList.add('hidden');
+            
+            // Após 2 segundos, mostrar dados gerais automaticamente
+            setTimeout(() => {
+                if (!currentEmployeeId) {
+                    document.getElementById('welcome-msg').classList.add('hidden');
+                    document.getElementById('general-view').classList.remove('hidden');
+                    loadGeneralData();
+                }
+            }, 2000);
+        }
+
+        // Carregar horas extra do colaborador selecionado
+        async function loadEmployeeOvertime() {
+            if (!currentEmployeeId) return;
+            
+            const month = document.getElementById('filter-month').value;
+            
+            try {
+                const url = month 
+                    ? `/api/overtime?employee_id=${currentEmployeeId}&month=${encodeURIComponent(month)}`
+                    : `/api/overtime?employee_id=${currentEmployeeId}`;
+                
+                const res = await fetch(url);
+                const data = await res.json();
+                const records = data.data || [];
+                
+                // Atualizar resumo
+                updateEmployeeSummary(records);
+                
+                // Renderizar lista
+                renderOvertimeList(records, 'overtime-list');
+            } catch (e) {
+                console.error('Erro:', e);
+            }
+        }
+
+        // Carregar dados gerais
+        async function loadGeneralData() {
+            const month = document.getElementById('general-month-filter').value;
+            
+            try {
+                const url = month 
+                    ? `/api/overtime?month=${encodeURIComponent(month)}`
+                    : '/api/overtime';
+                
+                const res = await fetch(url);
+                const data = await res.json();
+                const records = data.data || [];
+                
+                // Atualizar resumo
+                updateGeneralSummary(records);
+                
+                // Renderizar tabela
+                renderGeneralTable(records);
+            } catch (e) {
+                console.error('Erro:', e);
+            }
+        }
+
+        // Atualizar resumo do colaborador
+        function updateEmployeeSummary(records) {
+            let totalMinutes = 0;
+            records.forEach(r => {
+                if (r.overtime_time?.includes(':')) {
+                    const [h, m] = r.overtime_time.split(':').map(Number);
+                    totalMinutes += (h * 60) + m;
+                }
+            });
+            
+            const hours = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            document.getElementById('emp-total-hours').textContent = 
+                `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+            
+            const totalValue = records.reduce((sum, r) => sum + (r.overtime_value || 0), 0);
+            document.getElementById('emp-total-value').textContent = 
+                'R$ ' + totalValue.toFixed(2).replace('.', ',');
+        }
+
+        // Atualizar resumo geral
+        function updateGeneralSummary(records) {
+            document.getElementById('total-records').textContent = records.length;
+            
+            let totalMinutes = 0;
+            records.forEach(r => {
+                if (r.overtime_time?.includes(':')) {
+                    const [h, m] = r.overtime_time.split(':').map(Number);
+                    totalMinutes += (h * 60) + m;
+                }
+            });
+            
+            const hours = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            document.getElementById('total-hours').textContent = 
+                `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+            
+            const totalValue = records.reduce((sum, r) => sum + (r.overtime_value || 0), 0);
+            document.getElementById('total-value').textContent = 
+                'R$ ' + totalValue.toFixed(2).replace('.', ',');
+        }
+
+        // Renderizar lista de horas extra
+        function renderOvertimeList(records, containerId) {
+            const container = document.getElementById(containerId);
+            
+            if (records.length === 0) {
+                container.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-400">Nenhum registro encontrado</td></tr>';
+                return;
+            }
+            
+            container.innerHTML = records.map(r => `
+                <tr>
+                    <td><strong>${r.month_year}</strong></td>
+                    <td><span class="time-badge">${r.overtime_time || '--:--'}</span></td>
+                    <td><span class="value-badge">${r.overtime_value ? 'R$ ' + r.overtime_value.toFixed(2).replace('.', ',') : '--'}</span></td>
+                    <td>
+                        <button class="text-blue-600 hover:text-blue-800 font-bold text-xs mr-2" onclick="editRecord('${r.id}')">✏️</button>
+                        <button class="text-red-600 hover:text-red-800 font-bold text-xs" onclick="deleteRecord('${r.id}')">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Renderizar tabela geral
+        function renderGeneralTable(records) {
+            const container = document.getElementById('general-table-body');
+            
+            if (records.length === 0) {
+                container.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">Nenhum registro encontrado</td></tr>';
+                return;
+            }
+            
+            container.innerHTML = records.map(r => `
+                <tr onclick="selectEmployee('${r.employee_id}')" class="cursor-pointer hover:bg-gray-50">
+                    <td><strong>${r.month_year}</strong></td>
+                    <td>${r.employee_name}</td>
+                    <td>${r.registrationNumber || '-'}</td>
+                    <td>${r.role || '-'}</td>
+                    <td><span class="time-badge">${r.overtime_time || '--:--'}</span></td>
+                    <td><span class="value-badge">${r.overtime_value ? 'R$ ' + r.overtime_value.toFixed(2).replace('.', ',') : '--'}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Popular filtros de mês
+        function populateMonthFilters() {
+            const months = [...new Set(allOvertime.map(r => r.month_year))].sort().reverse();
+            
+            ['filter-month', 'general-month-filter'].forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.innerHTML = '<option value="">Todos os meses</option>';
+                    months.forEach(m => {
+                        const option = document.createElement('option');
+                        option.value = m;
+                        option.textContent = m;
+                        select.appendChild(option);
+                    });
+                }
+            });
+        }
+
+        // Modal
+        function openModal(record = null) {
+            const emp = allEmployees.find(e => e.id === currentEmployeeId);
+            
+            document.getElementById('modal-title').textContent = record ? 'Editar Hora Extra' : 'Nova Hora Extra';
+            document.getElementById('modal-subtitle').textContent = emp ? emp.name : '';
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            
+            document.getElementById('record-emp-id').value = currentEmployeeId || '';
+            
+            if (record) {
+                document.getElementById('record-id').value = record.id;
+                
+                // Separar mês e ano
+                if (record.month_year) {
+                    const parts = record.month_year.split(' ');
+                    document.getElementById('mes').value = parts[0] || '';
+                    document.getElementById('ano').value = parts[1] || '';
+                }
+                
+                // Separar hora, minuto e segundo
+                if (record.overtime_time) {
+                    const timeParts = record.overtime_time.split(':');
+                    document.getElementById('hora').value = timeParts[0] || '';
+                    document.getElementById('minuto').value = timeParts[1] || '';
+                    document.getElementById('segundo').value = timeParts[2] || '';
+                } else {
+                    document.getElementById('hora').value = '';
+                    document.getElementById('minuto').value = '';
+                    document.getElementById('segundo').value = '';
+                }
+                
+                // Preencher valor monetário formatado
+                if (record.overtime_value || record.overtime_value === 0) {
+                    const valueNum = parseFloat(record.overtime_value);
+                    document.getElementById('valor-monetario').value = formatCurrency(valueNum);
+                } else {
+                    document.getElementById('valor-monetario').value = '0,00';
+                }
+            } else {
+                document.getElementById('overtime-form').reset();
+                document.getElementById('record-id').value = '';
+                const now = new Date();
+                const months = ['JANEIRO', 'FEVEREIRO', 'MARCO', 'ABRIL', 'MAIO', 'JUNHO', 
+                               'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+                document.getElementById('mes').value = months[now.getMonth()];
+                document.getElementById('ano').value = now.getFullYear();
+                document.getElementById('hora').value = '';
+                document.getElementById('minuto').value = '';
+                document.getElementById('segundo').value = '';
+                document.getElementById('valor-monetario').value = '0,00';
+                
+                // Aplicar máscara inicial
+                maskCurrency(document.getElementById('valor-monetario'));
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.add('hidden');
+        }
+
+        // Salvar
+        async function saveRecord(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('record-id').value;
+            const empId = document.getElementById('record-emp-id').value || currentEmployeeId;
+            
+            // Juntar mês e ano
+            const mes = document.getElementById('mes').value;
+            const ano = document.getElementById('ano').value;
+            const monthYear = `${mes} ${ano}`.toUpperCase();
+            
+            // Juntar hora, minuto e segundo
+            const hora = document.getElementById('hora').value || '00';
+            const minuto = document.getElementById('minuto').value || '00';
+            const segundo = document.getElementById('segundo').value || '00';
+            const timeStr = `${hora.padStart(2, '0')}:${minuto.padStart(2, '0')}:${segundo.padStart(2, '0')}`;
+            
+            // Pegar valor monetário e converter
+            const valorStr = document.getElementById('valor-monetario').value || '0,00';
+            const valueNum = parseCurrency(valorStr);
+            
+            const data = {
+                employee_id: empId,
+                month_year: monthYear,
+                overtime_time: timeStr,
+                overtime_value: valueNum,
+                created_by: 'Sistema'
+            };
+            
+            try {
+                const url = id ? `/api/overtime/${id}` : '/api/overtime';
+                const method = id ? 'PUT' : 'POST';
+                
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await res.json();
+                
+                if (result.success) {
+                    closeModal();
+                    await loadAllOvertime();
+                    if (currentEmployeeId) loadEmployeeOvertime();
+                    else loadGeneralData();
+                    alert(id ? 'Registro atualizado!' : 'Registro criado!');
+                } else {
+                    alert('Erro: ' + (result.error || 'Erro desconhecido'));
+                }
+            } catch (e) {
+                alert('Erro ao salvar: ' + e.message);
+            }
+        }
+
+        // Editar
+        function editRecord(id) {
+            const record = allOvertime.find(r => r.id === id);
+            if (record) openModal(record);
+        }
+
+        // Excluir
+        async function deleteRecord(id) {
+            if (!confirm('Tem certeza que deseja excluir?')) return;
+            
+            try {
+                const res = await fetch(`/api/overtime/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                
+                if (result.success) {
+                    await loadAllOvertime();
+                    if (currentEmployeeId) loadEmployeeOvertime();
+                    else loadGeneralData();
+                    alert('Registro excluído!');
+                } else {
+                    alert('Erro: ' + (result.error || 'Erro desconhecido'));
+                }
+            } catch (e) {
+                alert('Erro ao excluir: ' + e.message);
+            }
+        }
+
+        // Exportar
+        function exportEmployeeData() {
+            if (!currentEmployeeId) return;
+            
+            const emp = allEmployees.find(e => e.id === currentEmployeeId);
+            const records = allOvertime.filter(r => r.employee_id === currentEmployeeId);
+            
+            let csv = 'Mês,Tempo,Valor\n';
+            records.forEach(r => {
+                csv += `"${r.month_year}","${r.overtime_time || ''}","${r.overtime_value ? r.overtime_value.toFixed(2) : ''}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `hora_extra_${emp?.name || 'colaborador'}.csv`;
+            link.click();
+        }
+
+        function exportGeneralData() {
+            const records = allOvertime;
+            
+            let csv = 'Mês,Colaborador,Matrícula,Tempo,Valor\n';
+            records.forEach(r => {
+                csv += `"${r.month_year}","${r.employee_name}","${r.registrationNumber || ''}","${r.overtime_time || ''}","${r.overtime_value ? r.overtime_value.toFixed(2) : ''}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'hora_extra_geral.csv';
+            link.click();
+        }
+
+        // Fechar modal ao clicar fora
+        document.getElementById('modal-overlay').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('modal-overlay')) closeModal();
+        });
+    </script>
+</body>
+</html>

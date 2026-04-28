@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colaboradores | Nordeste RH+</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Estilos globais -->
+    <link rel="stylesheet" href="css/global.css">
+    
+    <!-- Estilos do módulo -->
+    <link rel="stylesheet" href="modules/employees-pro/styles/main.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nordeste: {
+                            red: '#D32F2F',
+                            darkRed: '#B71C1C',
+                            black: '#212121',
+                            gray: '#F5F5F5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span class="text-gray-700">Carregando...</span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <button onclick="window.location.href='index.html'" class="text-gray-600 hover:text-gray-900 mr-4">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h1 class="text-xl font-bold text-gray-900">Gestão de Colaboradores</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-gray-600">
+                        <span id="total-employees">0</span> funcionários
+                    </div>
+                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i> Atualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-8">
+                <button data-view="list" class="tab-btn py-4 px-1 border-b-2 border-blue-500 text-blue-600 font-medium text-sm">
+                    <i class="fas fa-list mr-2"></i> Lista
+                </button>
+                <button data-view="editor" class="tab-btn py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    <i class="fas fa-edit mr-2"></i> Editor
+                </button>
+                <button data-view="dossier" class="tab-btn py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    <i class="fas fa-file-alt mr-2"></i> Dossier
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- List View -->
+        <div id="list-view" class="view-container">
+            <div id="employees-list">
+                <!-- Content will be rendered by ListComponent -->
+            </div>
+        </div>
+
+        <!-- Editor View -->
+        <div id="editor-view" class="view-container" style="display: none;">
+            <div id="editor-content">
+                <!-- Content will be rendered by EditorComponent -->
+            </div>
+        </div>
+
+        <!-- Dossier View -->
+        <div id="dossier-view" class="view-container" style="display: none;">
+            <div id="dossier-content">
+                <!-- Content will be rendered by DossierComponent -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script type="module">
+        import employeesPro from './modules/employees-pro/components/EmployeesPro.js';
+        
+        // Inicializar quando o DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await employeesPro.init();
+                console.log('✅ Módulo Employees-Pro inicializado com sucesso!');
+            } catch (error) {
+                console.error('❌ Erro ao inicializar módulo:', error);
+            }
+        });
+
+        // Expor globalmente para compatibilidade
+        window.employeesPro = employeesPro;
+    </script>
+</body>
+</html>

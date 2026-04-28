@@ -1,0 +1,8 @@
+<div class="modal-content-animated bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div class="bg-gray-50 px-6 py-4 border-b border-gray-100"><h3 class="text-lg font-bold text-gray-800">Devolver Item</h3></div>
+    <form onsubmit="window.modules.uniforms.submitReturn(event)" class="p-6 space-y-4">
+        <div><label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Motivo</label><select id="return-reason" class="input-field"><option>Desgaste</option><option>Troca de Função</option><option>Estoque</option></select></div>
+        <div><label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Observações</label><textarea id="return-obs" class="input-field"></textarea></div>
+        <div class="flex gap-3 pt-2"><button type="button" onclick="window.modules.uniforms.closeReturnModal()" class="flex-1 btn btn-outline">Cancelar</button><button type="submit" class="flex-1 btn btn-danger">Confirmar Devolução</button></div>
+    </form>
+</div>

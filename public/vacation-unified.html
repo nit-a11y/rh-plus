@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Férias | Nordeste RH+</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nordeste: { red: '#D32F2F', darkRed: '#B71C1C', black: '#121212', gray: '#F8FAFC' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/vacation-pro.css">
+    <link rel="stylesheet" href="css/vacation-dossier.css">
+    <link rel="stylesheet" href="css/carreira.css">
+    <link rel="stylesheet" href="css/tutorial.css">
+    <style>
+        .emp-item { padding: 1rem 1.5rem; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
+        .emp-item:hover { background: #F8FAFC; }
+        .emp-item.active { background: #FFF1F2; border-left: 4px solid #D32F2F; }
+        .main-container { padding: 2rem; }
+    </style>
+</head>
+
+<body class="bg-gray-100 h-screen flex overflow-hidden">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar-nav flex-shrink-0 w-72 flex flex-col z-50">
+        <div class="p-6 border-b bg-white">
+            <div class="flex items-center gap-3 mb-4">
+                <a href="/" class="p-2 bg-nordeste-black text-white rounded-lg">🏠</a>
+                <h1 class="text-xs font-black uppercase italic text-gray-800 leading-none">Gestão de <span class="text-nordeste-red">Férias</span></h1>
+            </div>
+            <div class="bg-gray-100 p-1 rounded-2xl flex mb-4"><div id="tab-active" onclick="window.setFilterStatus('active')" class="tab-btn active">Ativos</div><div id="tab-inactive" onclick="window.setFilterStatus('inactive')" class="tab-btn inactive">Desligados</div></div>
+            <div class="relative">
+                <input type="text" id="dossier-search" oninput="renderEmployeeList()" placeholder="Buscar..." class="w-full pl-10 pr-4 py-3 bg-gray-100 border-none rounded-2xl text-xs font-bold outline-none">
+                <svg class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+        </div>
+        
+        <div id="dossier-employee-list" class="flex-1 overflow-y-auto bg-white custom-scroll"></div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-container flex-1 flex flex-col min-w-0 overflow-hidden">
+        
+        <!-- WELCOME -->
+        <div id="welcome-msg" class="h-full flex flex-col items-center justify-center text-gray-300">
+            <div class="w-24 h-24 bg-gray-200 rounded-[2.5rem] flex items-center justify-center mb-6">
+                <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            </div>
+            <p class="font-black uppercase text-xs tracking-widest italic">Selecione um colaborador para gerenciar ausências</p>
+        </div>
+
+        <!-- SELECTION VIEW -->
+        <div id="selection-view" class="hidden animate-fade max-w-6xl mx-auto w-full">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- COLUNA 1: Card Colaborador -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-[2.5rem] p-6 border-2 border-nordeste-red shadow-xl flex flex-col items-center">
+                        <img id="view-photo" src="" class="w-24 h-24 rounded-[2rem] object-cover border-4 border-white shadow-2xl mb-4">
+                        <h2 id="view-name" class="text-lg font-black text-gray-800 uppercase italic text-center">...</h2>
+                        <span id="view-reg" class="bg-gray-100 px-3 py-1 rounded-lg text-[9px] font-mono font-bold text-gray-400 mt-2">#0000</span>
+                        
+                        <div class="w-full mt-6 pt-6 border-t border-gray-50 space-y-3">
+                            <div><p class="text-[8px] font-black text-gray-400 uppercase">Setor</p><p id="view-sector" class="text-xs font-black text-gray-800">...</p></div>
+                            <div><p class="text-[8px] font-black text-gray-400 uppercase">Admissão</p><p id="view-admission" class="text-xs font-black text-gray-600">...</p></div>
+                            <div><p class="text-[8px] font-black text-gray-400 uppercase">Última Ausência</p><p id="view-last-vacation" class="text-xs font-black text-gray-600">--</p></div>
+                        </div>
+                    </div>
+
+                    <button onclick="openNewVacationModal()" class="w-full py-3 bg-nordeste-red text-white rounded-xl font-black text-xs uppercase shadow-lg hover:bg-nordeste-darkRed transition-all flex items-center justify-center gap-2">
+                        <span>+</span> Nova Ausência
+                    </button>
+
+                    <div class="bg-nordeste-black rounded-[2rem] p-6 text-white shadow-xl">
+                        <p class="text-[9px] font-black text-nordeste-red uppercase tracking-widest mb-3">Resumo</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><p class="text-2xl font-black" id="stat-total">0</p><p class="text-[8px] text-gray-400 uppercase">Períodos</p></div>
+                            <div><p class="text-2xl font-black" id="stat-days">0</p><p class="text-[8px] text-gray-400 uppercase">Dias</p></div>
+                            <div><p class="text-2xl font-black" id="stat-abonos">0</p><p class="text-[8px] text-gray-400 uppercase">Abonos</p></div>
+                            <div><p class="text-2xl font-black" id="stat-balance">30</p><p class="text-[8px] text-gray-400 uppercase">Saldo</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUNA 2: Timeline -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="dossier-filters">
+                        <button class="dossier-filter-btn active" data-filter="all" onclick="setTimelineFilter('all', this)">Todos</button>
+                        <button class="dossier-filter-btn" data-filter="Concluída" onclick="setTimelineFilter('Concluída', this)">Concluídas</button>
+                        <button class="dossier-filter-btn" data-filter="Agendada" onclick="setTimelineFilter('Agendada', this)">Agendadas</button>
+                        <button class="dossier-filter-btn" data-filter="Planejada" onclick="setTimelineFilter('Planejada', this)">Planejadas</button>
+                        <button class="dossier-filter-btn" data-filter="retroativa" onclick="setTimelineFilter('retroativa', this)">Retroativos</button>
+                    </div>
+
+                    <div id="vacation-timeline" class="space-y-4 relative pl-8 border-l-2 border-gray-200 ml-4 max-h-[60vh] overflow-y-auto pr-2 custom-scroll"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL: NOVA AUSÊNCIA / EDIÇÃO -->
+    <div id="vacation-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-xl shadow-2xl overflow-hidden animate-pop">
+            <div class="bg-nordeste-black p-6 text-white flex justify-between items-center">
+                <div>
+                    <h3 id="modal-title" class="text-lg font-black uppercase italic">Nova Ausência</h3>
+                    <p id="modal-subtitle" class="text-[10px] text-gray-400">Preencha os dados do período</p>
+                </div>
+                <button onclick="closeVacationModal()" class="text-white/50 hover:text-white text-2xl">×</button>
+            </div>
+            <div class="p-6 space-y-5">
+                <input type="hidden" id="vac-id">
+                
+                <!-- Período de Férias: 3 Datas Editáveis -->
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <p class="text-[10px] font-black text-gray-400 uppercase mb-3">📅 Período de Férias (Editável)</p>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="text-[9px] font-bold text-gray-500 uppercase block mb-1">Início</label>
+                            <input type="date" id="vac-start" class="pro-input" onchange="window.onPeriodChange()">
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-bold text-gray-500 uppercase block mb-1">Fim (Gozo)</label>
+                            <input type="date" id="vac-end" class="pro-input" onchange="window.onPeriodChange()">
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-bold text-gray-500 uppercase block mb-1">Retorno</label>
+                            <input type="date" id="vac-return-date" class="pro-input" onchange="window.onPeriodChange()">
+                        </div>
+                    </div>
+                    <p class="text-[9px] text-gray-400 mt-2">Ajuste as 3 datas manualmente. Dias de gozo são calculados automaticamente.</p>
+                </div>
+
+                <!-- Dias calculado (somente leitura) -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="pro-label">Dias de Gozo (Auto)</label>
+                        <input type="number" id="vac-days" class="pro-input bg-gray-100" value="30" min="5" max="30" readonly>
+                    </div>
+                    <div>
+                        <label class="pro-label">Dias de Abono (Venda)</label>
+                        <input type="number" id="vac-abono" class="pro-input" value="0" min="0" max="10">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="pro-label">Tipo</label>
+                    <select id="vac-type" class="pro-input">
+                        <option value="Férias">Férias</option>
+                        <option value="Férias + Abono">Férias + Abono</option>
+                        <option value="Abono">Apenas Abono</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="pro-label">📝 Observações</label>
+                    <textarea id="vac-obs" class="pro-input h-20" placeholder="Detalhes adicionais..."></textarea>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button onclick="deleteVacation()" id="btn-delete" class="hidden flex-1 py-3 bg-red-50 text-red-600 rounded-xl font-black text-xs uppercase border border-red-200 hover:bg-red-100">🗑️ Excluir</button>
+                    <button onclick="closeVacationModal()" class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase hover:bg-gray-200">Cancelar</button>
+                    <button onclick="submitVacation()" class="flex-1 py-3 bg-nordeste-red text-white rounded-xl font-black text-xs uppercase shadow-lg hover:bg-nordeste-darkRed">💾 Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script type="module" src="js/tutorial/engine.js"></script>
+    <script type="module" src="js/pages/vacation-unified.js?v=5"></script>
+</body>
+
+</html>

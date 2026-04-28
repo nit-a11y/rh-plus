@@ -1,0 +1,19 @@
+<div class="modal-content-animated bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center"><h3 class="text-lg font-bold text-gray-800">Trocar Peça</h3><button onclick="window.modules.uniforms.closeExchangeModal()" class="text-gray-400 hover:text-gray-600">✕</button></div>
+    <form onsubmit="window.modules.uniforms.submitExchange(event)" class="p-6 space-y-5">
+        <div>
+            <label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Motivo da Troca</label>
+            <div class="flex gap-3">
+                <button type="button" id="btn-type-time" onclick="window.setExchangeType('Tempo')" class="flex-1 py-3 border rounded-lg font-bold text-sm transition-all bg-green-600 text-white border-green-600 shadow-sm">Tempo (Desgaste)</button>
+                <button type="button" id="btn-type-damage" onclick="window.setExchangeType('Avaria')" class="flex-1 py-3 border rounded-lg font-bold text-sm transition-all bg-white text-gray-600 border-gray-200 hover:bg-gray-50">Avaria (Dano)</button>
+            </div>
+        </div>
+        <div id="exchange-reason-container" class="hidden-custom animate-fade-in p-4 bg-red-50 rounded-xl border border-red-100">
+            <label class="text-xs font-bold text-red-700 uppercase mb-1 block">Tipo de Avaria</label>
+            <select id="exchange-reason" class="input-field border-red-200 text-red-800 focus:border-red-400"><option>Rasgo</option><option>Mancha Permanente</option><option>Perda / Roubo</option><option>Tamanho Inadequado</option></select>
+        </div>
+        <div class="flex items-center gap-2"><input type="checkbox" id="exchange-returned" checked class="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500"><label for="exchange-returned" class="text-sm text-gray-700 font-medium">Peça antiga foi devolvida?</label></div>
+        <div><label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Observações</label><textarea id="exchange-obs" rows="2" class="input-field"></textarea></div>
+        <div class="flex gap-3 pt-2"><button type="button" onclick="window.modules.uniforms.closeExchangeModal()" class="flex-1 btn btn-outline">Cancelar</button><button type="submit" class="flex-1 btn btn-secondary">Confirmar Troca</button></div>
+    </form>
+</div>

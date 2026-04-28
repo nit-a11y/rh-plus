@@ -1,0 +1,209 @@
+
+<div id="tpl-identity">
+    <div class="space-y-6 animate-fade-in">
+        <div class="pro-card-section border-t-4 border-blue-600 bg-blue-50/5">
+            <h2 class="text-lg font-black text-gray-800 uppercase italic mb-6 flex items-center gap-2">
+                <span class="p-1.5 bg-blue-100 text-blue-600 rounded-lg">🏢</span> VÍNCULO CORPORATIVO
+            </h2>
+            <div id="vinculos-container" class="space-y-4">
+                <!-- Vinculos serão populados dinamicamente -->
+            </div>
+            <button onclick="window.addVinculo()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm uppercase hover:bg-blue-700 transition-colors">
+                + Adicionar Vínculo
+            </button>
+        </div>
+
+        <div class="pro-card-section border-t-4 border-nordeste-red">
+            <h2 class="text-lg font-black text-gray-800 uppercase italic mb-6 flex items-center gap-2">
+                <span class="p-1.5 bg-red-50 text-red-600 rounded-lg">👤</span> IDENTIFICAÇÃO & FILIAÇÃO
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="md:col-span-2"><label class="pro-label uppercase">NOME COMPLETO</label><input id="emp-name" class="pro-input font-bold uppercase" data-mask="text"></div>
+                <div><label class="pro-label uppercase">DATA DE NASCIMENTO</label><input type="date" id="emp-birth" class="pro-input font-bold uppercase"></div>
+                <div><label class="pro-label uppercase">GÊNERO</label><select id="emp-gender" class="pro-input font-bold uppercase"><option value="MASCULINO">MASCULINO</option><option value="FEMININO">FEMININO</option><option value="OUTROS">OUTROS</option></select></div>
+                <div><label class="pro-label uppercase">NOME DO PAI</label><input id="emp-father" class="pro-input uppercase" placeholder="N/A" data-mask="text"></div>
+                <div><label class="pro-label uppercase">NOME DA MÃE</label><input id="emp-mother" class="pro-input uppercase" placeholder="OBRIGATÓRIO" data-mask="text"></div>
+                <div><label class="pro-label uppercase">ESTADO CIVIL</label><select id="emp-marital" class="pro-input font-bold uppercase"><option value="-">- SELECIONE -</option><option value="SOLTEIRO(A)">SOLTEIRO(A)</option><option value="CASADO(A)">CASADO(A)</option><option value="DIVORCIADO(A)">DIVORCIADO(A)</option><option value="VIÚVO(A)">VIÚVO(A)</option><option value="UNIÃO ESTÁVEL">UNIÃO ESTÁVEL</option></select></div>
+                <div><label class="pro-label uppercase">ETNIA</label><select id="emp-ethnicity" class="pro-input uppercase"><option value="-">- SELECIONE -</option><option value="BRANCA">BRANCA</option><option value="PRETA">PRETA</option><option value="PARDA">PARDA</option><option value="AMARELA">AMARELA</option><option value="INDÍGENA">INDÍGENA</option></select></div>
+                <div><label class="pro-label uppercase">ESCOLARIDADE</label><select id="emp-education" class="pro-input font-bold uppercase"><option value="-">- SELECIONE -</option><option value="ENSINO FUNDAMENTAL INCOMPLETO">ENSINO FUNDAMENTAL INCOMPLETO</option><option value="ENSINO FUNDAMENTAL COMPLETO">ENSINO FUNDAMENTAL COMPLETO</option><option value="ENSINO MÉDIO INCOMPLETO">ENSINO MÉDIO INCOMPLETO</option><option value="ENSINO MÉDIO COMPLETO">ENSINO MÉDIO COMPLETO</option><option value="ENSINO TÉCNICO">ENSINO TÉCNICO</option><option value="ENSINO SUPERIOR INCOMPLETO">ENSINO SUPERIOR INCOMPLETO</option><option value="ENSINO SUPERIOR COMPLETO">ENSINO SUPERIOR COMPLETO</option><option value="PÓS-GRADUAÇÃO / ESPECIALIZAÇÃO">PÓS-GRADUAÇÃO / ESPECIALIZAÇÃO</option></select></div>
+                
+                <div>
+                    <label class="pro-label uppercase">NATURALIDADE (CIDADE / UF)</label>
+                    <div class="flex gap-2">
+                        <input id="emp-nat-city" class="pro-input font-bold flex-1 uppercase" placeholder="CIDADE" data-mask="text">
+                        <input id="emp-nat-state" class="pro-input font-black uppercase text-center w-24" placeholder="UF" maxlength="2" data-mask="uf">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pro-card-section bg-gray-50/50">
+            <h2 class="text-lg font-black text-gray-800 uppercase italic mb-6 flex items-center gap-2">
+                <span class="p-1.5 bg-gray-100 text-gray-600 rounded-lg">📞</span> CONTATOS & LOCALIZAÇÃO
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                <div><label class="pro-label uppercase">E-MAIL PESSOAL</label><input id="emp-email" class="pro-input text-blue-600 uppercase" style="text-transform: lowercase !important;"></div>
+                <div><label class="pro-label uppercase">CELULAR / WHATSAPP</label><input id="emp-phone" class="pro-input font-bold uppercase" placeholder="(00) 00000-0000" data-mask="phone"></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-5">
+                <div class="md:col-span-2"><label class="pro-label uppercase">CEP</label><input id="emp-cep" class="pro-input font-mono uppercase" placeholder="00000-000" data-mask="cep"></div>
+                <div class="md:col-span-4"><label class="pro-label uppercase">LOGRADOURO (RUA / AV)</label><input id="emp-street" class="pro-input uppercase" data-mask="text"></div>
+                <div class="md:col-span-2"><label class="pro-label uppercase">NÚMERO</label><input id="emp-number" class="pro-input font-bold uppercase" placeholder="N/A"></div>
+                <div class="md:col-span-4"><label class="pro-label uppercase">COMPLEMENTO</label><input id="emp-complement" class="pro-input uppercase" placeholder="APTO, BLOCO, LOTE"></div>
+                <div class="md:col-span-2"><label class="pro-label uppercase">BAIRRO</label><input id="emp-neighborhood" class="pro-input uppercase" data-mask="text"></div>
+                <div class="md:col-span-3"><label class="pro-label uppercase">CIDADE</label><input id="emp-city" class="pro-input font-bold uppercase" data-mask="text"></div>
+                <div><label class="pro-label uppercase">UF</label><input id="emp-uf" class="pro-input font-bold uppercase" maxlength="2" placeholder="UF" data-mask="uf"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="tpl-documents">
+    <div class="pro-card-section animate-fade-in border-t-4 border-gray-800">
+        <h2 class="text-lg font-black text-gray-800 uppercase italic mb-8 border-b border-gray-100 pb-4 flex items-center gap-3">
+            <span class="p-2 bg-gray-100 rounded-xl">📄</span> CENTRAL DE DOCUMENTOS LEGAIS
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 shadow-inner">
+                <label class="pro-label text-nordeste-red uppercase">CPF (OBRIGATÓRIO)</label>
+                <input id="doc-cpf" class="pro-input font-mono font-black text-lg uppercase" placeholder="000.000.000-00" data-mask="cpf">
+            </div>
+            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 shadow-inner">
+                <label class="pro-label uppercase">PIS / PASEP</label>
+                <input id="doc-pis" class="pro-input font-mono font-bold uppercase" placeholder="000.00000.00-0" data-mask="pis">
+            </div>
+            <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 shadow-inner">
+                <label class="pro-label uppercase">RG (NÚMERO)</label>
+                <input id="doc-rg" class="pro-input font-black text-lg uppercase" data-mask="number">
+            </div>
+            <div><label class="pro-label uppercase">ÓRGÃO EMISSOR</label><input id="doc-rg-organ" class="pro-input uppercase" data-mask="text"></div>
+            <div><label class="pro-label uppercase">UF IDENTIDADE</label><input id="doc-rg-uf" class="pro-input uppercase font-bold" maxlength="2" data-mask="uf"></div>
+            <div><label class="pro-label uppercase">DATA EMISSÃO RG</label><input type="date" id="doc-rg-date" class="pro-input uppercase"></div>
+            <div><label class="pro-label uppercase">CTPS NÚMERO / SÉRIE</label><input id="doc-ctps" class="pro-input font-bold uppercase" data-mask="number"></div>
+            <div><label class="pro-label uppercase">CNH (HABILITAÇÃO)</label><input id="doc-cnh" class="pro-input font-bold uppercase" data-mask="number"></div>
+            <div><label class="pro-label uppercase">TÍTULO ELEITOR</label><input id="doc-title" class="pro-input font-mono uppercase" data-mask="number"></div>
+            <div><label class="pro-label uppercase">ZONA ELEITORAL</label><input id="doc-zone" class="pro-input uppercase" data-mask="number"></div>
+            <div><label class="pro-label uppercase">SEÇÃO</label><input id="doc-section" class="pro-input uppercase" data-mask="number"></div>
+        </div>
+        
+        <div class="mt-8 pt-8 border-t border-gray-200">
+            <h2 class="text-[13px] font-black text-gray-800 uppercase italic mb-6">📁 ANEXOS (CONTRATOS, TERMOS E COMPROVANTES GERAIS)</h2>
+            <div class="bg-blue-50/40 p-6 rounded-2xl border-2 border-dashed border-blue-200 hover:border-blue-500 hover:bg-blue-100/50 transition-colors cursor-pointer text-center relative group" onclick="document.getElementById('emp-doc-upload').click()">
+                <div class="text-blue-500 text-3xl mb-2 group-hover:scale-110 transition-transform">⇪</div>
+                <p class="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Clique aqui para enviar um novo Arquivo Arquivo (Base64) ou Comprovante</p>
+                <p class="text-[8px] font-black text-blue-500 uppercase mt-2">ACEITA PDF, DOC, IMAGENS / DOCUMENTOS ISTRITOS DA ASO (MÁX: 10MB)</p>
+                <input type="file" id="emp-doc-upload" class="hidden" accept="*" onchange="window.handleGeneralDocUpload(event)">
+            </div>
+            
+            <div id="emp-documents-list" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Preenchido via Render JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="tpl-contract">
+    <div class="space-y-6 animate-fade-in">
+        <div class="pro-card-section border-t-4 border-nordeste-red shadow-xl">
+            <h2 class="text-lg font-black text-gray-800 uppercase italic mb-8">VÍNCULO ESOCIAL & FINANCEIRO</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="pro-label uppercase">MATRÍCULA</label>
+                    <input id="emp-reg-num" class="pro-input font-black text-lg uppercase" data-mask="number">
+                </div>
+                <div><label class="pro-label uppercase">DATA ADMISSÃO</label><input type="date" id="emp-adm" class="pro-input font-bold uppercase"></div>
+                <div><label class="pro-label uppercase">HIERARQUIA</label><select id="emp-hier" class="pro-input font-bold uppercase"><option value="COLABORADOR">COLABORADOR</option><option value="GESTÃO">GESTÃO</option><option value="DIREÇÃO">DIREÇÃO</option></select></div>
+                <div class="md:col-span-2"><label class="pro-label uppercase">CARGO DA MATRIZ (ATUAL)</label><select id="emp-role-select" class="pro-input font-black text-nordeste-red uppercase"></select></div>
+                <div><label class="pro-label uppercase">CBO</label><input id="emp-cbo" class="pro-input font-mono font-black text-amber-600 bg-gray-50 uppercase" readonly></div>
+                <div><label class="pro-label uppercase">SETOR</label><input id="emp-sector" class="pro-input bg-gray-50 font-bold uppercase" readonly></div>
+                <div><label class="pro-label uppercase">SALÁRIO BASE (ATUAL)</label><input id="emp-salary" class="pro-input font-black text-green-700 text-lg uppercase" oninput="window.formatCurrencyInput(event)"></div>
+                <div><label class="pro-label uppercase">KIT FARDAMENTO</label><select id="emp-type" class="pro-input font-bold uppercase"><option value="ADM">ADM</option><option value="OP">OP</option><option value="ASD">ASD</option></select></div>
+            </div>
+        </div>
+
+        <!-- SEÇÃO DE DADOS INICIAIS (NOVA) -->
+        <div class="pro-card-section bg-gray-50 border-t-4 border-gray-400">
+            <h2 class="text-lg font-black text-gray-600 uppercase italic mb-6 flex items-center gap-2">
+                <span class="p-1.5 bg-gray-200 text-gray-500 rounded-lg">📜</span> DADOS DE ENTRADA (HISTÓRICO)
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="pro-label uppercase">CARGO INICIAL (ADMISSÃO)</label>
+                    <input id="emp-initial-role" class="pro-input font-bold uppercase text-gray-600" placeholder="Ex: APRENDIZ">
+                </div>
+                <div>
+                    <label class="pro-label uppercase">SALÁRIO INICIAL</label>
+                    <input id="emp-initial-salary" class="pro-input font-bold uppercase text-gray-600" placeholder="R$ 0,00" oninput="window.formatCurrencyInput(event)">
+                </div>
+            </div>
+        </div>
+
+        <div class="pro-card-section bg-gray-900 text-white">
+            <h2 class="text-lg font-black uppercase italic mb-6 flex items-center gap-2"><span class="p-1.5 bg-white/10 text-orange-400 rounded-lg">⏰</span> ESCALA & JORNADA</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div><label class="pro-label !text-gray-400 uppercase">ESCALA (EX: 5X2, 6X1)</label><input id="emp-scale" class="pro-input !bg-gray-800 !border-gray-700 !text-white font-bold uppercase" placeholder="5X2" data-mask="text"></div>
+                <div><label class="pro-label !text-gray-400 uppercase">HORÁRIO DETALHADO</label><input id="emp-schedule" class="pro-input !bg-gray-800 !border-gray-700 !text-white uppercase" placeholder="07:30 ÀS 17:18"></div>
+            </div>
+        </div>
+
+        <!-- TRANSFERÊNCIA DE VÍNCULO -->
+        <div class="pro-card-section bg-orange-100 border-t-4 border-orange-500 shadow-xl">
+            <h2 class="text-lg font-black text-orange-900 uppercase italic mb-6 flex items-center gap-2">
+                <span class="p-1.5 bg-orange-500 text-white rounded-lg">🔄</span> TRANSFERÊNCIA DE VÍNCULO / HISTÓRICO
+            </h2>
+            <div class="bg-white rounded-xl p-6 border-2 border-orange-200">
+                <p class="text-sm text-gray-600 mb-4">Altere o empregador e/ou unidade do colaborador:</p>
+                <div class="flex gap-4">
+                    <button onclick="window.openTransferModalFromEditor()" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-black text-[11px] uppercase transition-all flex items-center gap-2 shadow-lg transform hover:scale-105">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                        Nova Transferência
+                    </button>
+                    <button onclick="window.viewTransferHistoryFromEditor()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-black text-[11px] uppercase transition-all flex items-center gap-2 shadow-lg transform hover:scale-105">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Ver Histórico
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="tpl-benefits">
+    <div class="space-y-6 animate-fade-in">
+        <div class="pro-card-section border-t-4 border-orange-500">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-lg font-black text-gray-800 uppercase italic">BENEFÍCIOS CONTRATUAIS</h2>
+                <button onclick="window.openAddBenefitModal()" class="bg-nordeste-black text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase shadow-lg">+ NOVO BENEFÍCIO</button>
+            </div>
+            <div id="benefits-list-area" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+    </div>
+</div>
+
+<div id="tpl-family">
+    <div class="space-y-10 animate-fade-in">
+        <div class="pro-card-section border-t-4 border-blue-600 bg-blue-50/5">
+            <div class="flex justify-between items-center mb-8">
+                <div><h2 class="text-lg font-black text-gray-800 uppercase italic leading-none">CONTATOS DE EMERGÊNCIA (SOS)</h2><p class="text-[9px] font-bold text-blue-600 uppercase mt-2 tracking-widest">PROCEDIMENTO EM CASO DE SINISTRO</p></div>
+                <button onclick="window.openAddEmergencyModal()" class="bg-blue-700 text-white px-5 py-2 rounded-xl text-[9px] font-black uppercase shadow-lg">+ NOVO SOS</button>
+            </div>
+            <div id="emergency-list-area" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+        <div class="pro-card-section border-t-4 border-purple-600 bg-purple-50/5">
+            <div class="flex justify-between items-center mb-8">
+                <div><h2 class="text-lg font-black text-gray-800 uppercase italic leading-none">DEPENDENTES LEGAIS</h2><p class="text-[9px] font-bold text-purple-600 uppercase mt-2 tracking-widest">IRRF / SALÁRIO FAMÍLIA / CONVÊNIOS</p></div>
+                <button onclick="window.openAddDependentModal()" class="bg-purple-700 text-white px-5 py-2 rounded-xl text-[9px] font-black uppercase shadow-lg">+ NOVO DEPENDENTE</button>
+            </div>
+            <div id="dependents-list-area" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+    </div>
+</div>
+
+<div id="tpl-history">
+    <div class="space-y-10 animate-fade-in">
+        <div class="pro-card-section border-t-4 border-gray-800">
+            <h2 class="text-lg font-black text-gray-800 uppercase italic mb-10">HISTÓRICO UNIFICADO (TIMELINE)</h2>
+            <div id="h-career-timeline" class="space-y-6 relative border-l-2 border-gray-100 ml-4 pl-10 pb-6"></div>
+        </div>
+    </div>
+</div>

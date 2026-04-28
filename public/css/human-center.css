@@ -1,0 +1,102 @@
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #fff;
+}
+
+.calendar-day-head {
+    padding: 15px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 900;
+    color: #94a3b8;
+    text-transform: uppercase;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.calendar-cell {
+    min-height: 150px;
+    padding: 10px;
+    border-right: 1px solid #f1f5f9;
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s;
+    background: white;
+}
+.calendar-cell:nth-child(7n) { border-right: none; }
+.calendar-cell:hover { background: #f8fafc; z-index: 10; }
+.calendar-cell.other-month { opacity: 0.2; background: #fafafa; }
+.calendar-cell.today { background: #fff1f2; }
+.calendar-cell.today .day-number { color: #D32F2F; font-size: 1.3rem; }
+
+.day-number {
+    font-size: 14px;
+    font-weight: 900;
+    color: #cbd5e1;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.event-dot {
+    font-size: 8px;
+    font-weight: 900;
+    padding: 6px 10px;
+    border-radius: 10px;
+    margin-bottom: 5px;
+    color: white;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.event-dot:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+.dot-birthday { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
+.dot-anniversary { background: linear-gradient(135deg, #10B981, #059669); }
+.dot-vacation { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+.dot-event { background: linear-gradient(135deg, #EF4444, #D32F2F); }
+.dot-promotion { background: linear-gradient(135deg, #F59E0B, #D97706); }
+
+.filter-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-radius: 18px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+.filter-item:hover { background: #F8FAFC; }
+.filter-item.active { background: #121212; color: white; }
+
+.human-card {
+    background: white;
+    border-radius: 2.25rem;
+    padding: 1.5rem;
+    border: 1.5px solid #e2e8f0;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+}
+.human-card:hover { transform: translateX(5px); box-shadow: 0 15px 30px rgba(0,0,0,0.05); border-color: #D32F2F; }
+
+.promo-card {
+    background: linear-gradient(145deg, #ffffff, #fffbeb);
+    border-left: 6px solid #F59E0B;
+}
+
+@keyframes pop { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+.animate-pop { animation: pop 0.3s cubic-bezier(0.4, 0, 0.2, 1); }

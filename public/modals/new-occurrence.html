@@ -1,0 +1,35 @@
+<div class="modal-content-animated bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+        <h3 class="text-lg font-bold text-gray-800 uppercase tracking-tight">Registrar Ocorrência Disciplinar</h3>
+        <button onclick="window.modules.occurrences.closeOccurrenceModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <form onsubmit="window.modules.occurrences.submitOccurrence(event)" class="p-6 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Tipo de Medida</label>
+                <select id="occ-type" class="input-field bg-white" required>
+                    <option value="Advertência Verbal">Advertência Verbal</option>
+                    <option value="Advertência por Escrito">Advertência por Escrito</option>
+                    <option value="Suspensão">Suspensão</option>
+                    <option value="Justa Causa (Desligamento)">Justa Causa (Desligamento)</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Data do Fato</label>
+                <input type="date" id="occ-date" class="input-field" required>
+            </div>
+        </div>
+        <div>
+            <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Motivo Principal</label>
+            <input type="text" id="occ-reason" class="input-field" placeholder="Ex: Falta não justificada, Avaria proposital..." required>
+        </div>
+        <div>
+            <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Detalhamento / Observações</label>
+            <textarea id="occ-obs" rows="3" class="input-field" placeholder="Descreva os detalhes do ocorrido..."></textarea>
+        </div>
+        <div class="flex gap-3 pt-2">
+            <button type="button" onclick="window.modules.occurrences.closeOccurrenceModal()" class="flex-1 btn btn-outline">Cancelar</button>
+            <button type="submit" class="flex-1 btn btn-secondary">Registrar Fato</button>
+        </div>
+    </form>
+</div>

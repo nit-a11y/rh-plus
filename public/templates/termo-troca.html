@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Termo de Troca de Equipamento</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f4f7f9;
+      line-height: 1.6;
+    }
+
+    .header {
+      background: #d32f2f;
+      color: white;
+      text-align: center;
+      padding: 20px 20px;
+      font-weight: 900;
+      font-size: 16px;
+      letter-spacing: 0.02em;
+      position: relative;
+    }
+
+    .header-logo {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 60px;
+      height: 60px;
+    }
+
+    .container {
+      max-width: 210mm;
+      margin: 0 auto;
+      background: white;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+      border-radius: 8px;
+      overflow: hidden;
+      padding: 15px;
+    }
+
+    .top-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      padding: 15px 20px 0 20px;
+      color: #64748b;
+      font-weight: 600;
+    }
+
+    .section {
+      margin-bottom: 15px;
+      padding: 0 20px;
+    }
+
+    .section-title {
+      background: #f8fafc;
+      padding: 12px 16px;
+      font-weight: 900;
+      border-left: 4px solid #d32f2f;
+      margin-bottom: 12px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #1e293b;
+    }
+
+    .row {
+      margin-bottom: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      font-size: 12px;
+      align-items: center;
+    }
+
+    .label {
+      font-weight: 700;
+      color: #374151;
+      min-width: 140px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    h2 {
+      text-align: center;
+      color: #1e293b;
+      font-size: 28px;
+      font-weight: 900;
+      margin: 30px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .list div {
+      margin: 8px 0;
+      font-size: 12px;
+      line-height: 1.8;
+      color: #4b5563;
+    }
+
+    .signatures {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+      padding: 0 20px 30px 20px;
+    }
+
+    .signature-box {
+      width: 45%;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .line {
+      border-bottom: 2px solid #1e293b;
+      margin: 25px 0 8px 0;
+    }
+
+    .old-item {
+      background: #fef2f2;
+      border: 2px solid #fca5a5;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .new-item {
+      background: #f0fdf4;
+      border: 2px solid #10b981;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .item-title {
+      font-weight: 900;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      color: #1e293b;
+    }
+
+    @media print {
+      body { background: white; padding: 0; margin: 0; }
+      .container { box-shadow: none; border-radius: 0; }
+      .header { padding: 20px; }
+      .section { page-break-inside: avoid; margin-bottom: 15px; }
+      .section-title { margin-bottom: 8px; }
+      .row { margin-bottom: 4px; padding: 4px 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <img src="/assets/nordeste-logo-with-text.svg" alt="NIT Logo" class="header-logo">
+    <h1>NORDESTE LOCAÇÕES</h1>
+    <small style="font-size: 12px; margin-top: 4px; display: block;">{{empresa_nome}} — {{empresa_unidade}}</small>
+  </div>
+
+  <div class="container">
+
+    <div class="top-meta">
+      <div><strong>CÓDIGO:</strong> {{codigo_documento}}</div>
+      <div><strong>DATA:</strong> {{data_emissao}}</div>
+    </div>
+
+    <h2>Termo de Troca de Equipamento</h2>
+
+    <div class="section">
+      <div class="section-title">Dados da Empresa</div>
+      <div class="row"><span class="label">Razão Social:</span> {{empresa_nome}}</div>
+      <div class="row"><span class="label">CNPJ:</span> {{empresa_cnpj}}</div>
+      <div class="row"><span class="label">Endereço:</span> {{empresa_endereco}}</div>
+      <div class="row"><span class="label">Unidade:</span> {{empresa_unidade}}</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Dados do Colaborador</div>
+      <div class="row"><span class="label">Nome:</span> {{colaborador_nome}}</div>
+      <div class="row"><span class="label">Matrícula:</span> {{colaborador_cpf}}</div>
+      <div class="row"><span class="label">Unidade:</span> {{colaborador_unidade}}</div>
+      <div class="row"><span class="label">Empresa:</span> {{colaborador_empresa}}</div>
+    </div>
+
+    <div style="display: flex; gap: 30px; margin-bottom: 20px;">
+    <div class="section" style="flex: 1; background: #fef2f2; border: 2px solid #fca5a5; padding: 20px; border-radius: 12px;">
+      <div class="section-title" style="color: #d97706; border-left-color: #d97706;">Equipamento Antigo (Devolvido)</div>
+      <div class="item-title" style="font-size: 11px; margin-bottom: 8px;">ESPECIFICAÇÕES TÉCNICAS</div>
+      <div style="font-size: 10px; line-height: 1.6;">
+        <div style="margin-bottom: 4px;"><strong>Patrimônio:</strong> {{old_patrimonio}}</div>
+        <div style="margin-bottom: 4px;"><strong>Tipo:</strong> {{old_tipo}}</div>
+        <div style="margin-bottom: 4px;"><strong>Modelo:</strong> {{old_modelo}}</div>
+        <div style="margin-bottom: 4px;"><strong>Memória RAM:</strong> {{old_memoria}}</div>
+        <div style="margin-bottom: 4px;"><strong>Armazenamento:</strong> {{old_armazenamento}}</div>
+        <div><strong>Classificação:</strong> {{old_tier}}</div>
+      </div>
+    </div>
+
+    <div class="section" style="flex: 1; background: #f0fdf4; border: 2px solid #10b981; padding: 20px; border-radius: 12px;">
+      <div class="section-title" style="color: #059669; border-left-color: #059669;">Equipamento Novo (Entregue)</div>
+      <div class="item-title" style="font-size: 11px; margin-bottom: 8px;">ESPECIFICAÇÕES TÉCNICAS</div>
+      <div style="font-size: 10px; line-height: 1.6;">
+        <div style="margin-bottom: 4px;"><strong>Patrimônio:</strong> {{new_patrimonio}}</div>
+        <div style="margin-bottom: 4px;"><strong>Tipo:</strong> {{new_tipo}}</div>
+        <div style="margin-bottom: 4px;"><strong>Modelo:</strong> {{new_modelo}}</div>
+        <div style="margin-bottom: 4px;"><strong>Memória RAM:</strong> {{new_memoria}}</div>
+        <div style="margin-bottom: 4px;"><strong>Armazenamento:</strong> {{new_armazenamento}}</div>
+        <div><strong>Classificação:</strong> {{new_tier}}</div>
+      </div>
+    </div>
+</div>
+
+    <div class="section">
+      <div class="section-title">Detalhes da Troca</div>
+      <div class="row"><span class="label">Motivo:</span> {{motivo_troca}}</div>
+      <div class="row"><span class="label">Data da Troca:</span> {{data_emissao}}</div>
+      <div class="row"><span class="label">Observações:</span> {{observacoes}}</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Declaração</div>
+      <p style="line-height:1.8; text-align: justify; font-size: 13px; color: #374151;">
+        Declaro, para os devidos fins, que recebi da empresa <strong>{{empresa_nome}}</strong>, inscrita no CNPJ nº <strong>{{empresa_cnpj}}</strong>, o equipamento novo acima descrito, em perfeito estado de conservação e funcionamento, e que devolvi o equipamento antigo também descrito. Comprometo-me a:
+      </p>
+
+      <div class="list" style="margin-top: 20px;">
+        <div><strong>I.</strong> Zelar pela guarda, conservação e uso adequado do novo equipamento, utilizando-o apenas para fins profissionais;</div>
+        <div><strong>II.</strong> Não permitir o uso por terceiros ou a instalação de softwares não autorizados pela empresa;</div>
+        <div><strong>III.</strong> Responsabilizar-me por qualquer dano, extravio ou furto decorrente de negligência ou mau uso;</div>
+        <div><strong>IV.</strong> Comunicar imediatamente ao setor de TI (NIT) qualquer problema técnico ou irregularidade;</div>
+        <div><strong>V.</strong> Devolver o equipamento imediatamente em caso de desligamento da empresa ou quando solicitado.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Assinaturas</div>
+
+      <div class="signatures">
+        <div class="signature-box">
+          <div class="line"></div>
+          <strong>{{colaborador_nome}}</strong><br>
+          <small style="color: #6b7280;">Matrícula: {{colaborador_cpf}}</small>
+        </div>
+
+        <div class="signature-box">
+          <div class="line"></div>
+          <strong>{{responsavel_nome}}</strong><br>
+          <small style="color: #6b7280;">Responsável NIT</small>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,875 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G&G+ | Centro de Comando</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gg: {
+                            roseLight: '#FFB6C1',
+                            roseMedium: '#FF69B4',
+                            roseIntense: '#FF1493',
+                            roseDark: '#C71585',
+                            white: '#FFF8F7',
+                            gray: '#F8F0F4',
+                            accent: '#DC143C',
+                        },
+                        nordeste: {
+                            red: '#D32F2F',
+                            darkRed: '#B71C1C',
+                            black: '#121212',
+                            gray: '#F4F7F9',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/tutorial.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--gg-white); }
+        .sidebar-item { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-item:hover { background: var(--gg-gradient-light); color: white; transform: translateX(8px); box-shadow: var(--gg-shadow-md); }
+        .sidebar-item.active { background: var(--gg-gradient-medium); color: white; box-shadow: var(--gg-shadow-lg); transform: translateX(4px); }
+        .welcome-gradient { background: var(--gg-gradient-bg); border: var(--gg-border-light); }
+        
+        /* Luck Box Styles */
+        .lucky-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--gg-shadow-md);
+            border: var(--gg-border-light);
+            overflow: hidden;
+        }
+        .lucky-card:hover {
+            transform: translateY(-12px) scale(1.05) rotate(2deg);
+            box-shadow: var(--gg-shadow-xl);
+            border-color: var(--gg-rose-medium);
+        }
+        .lucky-card.revealed {
+            cursor: default;
+        }
+        .lucky-card.mystery {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+        }
+        .lucky-card.mystery::before {
+            content: '?';
+            font-size: 4rem;
+            font-weight: 900;
+            color: rgba(255,255,255,0.3);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+        .lucky-card-content {
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.8) rotate(180deg);
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .lucky-card.revealed .lucky-card-content {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+        .lucky-card-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-bottom: 0.5rem;
+            border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .lucky-card-name {
+            font-weight: 900;
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+            color: #1f2937;
+            text-transform: uppercase;
+        }
+        .lucky-card-days {
+            font-size: 0.65rem;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .lucky-card-result {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.6rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-top: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .lucky-card-result.approved {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+        .lucky-card-result.rejected {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            color: white;
+        }
+        .lucky-card-result.pending {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: white;
+        }
+        
+        /* Animações de Lock Box - Explosão e Giros */
+        @keyframes lockBoxOpen {
+            0% { transform: scale(1) rotate(0deg); }
+            10% { transform: scale(1.1) rotate(5deg); }
+            20% { transform: scale(0.9) rotate(-5deg); }
+            30% { transform: scale(1.2) rotate(10deg); }
+            40% { transform: scale(0.8) rotate(-10deg); }
+            50% { transform: scale(1.5) rotate(360deg); opacity: 1; }
+            60% { transform: scale(1.3) rotate(720deg); opacity: 1; }
+            70% { transform: scale(1.1) rotate(1080deg); opacity: 1; }
+            80% { transform: scale(0.9) rotate(1440deg); opacity: 1; }
+            90% { transform: scale(1.05) rotate(1800deg); opacity: 1; }
+            100% { transform: scale(1) rotate(2160deg); opacity: 1; }
+        }
+        
+        @keyframes celebrate {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            10% { transform: scale(0.5) rotate(90deg); opacity: 0.5; }
+            20% { transform: scale(1.5) rotate(180deg); opacity: 1; }
+            30% { transform: scale(0.8) rotate(270deg); opacity: 1; }
+            40% { transform: scale(1.3) rotate(360deg); opacity: 1; }
+            50% { transform: scale(0.9) rotate(450deg); opacity: 1; }
+            60% { transform: scale(1.2) rotate(540deg); opacity: 1; }
+            70% { transform: scale(1.1) rotate(630deg); opacity: 1; }
+            80% { transform: scale(1.05) rotate(720deg); opacity: 1; }
+            90% { transform: scale(1.02) rotate(810deg); opacity: 1; }
+            100% { transform: scale(1) rotate(900deg); opacity: 1; }
+        }
+        
+        @keyframes sad {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            15% { transform: scale(0.3) rotate(-30deg); opacity: 0.5; }
+            30% { transform: scale(0.7) rotate(-60deg); opacity: 1; }
+            45% { transform: scale(0.5) rotate(-45deg); opacity: 1; }
+            60% { transform: scale(0.9) rotate(-30deg); opacity: 1; }
+            75% { transform: scale(0.7) rotate(-15deg); opacity: 1; }
+            90% { transform: scale(0.95) rotate(-5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        
+        @keyframes terminated {
+            0% { 
+                transform: scale(0) rotate(0deg) skew(0deg); 
+                opacity: 0; 
+                filter: grayscale(0%) brightness(1);
+            }
+            20% { 
+                transform: scale(0.8) rotate(-90deg) skew(-10deg); 
+                opacity: 0.8; 
+                filter: grayscale(50%) brightness(0.8);
+            }
+            40% { 
+                transform: scale(1.2) rotate(-180deg) skew(-20deg); 
+                opacity: 1; 
+                filter: grayscale(80%) brightness(0.6);
+            }
+            60% { 
+                transform: scale(0.9) rotate(-270deg) skew(-15deg); 
+                opacity: 1; 
+                filter: grayscale(100%) brightness(0.4);
+            }
+            80% { 
+                transform: scale(1.05) rotate(-360deg) skew(-5deg); 
+                opacity: 1; 
+                filter: grayscale(100%) brightness(0.3);
+            }
+            100% { 
+                transform: scale(1) rotate(-420deg) skew(0deg); 
+                opacity: 1; 
+                filter: grayscale(100%) brightness(0.3);
+            }
+        }
+        
+        .lucky-card.unlocking {
+            animation: lockBoxOpen 2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .lucky-card.celebrating .lucky-card-content {
+            animation: celebrate 2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .lucky-card.sad .lucky-card-content {
+            animation: sad 2s ease-out;
+        }
+        
+        .lucky-card.terminated .lucky-card-content {
+            animation: terminated 2.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .lucky-card.terminated .lucky-card-avatar {
+            filter: grayscale(100%) brightness(0.3);
+            border: 3px solid #666;
+        }
+        
+        .lucky-card.terminated .lucky-card-name {
+            color: #666;
+        }
+        
+        .lucky-card.terminated .lucky-card-days {
+            color: #888;
+        }
+        
+        /* Explosão de partículas */
+        .explosion-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        @keyframes explosion {
+            0% { 
+                transform: translate(0, 0) scale(1); 
+                opacity: 1; 
+            }
+            100% { 
+                transform: translate(var(--tx), var(--ty)) scale(0); 
+                opacity: 0; 
+            }
+        }
+        
+        /* Confetti animation */
+        .confetti {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        
+        /* Brilho mágico */
+        .lucky-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(45deg);
+            transition: all 0.6s;
+            opacity: 0;
+        }
+        .lucky-card:hover::after {
+            animation: shimmer 0.6s ease-out;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); opacity: 0; }
+        }
+        /* ========================================
+           G&G+ THEME - Identidade Visual Feminina
+           Design limpo, calmo e moderno
+           ======================================== */
+
+        /* :root CSS Variables - Paleta Principal */
+        :root {
+          /* Cores Principais G&G+ */
+          --gg-rose-light: #FFB6C1;      /* Rosa claro - calma e delicadeza */
+          --gg-rose-medium: #FF69B4;     /* Rosa médio - equilíbrio */
+          --gg-rose-intense: #FF1493;    /* Rosa intenso - energia */
+          --gg-rose-dark: #C71585;      /* Rosa escuro - profundidade */
+          --gg-white: #FFF8F7;           /* Branco rosado - pureza */
+          --gg-gray: #F8F0F4;            /* Cinza rosado - suavidade */
+          --gg-accent: #DC143C;         /* Vermelho suave - paixão */
+          
+          /* Gradientes */
+          --gg-gradient-light: linear-gradient(135deg, #FFB6C1 0%, #FFC0CB 100%);
+          --gg-gradient-medium: linear-gradient(135deg, #FF69B4 0%, #FF1493 100%);
+          --gg-gradient-intense: linear-gradient(135deg, #FF1493 0%, #C71585 100%);
+          --gg-gradient-bg: linear-gradient(135deg, #FFF8F7 0%, #F8F0F4 100%);
+          
+          /* Sombras */
+          --gg-shadow-sm: 0 2px 8px rgba(255, 105, 180, 0.1);
+          --gg-shadow-md: 0 8px 25px rgba(255, 105, 180, 0.15);
+          --gg-shadow-lg: 0 15px 35px rgba(255, 105, 180, 0.2);
+          --gg-shadow-xl: 0 20px 50px rgba(255, 105, 180, 0.25);
+          
+          /* Bordas */
+          --gg-border-light: 1px solid rgba(255, 182, 193, 0.3);
+          --gg-border-medium: 2px solid rgba(255, 105, 180, 0.5);
+          --gg-border-intense: 2px solid rgba(255, 20, 147, 0.7);
+        }
+
+        /* ========================================
+           SIDEBAR REDESIGN
+           ======================================== */
+        .sidebar-gg {
+          background: var(--gg-white);
+          border-right: var(--gg-border-light);
+          box-shadow: var(--gg-shadow-sm);
+          color: #4A5568;
+        }
+
+        .sidebar-gg .logo-container {
+          padding: 2rem 1.5rem;
+          border-bottom: var(--gg-border-light);
+          background: var(--gg-gradient-bg);
+        }
+
+        .sidebar-gg .logo-container img {
+          height: 40px;
+          border-radius: 0.75rem;
+          filter: drop-shadow(0 2px 8px rgba(255, 105, 180, 0.2));
+        }
+
+        .sidebar-gg .nav-item {
+          padding: 1rem 1.5rem;
+          margin: 0.5rem 1rem;
+          border-radius: 1.5rem;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          font-weight: 600;
+          font-size: 0.9rem;
+          color: #4A5568;
+        }
+
+        .sidebar-gg .nav-item:hover {
+          background: var(--gg-gradient-light);
+          color: white;
+          transform: translateX(8px);
+          box-shadow: var(--gg-shadow-md);
+        }
+
+        .sidebar-gg .nav-item.active {
+          background: var(--gg-gradient-medium);
+          color: white;
+          box-shadow: var(--gg-shadow-lg);
+          transform: translateX(4px);
+        }
+
+        /* ========================================
+           HEADER REDESIGN
+           ======================================== */
+        .header-gg {
+          background: white;
+          border-bottom: var(--gg-border-light);
+          box-shadow: var(--gg-shadow-sm);
+          padding: 1.5rem 3rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .header-gg .page-title {
+          font-size: 1.5rem;
+          font-weight: 800;
+          font-style: italic;
+          color: var(--gg-rose-dark);
+          text-transform: uppercase;
+          letter-spacing: -0.02em;
+        }
+
+        .header-gg .user-section {
+          display: flex;
+          align-items: center;
+          gap: 2rem;
+        }
+
+        .header-gg .user-avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 1.5rem;
+          border: 3px solid var(--gg-rose-light);
+          box-shadow: var(--gg-shadow-md);
+          transition: all 0.3s ease;
+          cursor: pointer;
+        }
+
+        .header-gg .user-avatar:hover {
+          transform: scale(1.05);
+          border-color: var(--gg-rose-medium);
+        }
+
+        .header-gg .notification-btn {
+          position: relative;
+          padding: 0.75rem;
+          border-radius: 1rem;
+          background: var(--gg-gray);
+          color: var(--gg-rose-medium);
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .header-gg .notification-btn:hover {
+          background: var(--gg-rose-light);
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: var(--gg-shadow-md);
+        }
+
+        /* ========================================
+           CARDS REDESIGN
+           ======================================== */
+        .gg-card {
+          background: white;
+          border-radius: 2rem;
+          padding: 2rem;
+          border: var(--gg-border-light);
+          box-shadow: var(--gg-shadow-sm);
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .gg-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+          background: var(--gg-gradient-light);
+          transform: scaleX(0);
+          transition: transform 0.3s ease;
+        }
+
+        .gg-card:hover {
+          transform: translateY(-8px);
+          box-shadow: var(--gg-shadow-lg);
+          border-color: var(--gg-rose-light);
+        }
+
+        .gg-card:hover::before {
+          transform: scaleX(1);
+        }
+
+        .gg-card .card-icon {
+          width: 60px;
+          height: 60px;
+          border-radius: 1.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.5rem;
+          margin-bottom: 1.5rem;
+          background: var(--gg-gradient-light);
+          color: white;
+          box-shadow: var(--gg-shadow-md);
+          transition: all 0.3s ease;
+        }
+
+        .gg-card:hover .card-icon {
+          transform: scale(1.1) rotate(5deg);
+          background: var(--gg-gradient-medium);
+        }
+
+        .gg-card .card-title {
+          font-size: 1.25rem;
+          font-weight: 800;
+          font-style: italic;
+          color: var(--gg-rose-dark);
+          margin-bottom: 1rem;
+          text-transform: uppercase;
+          letter-spacing: -0.01em;
+        }
+
+        .gg-card .card-description {
+          color: #718096;
+          font-size: 0.875rem;
+          font-weight: 500;
+          line-height: 1.6;
+        }
+
+        /* ========================================
+           LUCK BOX REDESIGN
+           ======================================== */
+        .luck-box-gg {
+          background: var(--gg-gradient-bg);
+          border-radius: 3rem;
+          padding: 3rem;
+          box-shadow: var(--gg-shadow-lg);
+          border: var(--gg-border-medium);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .luck-box-gg::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: var(--gg-gradient-light);
+          opacity: 0.1;
+          transform: rotate(45deg);
+          animation: shimmer 8s infinite;
+        }
+
+        @keyframes shimmer {
+          0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+          50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+          100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+        }
+
+        .luck-box-gg .section-header {
+          text-align: center;
+          margin-bottom: 3rem;
+          position: relative;
+          z-index: 1;
+        }
+
+        .luck-box-gg .section-title {
+          font-size: 2.5rem;
+          font-weight: 900;
+          font-style: italic;
+          color: var(--gg-rose-dark);
+          text-transform: uppercase;
+          margin-bottom: 1rem;
+          text-shadow: 2px 2px 4px rgba(255, 105, 180, 0.2);
+        }
+
+        .luck-box-gg .section-subtitle {
+          color: var(--gg-rose-medium);
+          font-weight: 600;
+          font-size: 1.1rem;
+          opacity: 0.9;
+        }
+
+        /* ========================================
+           BOTÕES E INTERAÇÕES
+           ======================================== */
+        .gg-btn {
+          padding: 1rem 2rem;
+          border-radius: 1.5rem;
+          border: none;
+          font-weight: 700;
+          font-size: 0.875rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .gg-btn-primary {
+          background: var(--gg-gradient-medium);
+          color: white;
+          box-shadow: var(--gg-shadow-md);
+        }
+
+        .gg-btn-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--gg-shadow-lg);
+          background: var(--gg-gradient-intense);
+        }
+
+        .gg-btn-secondary {
+          background: var(--gg-gray);
+          color: var(--gg-rose-medium);
+          border: var(--gg-border-light);
+        }
+
+        .gg-btn-secondary:hover {
+          background: var(--gg-rose-light);
+          color: white;
+          transform: translateY(-2px);
+        }
+
+        /* ========================================
+           TIPOGRAFIA
+           ======================================== */
+        .gg-heading-1 {
+          font-size: 3rem;
+          font-weight: 900;
+          font-style: italic;
+          color: var(--gg-rose-dark);
+          text-transform: uppercase;
+          letter-spacing: -0.02em;
+          line-height: 1.1;
+        }
+
+        .gg-heading-2 {
+          font-size: 2rem;
+          font-weight: 800;
+          font-style: italic;
+          color: var(--gg-rose-dark);
+          text-transform: uppercase;
+          letter-spacing: -0.01em;
+          line-height: 1.2;
+        }
+
+        .gg-heading-3 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          font-style: italic;
+          color: var(--gg-rose-medium);
+          text-transform: uppercase;
+          letter-spacing: 0;
+          line-height: 1.3;
+        }
+
+        .gg-text {
+          font-size: 1rem;
+          font-weight: 500;
+          color: #4A5568;
+          line-height: 1.6;
+        }
+
+        .gg-text-small {
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #718096;
+          line-height: 1.5;
+        }
+
+        /* ========================================
+           RESPONSIVIDADE
+           ======================================== */
+        @media (max-width: 768px) {
+          .gg-card {
+            padding: 1.5rem;
+          }
+          
+          .gg-card .card-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.25rem;
+          }
+          
+          .gg-card .card-title {
+            font-size: 1.1rem;
+          }
+          
+          .luck-box-gg {
+            padding: 2rem;
+          }
+          
+          .luck-box-gg .section-title {
+            font-size: 2rem;
+          }
+          
+          .gg-heading-1 {
+            font-size: 2rem;
+          }
+          
+          .gg-heading-2 {
+            font-size: 1.5rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .gg-card {
+            padding: 1rem;
+          }
+          
+          .luck-box-gg {
+            padding: 1.5rem;
+          }
+          
+          .luck-box-gg .section-title {
+            font-size: 1.5rem;
+          }
+          
+          .gg-heading-1 {
+            font-size: 1.5rem;
+          }
+        }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar-gg text-gray-700 w-72 flex flex-col shadow-lg z-50 flex-shrink-0">
+        <div class="logo-container">
+            <img src="assets/G&G_LOGO.png" alt="G&G+ Logo" class="h-10">
+        </div>
+
+        <nav id="sidebar-nav" class="flex-1 p-5 space-y-2 mt-4 overflow-y-auto custom-scroll">
+            <!-- RENDERIZADO VIA JS -->
+        </nav>
+
+        <div class="p-6 border-t border-gray-200 space-y-4">
+             <a href="/perfil" class="nav-item">
+                 <span>⚙️</span> Configurações
+             </a>
+             <button onclick="Auth.logout()" class="gg-btn gg-btn-secondary w-full">
+                 SAIR DO SISTEMA
+             </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <header class="header-gg">
+            <div>
+                <h2 id="page-title" class="gg-heading-2">Dashboard Central</h2>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- Ícone de Notificações -->
+                <button onclick="window.scrollToNotifications()" class="relative p-2 rounded-xl hover:bg-gray-100 transition-colors group" title="Notificações">
+                    <svg class="w-6 h-6 text-gray-600 group-hover:text-nordeste-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    <span id="header-notification-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-nordeste-red text-white text-[10px] font-black rounded-full flex items-center justify-center">0</span>
+                </button>
+                
+                <div class="text-right">
+                    <p id="user-name-display" class="gg-text font-black uppercase italic">Carregando...</p>
+                    <p id="user-role-display" class="gg-text-small font-bold uppercase tracking-widest" style="color: var(--gg-rose-medium)">...</p>
+                </div>
+                <div class="relative group cursor-pointer" onclick="location.href='/perfil'">
+                    <img id="user-avatar-display" src="" class="user-avatar">
+                    <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-50 border-2 border-white rounded-full"></div>
+                </div>
+            </div>
+        </header>
+
+        <div id="content-area" class="flex-1 overflow-y-auto p-12 custom-scroll">
+            <div id="view-dashboard" class="animate-fade-in space-y-12">
+                <section class="welcome-gradient rounded-[3rem] p-12 relative overflow-hidden gg-shadow-lg">
+                    <div class="relative z-10 max-w-2xl">
+                        <span class="gg-btn gg-btn-primary px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 inline-block">Ecossistema G&G+</span>
+                        <h2 class="gg-heading-1 mb-6">Bem-vindo à Nova Era da <span style="color: var(--gg-rose-intense)">Gestão de Pessoas</span></h2>
+                        <p class="gg-text font-medium text-lg leading-relaxed">Centralize prontuários, automatize a logística de fardamento e monitore a evolução de carreira em uma única plataforma inteligente.</p>
+                    </div>
+                    <div class="absolute right-[-50px] top-[-50px] opacity-10 rotate-12">
+                        <svg class="w-96 h-96" fill="var(--gg-rose-light)" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    </div>
+                </section>
+                
+                <!-- GRID DE ATALHOS - IDs ADICIONADOS PARA FILTRAGEM -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    
+                    <a href="/fardamento" id="card-uniforms" class="gg-card">
+                        <div class="card-icon" style="background: var(--gg-gradient-light)">🎽</div>
+                        <h4 class="card-title">Ciclo de Fardamento</h4>
+                        <p class="card-description">Gestão automatizada de estoque ativo com alertas de vencimento baseados na função.</p>
+                    </a>
+
+                    <a href="/ferramentas" id="card-tools" class="gg-card">
+                        <div class="card-icon" style="background: var(--gg-gradient-medium)">💻</div>
+                        <h4 class="card-title">Gestão de Ativos</h4>
+                        <p class="card-description">Inventário de notebooks, smartphones e periféricos com termo de comodato digital.</p>
+                    </a>
+
+                    <a href="/carreira" id="card-career" class="gg-card">
+                        <div class="card-icon" style="background: var(--gg-gradient-intense)">📈</div>
+                        <h4 class="card-title">Evolução Salarial</h4>
+                        <p class="card-description">Acompanhamento matemático da valorização do capital humano e promoções.</p>
+                    </a>
+
+                    <a href="/aso.html" id="card-aso" class="gg-card">
+                        <div class="card-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%)">🩺</div>
+                        <h4 class="card-title">Saúde & Compliance</h4>
+                        <p class="card-description">Controle rigoroso de ASOs e conformidade com as normas de segurança do trabalho.</p>
+                    </a>
+
+                    <a href="/hora-extra.html" id="card-overtime" class="gg-card">
+                        <div class="card-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%)">⏰</div>
+                        <h4 class="card-title">Hora Extra</h4>
+                        <p class="card-description">Registro e acompanhamento de horas extras por colaborador e período.</p>
+                    </a>
+
+                    <a href="/recrutamento" id="card-recruitment" class="gg-card">
+                        <div class="card-icon" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)">💼</div>
+                        <h4 class="card-title">Recrutamento</h4>
+                        <p class="card-description">Gestão de vagas em aberto e pipeline de candidatos com acompanhamento de etapas.</p>
+                    </a>
+
+                    <!-- NOVO MÓDULO EXTERNO BI -->
+                    <a href="https://nordesteloc.reportload.com/signin" target="_blank" id="card-intelligence" class="gg-card" style="border-bottom: 4px solid var(--gg-accent);">
+                        <div class="card-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%)">📊</div>
+                        <h4 class="card-title">BI Explore</h4>
+                        <p class="card-description mb-4">Acesse a plataforma externa de inteligência analítica e relatórios avançados.</p>
+                        <span class="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest" style="color: var(--gg-accent);">Acessar Plataforma →</span>
+                    </a>
+                </div>
+                
+                <!-- DECISÃO 90 DIAS - Avaliação de Período de Experiência -->
+                <div id="luck-box-section" class="luck-box-gg">
+                    <div class="relative z-10">
+                        <div class="section-header">
+                            <h3 class="section-title">Decisão 90 Dias</h3>
+                            <p class="section-subtitle">Avaliação final - Pronto para aprovação ou reprovação?</p>
+                        </div>
+                        <div id="lucky-cards-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            <!-- Cards serão renderizados via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="quick-stats-grid" class="grid grid-cols-1 md:grid-cols-4 gap-6"></div>
+                
+                <!-- WIDGET DE NOTIFICAÇÕES ONBOARDING -->
+                <section id="notifications-section" class="gg-card">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: var(--gg-gradient-light)">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="gg-heading-3">Notificações</h3>
+                                <p class="gg-text-small font-bold uppercase tracking-widest">Onboarding 90 Dias</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="notification-badge" class="hidden gg-btn gg-btn-primary text-[10px] font-black px-2 py-1 rounded-full">0</span>
+                            <button onclick="window.loadNotifications()" class="gg-btn gg-btn-secondary p-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="notifications-list" class="space-y-3 max-h-64 overflow-y-auto custom-scroll">
+                        <p class="gg-text-small text-center font-bold py-8" style="color: var(--gg-gray);">Carregando notificações...</p>
+                    </div>
+<div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                        <div class="flex gap-3">
+                            <button onclick="window.generateOnboardingNotifications()" class="gg-btn gg-btn-secondary text-[10px] font-bold uppercase">🔄 Gerar</button>
+                            <button onclick="window.markAllNotificationsRead()" class="gg-btn gg-btn-secondary text-[10px] font-bold uppercase">Mark all</button>
+                        </div>
+                        <a href="/onboarding-90dias.html" class="gg-text-small font-bold uppercase" style="color: var(--gg-rose-intense);">Acessar módulo →</a>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+    <div id="pro-modal-container" class="hidden fixed inset-0 z-[200] bg-black/70 backdrop-blur-md flex items-center justify-center p-4"><div id="pro-modal-content" class="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-pop border border-white/20"></div></div>
+    <script src="js/auth.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/tutorial/engine.js"></script>
+    <script src="js/notifications-widget.js"></script>
+</body>
+</html>

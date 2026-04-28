@@ -1,0 +1,183 @@
+# 🗄️ GITIGNORE - RH+ SISTEMA DE GESTÃO
+# Proteção de dados sensíveis e arquivos de desenvolvimento
+
+# ===========================================
+# 🔐 DADOS SENSÍVEIS E CONFIGURAÇÕES
+# ===========================================
+# Pasta de configurações com senhas e dados da VPS
+dados-config/
+
+# Arquivos de ambiente com senhas
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Backup de bancos de dados
+*.sql
+*.sql.gz
+*.backup
+*.dump
+
+# ===========================================
+# 📁 DEPENDÊNCIAS E NODE.JS
+# ===========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# ===========================================
+# 📊 LOGS E ARQUIVOS TEMPORÁRIOS
+# ===========================================
+logs/
+*.log
+access.log
+error.log
+pm2-logs/
+tmp/
+temp/
+
+# ===========================================
+# 💾 BANCOS DE DADOS LOCAIS
+# ===========================================
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+# ===========================================
+# 🖥️ ARQUIVOS DE SISTEMA E IDE
+# ===========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE e editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.postgresql.conf.swp
+
+# ===========================================
+# 🔧 FERRAMENTAS E BUILD
+# ===========================================
+build/
+dist/
+.cache/
+.parcel-cache/
+
+# ===========================================
+# 📱 ARQUIVOS DE UPLOAD E MÍDIA
+# ===========================================
+uploads/
+public/uploads/
+public/assets/temp/
+*.tmp
+
+# ===========================================
+# 🗂️ BACKUPS E COMPACTADOS
+# ===========================================
+backups/
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# ===========================================
+# 📋 DOCUMENTOS E RELATÓRIOS TEMPORÁRIOS
+# ===========================================
+*.pdf
+*.docx
+*.xlsx
+*.txt
+*.md.temp
+README.temp
+
+# ===========================================
+# 🌐 CERTIFICADOS E CHAVES
+# ===========================================
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+certificados/
+ssl/
+
+# ===========================================
+# 📊 ARQUIVOS DE TESTE E COBERTURA
+# ===========================================
+coverage/
+.nyc_output/
+junit.xml
+test-results/
+
+# ===========================================
+# 🔄 SCRIPTS PERSONALIZADOS
+# ===========================================
+scripts/local/
+scripts/temp/
+*.local.sh
+*.local.bat
+
+# ===========================================
+# 📦 PM2 E PROCESS MANAGERS
+# ===========================================
+ecosystem.config.js.local
+pm2-logs/
+.pm2/
+
+# ===========================================
+# 🔍 ARQUIVOS DE ANÁLISE E DEBUG
+# ===========================================
+*.prof
+*.heap
+*.cpuprofile
+debug.log
+
+# ===========================================
+# 📅 AGENDAMENTO E CRON
+# ===========================================
+crontab.tmp
+cron.*.tmp
+
+# ===========================================
+# 🌍 VARIÁVEIS ESPECÍFICAS DE AMBIENTE
+# ===========================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===========================================
+# 🚀 DEPLOY E PRODUÇÃO
+# ===========================================
+# Arquivos que só devem existir na VPS
+/etc/nginx/sites-available/rh.nordesteloc.cloud
+/etc/ssl/certs/rh.nordesteloc.cloud*
+/usr/local/bin/backup-*
+
+# ===========================================
+# 📝 NOTAS FINAIS
+# ===========================================
+# - Este .gitignore protege dados sensíveis
+# - Evita upload de senhas, configs da VPS e backups
+# - Mantém o repositório limpo e seguro
+# - Permite apenas código fonte e documentação pública

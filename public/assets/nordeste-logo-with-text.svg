@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 70" width="420" height="70">
+  <defs>
+    <style type="text/css">
+      .fil5 {fill:#373435}
+      .fil0 {fill:#CB3438}
+      .fil3 {fill:url(#id0)}
+      .fil4 {fill:url(#id1)}
+      .fil2 {fill:url(#id2)}
+      .fil1 {fill:url(#id3)}
+    </style>
+    <linearGradient id="id0" gradientUnits="userSpaceOnUse" x1="3592.12" y1="1827.88" x2="6475.31" y2="4931.03">
+     <stop offset="0" style="stop-opacity:1; stop-color:#6B7D87"/>
+     <stop offset="0.701961" style="stop-opacity:1; stop-color:#78807E"/>
+     <stop offset="1" style="stop-opacity:1; stop-color:#858474"/>
+    </linearGradient>
+    <linearGradient id="id1" gradientUnits="userSpaceOnUse" x1="3779.74" y1="1802.4" x2="1988.15" y2="252.96">
+     <stop offset="0" style="stop-opacity:1; stop-color:#606062"/>
+     <stop offset="1" style="stop-opacity:1; stop-color:#D2D3D5"/>
+    </linearGradient>
+    <linearGradient id="id2" gradientUnits="userSpaceOnUse" x1="47.39" y1="2777.37" x2="4513.32" y2="2777.37">
+     <stop offset="0" style="stop-opacity:1; stop-color:#373435"/>
+     <stop offset="0.701961" style="stop-opacity:1; stop-color:#9A9999"/>
+     <stop offset="1" style="stop-opacity:1; stop-color:#FEFEFE"/>
+    </linearGradient>
+    <linearGradient id="id3" gradientUnits="userSpaceOnUse" x1="3965.69" y1="4094.98" x2="4629.93" y2="6190.77">
+     <stop offset="0" style="stop-opacity:1; stop-color:#6B7D87"/>
+     <stop offset="1" style="stop-opacity:1; stop-color:#4E5A62"/>
+    </linearGradient>
+  </defs>
+  <!-- Ícone do CorelDRAW adaptado com escala reduzida -->
+  <g transform="translate(-5, 5) scale(0.011)">
+    <polygon class="fil0" points="-0,1512.86 25.58,6130.44 2935.68,4793.37 "/>
+    <polygon class="fil1" points="2924.35,4797.83 4460.79,4033.88 5692.99,5412.45 4183.79,6192.73 "/>
+    <polygon class="fil2" points="4465.98,4037.38 2924.78,4798.34 0.05,1513.11 1528.66,766.44 "/>
+    <polygon class="fil3" points="7182.75,4684.89 5692.94,5412.47 2698.19,2071.51 4209.18,1362.69 "/>
+    <polygon class="fil4" points="1528.64,766.48 3030.95,11.54 4207.86,1363.32 2719.51,2095.43 "/>
+    <polygon class="fil5" points="7182.84,4684.78 7182.84,0 4207.8,1363.32 "/>
+  </g>
+  <!-- Texto com mais espaçamento -->
+  <text x="88" y="45" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#dc2626">Nordeste</text>
+  <text x="215" y="45" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#333333">Locações</text>
+</svg>

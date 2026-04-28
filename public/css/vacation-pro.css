@@ -1,0 +1,68 @@
+
+/* --- NAVEGAÇÃO SIDEBAR --- */
+.vac-nav-btn {
+    padding: 1rem 1.25rem; border-radius: 1rem; cursor: pointer; transition: all 0.2s;
+    font-size: 0.75rem; font-weight: 800; color: #4b5563; text-transform: uppercase;
+    display: flex; align-items: center; gap: 0.75rem;
+}
+.vac-nav-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+.vac-nav-btn.active { background: #D32F2F; color: white; box-shadow: 0 10px 15px rgba(211,47,47,0.3); }
+
+/* --- CARDS DE ESTATÍSTICA --- */
+.card-vac-stat {
+    background: white; padding: 1.5rem; border-radius: 1.5rem; border-left: 5px solid; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;
+}
+.stat-label { font-size: 0.65rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 2.25rem; font-weight: 900; margin: 0.25rem 0; line-height: 1; }
+.stat-sub { font-size: 0.6rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+
+.border-l-status-vencido { border-left-color: #EF4444; }
+.border-l-status-emdia { border-left-color: #10B981; }
+.border-l-status-alerta { border-left-color: #F59E0B; }
+.border-l-status-carencia { border-left-color: #94a3b8; }
+.border-l-status-info { border-left-color: #3B82F6; }
+.border-l-status-planejada { border-left-color: #FBBF24; }
+
+/* --- GRID DE CRACHÁS --- */
+.vacation-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;
+}
+
+.vac-card {
+    background: white; border-radius: 1.5rem; padding: 1.25rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; position: relative;
+    border: 1px solid #f1f5f9;
+}
+.vac-card:hover { transform: translateY(-3px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05); }
+
+.vac-status-pill {
+    padding: 3px 8px; border-radius: 6px; font-size: 8px; font-weight: 900; text-transform: uppercase;
+}
+.bg-vencido { background: #fee2e2; color: #b91c1c; }
+.bg-alerta { background: #ffedd5; color: #c2410c; }
+.bg-emdia { background: #dcfce7; color: #15803d; }
+.bg-planejada { background: #fef3c7; color: #b45309; }
+.bg-info { background: #dbeafe; color: #1e40af; }
+.bg-carencia { background: #f3f4f6; color: #6b7280; }
+
+.filter-select {
+    appearance: none; background: white; border: 1px solid #e5e7eb; border-radius: 0.75rem;
+    padding: 0.5rem 2rem 0.5rem 1rem; font-size: 0.7rem; font-weight: 800; color: #374151;
+    cursor: pointer; outline: none; transition: border 0.2s; white-space: nowrap;
+}
+.filter-select:hover { border-color: #D32F2F; }
+
+.btn-vac-primary { width: 100%; padding: 0.75rem; border-radius: 0.75rem; font-size: 9px; font-weight: 900; text-transform: uppercase; color: white; transition: all 0.2s; }
+.btn-vac-primary:hover { filter: brightness(1.1); transform: scale(1.02); }
+
+.btn-vac-secondary { width: 100%; padding: 0.75rem; border-radius: 0.75rem; font-size: 9px; font-weight: 900; text-transform: uppercase; border: 1px solid #fee2e2; transition: all 0.2s; }
+
+.pro-input { width: 100%; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 12px; font-weight: 700; outline: none; transition: border 0.2s; }
+.pro-input:focus { border-color: #D32F2F; }
+.pro-label { font-size: 9px; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; display: block; }
+
+/* --- CUSTOM SCROLL --- */
+.custom-scroll::-webkit-scrollbar { width: 6px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.custom-scroll::-webkit-scrollbar-track { background: transparent; }

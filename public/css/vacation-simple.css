@@ -1,0 +1,215 @@
+/* VACATION SIMPLE - DESIGN INSPIRADO EM CARREIRA */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --nordeste-red: #D32F2F;
+  --nordeste-darkRed: #B71C1C;
+  --nordeste-black: #121212;
+  --nordeste-gray: #F4F7F9;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: #1E293B;
+}
+
+/* Sidebar Navigation */
+.sidebar-nav {
+  width: 320px;
+  background: #fff;
+  border-right: 1px solid #E2E8F0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.emp-item {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #F1F5F9;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.emp-item:hover {
+  background: #F8FAFC;
+}
+
+.emp-item.active {
+  background: #FFF1F2;
+  border-left: 4px solid #D32F2F;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  background: white;
+  color: #D32F2F;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.tab-btn.inactive {
+  color: #94a3b8;
+}
+
+/* Vacation Status Tags */
+.vac-tag {
+  padding: 6px 12px;
+  border-radius: 99px;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid transparent;
+}
+
+.vac-tag.active {
+  background: #fff;
+  border-color: #D32F2F;
+  color: #D32F2F;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Timeline Design (Inspirado em Carreira) */
+.vacation-item {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.vacation-dot {
+  position: absolute;
+  left: -53px;
+  top: 10px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  border: 4px solid #D32F2F;
+  border-radius: 50%;
+  z-index: 10;
+  box-shadow: 0 0 15px rgba(211, 47, 47, 0.2);
+}
+
+.vacation-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1.5rem;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.vacation-card:hover {
+  border-color: #D32F2F;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+/* Badges Status */
+.vacation-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.vacation-gozado {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.vacation-planejado {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.vacation-em-gozo {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.vacation-vencido {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Scrollbar Custom */
+.custom-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+/* Modais Premium */
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 12px 15px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  border-color: #D32F2F;
+}
+
+.btn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--nordeste-black);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #000;
+  transform: scale(1.02);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade {
+  animation: fadeIn 0.4s ease-out;
+}

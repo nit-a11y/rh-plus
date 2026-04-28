@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dossiê de Férias | Nordeste RH+</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nordeste: { red: '#D32F2F', darkRed: '#B71C1C', black: '#121212', gray: '#F8FAFC' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/vacation-dossier.css">
+</head>
+
+<body class="bg-gray-100 h-screen flex overflow-hidden">
+    
+    <!-- SIDEBAR DE COLABORADORES -->
+    <aside class="dossier-sidebar flex-shrink-0 w-80 flex flex-col z-50">
+        <div class="p-6 border-b border-white/5">
+            <h1 class="text-lg font-black italic tracking-tighter uppercase text-white leading-none">
+                Dossiê de <span class="text-nordeste-red">Férias</span>
+            </h1>
+            <p class="text-[9px] text-gray-400 font-bold uppercase mt-2 tracking-widest">Registro Histórico Completo</p>
+        </div>
+        
+        <div class="p-4">
+            <input type="text" id="dossier-search" class="dossier-search" placeholder="🔍 Buscar colaborador...">
+        </div>
+        
+        <div id="dossier-employee-list" class="dossier-employee-list dossier-scrollbar">
+            <!-- Lista injetada via JS -->
+        </div>
+        
+        <div class="p-4 border-t border-white/5">
+            <button onclick="switchVacView('new-record')" class="w-full py-3 bg-nordeste-red hover:bg-nordeste-darkRed rounded-xl font-black text-xs uppercase transition-all flex items-center justify-center gap-2">
+                <span>+</span> Novo Registro
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        
+        <!-- HEADER -->
+        <header class="bg-white border-b px-8 py-5 flex justify-between items-center shadow-sm z-40">
+            <div class="flex items-center gap-4">
+                <div class="p-2.5 bg-gray-100 text-gray-500 rounded-xl">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-sm font-black text-gray-800 uppercase italic">Central de Registros Históricos</h2>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Dossiê por Colaborador</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="loadDataFromServer()" class="text-gray-400 hover:text-nordeste-red transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                </button>
+                <a href="/" class="text-gray-400 hover:text-white text-xs font-black uppercase">← Painel</a>
+            </div>
+        </header>
+
+        <!-- CONTENT AREA -->
+        <div id="dossier-content" class="flex-1 overflow-y-auto p-8 bg-[#F1F5F9] dossier-scrollbar">
+            
+            <!-- EMPTY STATE -->
+            <div id="dossier-empty" class="dossier-empty">
+                <div class="dossier-empty-icon">📂</div>
+                <h3>Nenhum Colaborador Selecionado</h3>
+                <p>Selecione um colaborador na sidebar para visualizar seu histórico de ausências.</p>
+            </div>
+
+            <!-- DOSSIER VIEW -->
+            <div id="dossier-view" class="hidden">
+                <div class="dossier-header">
+                    <div class="dossier-profile">
+                        <img id="dossier-avatar" src="" class="shadow-lg">
+                        <div>
+                            <h1 id="dossier-name">...</h1>
+                            <p id="dossier-meta" class="dossier-meta">...</p>
+                        </div>
+                    </div>
+                    <div class="dossier-actions">
+                        <button onclick="openDossierModal()" class="dossier-btn dossier-btn-primary">
+                            <span>+</span> Novo Período
+                        </button>
+                        <button onclick="openRetroModal()" class="dossier-btn dossier-btn-secondary">
+                            📜 Registro Retroativo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STATS -->
+                <div class="dossier-stats">
+                    <div class="dossier-stat-card border-l-green-500">
+                        <p class="dossier-stat-label">Total de Períodos</p>
+                        <h3 id="stat-total" class="dossier-stat-value">0</h3>
+                        <p class="dossier-stat-sub">Registros no sistema</p>
+                    </div>
+                    <div class="dossier-stat-card border-l-blue-500">
+                        <p class="dossier-stat-label">Dias Gozados</p>
+                        <h3 id="stat-days" class="dossier-stat-value">0</h3>
+                        <p class="dossier-stat-sub">Últimos 12 meses</p>
+                    </div>
+                    <div class="dossier-stat-card border-l-amber-500">
+                        <p class="dossier-stat-label">Abonos Vendidos</p>
+                        <h3 id="stat-abonos" class="dossier-stat-value">0</h3>
+                        <p class="dossier-stat-sub">Dias convertedidos</p>
+                    </div>
+                    <div class="dossier-stat-card border-l-purple-500">
+                        <p class="dossier-stat-label">Última Ausência</p>
+                        <h3 id="stat-last" class="dossier-stat-value text-sm">--</h3>
+                        <p class="dossier-stat-sub">Data de retorno</p>
+                    </div>
+                </div>
+
+                <!-- FILTROS DE TIMELINE -->
+                <div class="dossier-filters">
+                    <button class="dossier-filter-btn active" data-filter="all">Todos</button>
+                    <button class="dossier-filter-btn" data-filter="Concluída">Concluídas</button>
+                    <button class="dossier-filter-btn" data-filter="Agendada">Agendadas</button>
+                    <button class="dossier-filter-btn" data-filter="Planejada">Planejadas</button>
+                    <button class="dossier-filter-btn" data-filter="retroativa">Retroativos</button>
+                </div>
+
+                <!-- TIMELINE -->
+                <h3 class="dossier-section-title">📖 Registro de Ausências</h3>
+                <div id="dossier-timeline" class="dossier-timeline">
+                    <!-- Timeline injetada via JS -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- MODAL: NOVO REGISTRO RICO -->
+    <div id="dossier-modal" class="dossier-modal">
+        <div class="dossier-modal-content">
+            <div class="dossier-modal-header">
+                <h2>Novo Período de Ausência</h2>
+                <button onclick="closeDossierModal()" class="dossier-modal-close">×</button>
+            </div>
+            <div class="dossier-modal-body">
+                <div class="dossier-form-grid">
+                    <div class="dossier-form-group">
+                        <label class="dossier-form-label">Data de Início</label>
+                        <input type="date" id="new-start" class="dossier-form-input" onchange="calcNewReturn()">
+                    </div>
+                    <div class="dossier-form-group">
+                        <label class="dossier-form-label">Dias de Gozo</label>
+                        <input type="number" id="new-days" class="dossier-form-input" value="30" min="5" max="30" oninput="calcNewReturn()">
+                    </div>
+                    <div class="dossier-form-group">
+                        <label class="dossier-form-label">Tipo de Ausência</label>
+                        <select id="new-type" class="dossier-form-select">
+                            <option value="Férias">Férias</option>
+                            <option value="Férias + Abono">Férias + Abono (Venda)</option>
+                            <option value="Abono Pecuniário">Apenas Abono (Venda)</option>
+                        </select>
+                    </div>
+                    <div class="dossier-form-group">
+                        <label class="dossier-form-label">Quantidade Abono</label>
+                        <input type="number" id="new-abono" class="dossier-form-input" value="0" min="0" max="10">
+                    </div>
+                    <div class="dossier-form-group full">
+                        <label class="dossier-form-label">Colaborador Responsável pelo Registro</label>
+                        <input type="text" id="new-responsible" class="dossier-form-input" placeholder="Nome de quem está registrando">
+                    </div>
+                    <div class="dossier-form-group full">
+                        <label class="dossier-form-label">🎯 Objetivo da Ausência</label>
+                        <select id="new-motivo" class="dossier-form-select">
+                            <option value="">Selecione o motivo...</option>
+                            <option value="Descanso">Descanso / Lazer</option>
+                            <option value="Viagem">Viagem</option>
+                            <option value="Saúde">Tratamento de Saúde</option>
+                            <option value="Pessoal">Assuntos Pessoais</option>
+                            <option value="Família">Motivos Familiares</option>
+                            <option value="Estudo">Estudo / Capacitação</option>
+                            <option value="Projeto">Projeto Pessoal</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="dossier-form-group full">
+                        <label class="dossier-form-label">👤 Quem Substituiu (Opcional)</label>
+                        <input type="text" id="new-substituto" class="dossier-form-input" placeholder="Nome do colaborador que cobrirá a ausência">
+                    </div>
+                    <div class="dossier-form-group full">
+                        <label class="dossier-form-label">📋 Observações / Contexto</label>
+                        <textarea id="new-obs" class="dossier-form-textarea" placeholder="Detalhes adicionais sobre este período, alertas, projetos em andamento..."></textarea>
+                    </div>
+                    <div class="dossier-form-group full">
+                        <label class="dossier-form-label">📅 Data de Retorno (Calculada)</label>
+                        <input type="text" id="new-return-preview" class="dossier-form-input" readonly style="background: #e2e8f0; color: #64748b;">
+                    </div>
+                </div>
+            </div>
+            <div class="dossier-modal-footer">
+                <button onclick="closeDossierModal()" class="dossier-btn dossier-btn-secondary">Cancelar</button>
+                <button onclick="submitNewRecord()" class="dossier-btn dossier-btn-primary">💾 Salvar Registro</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: REGISTRO RETROATIVO -->
+    <div id="retro-modal" class="dossier-modal">
+        <div class="dossier-modal-content" style="max-width: 650px;">
+            <div class="dossier-modal-header" style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);">
+                <h2>📜 Registro Retroativo</h2>
+                <button onclick="closeRetroModal()" class="dossier-modal-close">×</button>
+            </div>
+            <div class="dossier-modal-body">
+                <div class="bg-purple-50 p-4 rounded-xl border border-purple-100 mb-6">
+                    <p class="text-xs font-bold text-purple-700">
+                        <strong>⚠️ Atenção:</strong> Este registro representa uma ausência passada que não estava documentada. Use para migração de dados ou regularização de histórico.
+                    </p>
+                </div>
+                <div class="dossier-form-grid">
+                    <div class="dossier-form-group">
+                        <label class="dossier-form-label">Data de Início (Passada)</label>
+                        <input type="date" id="retro-start" class="dossier-form-input" onchange="calcRetroReturn()">
+                    </div>
+                    <div class="dossier-form-group">
+                        <label class="dossier-form-label">Dias Gozados</label>
+                        <input type="number" id="retro-days" class="dossier-form-input" value="30" min="5" max="30" onchange="calcRetroReturn()">
+                    </div>
+                    <div class="dossier-form-group">
+                        <label class="dossier-form-label">Tipo de Ausência</label>
+                        <select id="retro-type" class="dossier-form-select">
+                            <option value="Férias">Férias</option>
+                            <option value="Férias + Abono">Férias + Abono</option>
+                            <option value="Abono">Apenas Abono</option>
+                        </select>
+                    </div>
+                    <div class="dossier-form-group">
+                        <label class="dossier-form-label">Dias de Abono</label>
+                        <input type="number" id="retro-abono" class="dossier-form-input" value="0" min="0" max="10">
+                    </div>
+                    <div class="dossier-form-group full">
+                        <label class="dossier-form-label">📝 Contexto / Justificativa do Registro</label>
+                        <textarea id="retro-justificativa" class="dossier-form-textarea" style="min-height: 100px;" placeholder="Ex: Regularização de migração de dados de 2023; Ajuste conforme auditoria; Férias gozadas antes do sistema..."></textarea>
+                    </div>
+                    <div class="dossier-form-group full">
+                        <label class="dossier-form-label">👤 Responsável pelo Registro</label>
+                        <input type="text" id="retro-responsible" class="dossier-form-input" placeholder="Quem está fazendo este registro agora">
+                    </div>
+                    <div class="dossier-form-group full">
+                        <label class="dossier-form-label">📅 Término (Calculado)</label>
+                        <input type="text" id="retro-end-preview" class="dossier-form-input" readonly style="background: #e2e8f0;">
+                    </div>
+                </div>
+            </div>
+            <div class="dossier-modal-footer">
+                <button onclick="closeRetroModal()" class="dossier-btn dossier-btn-secondary">Cancelar</button>
+                <button onclick="submitRetro()" class="dossier-btn" style="background: #7c3aed; color: white; border: none;">📜 Gravar Histórico</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script type="module" src="js/pages/vacation-dossier.js"></script>
+</body>
+</html>

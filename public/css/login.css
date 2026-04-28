@@ -1,0 +1,262 @@
+
+/* --- LOGIN SYSTEM NORDESTE RH+ --- */
+
+/* Sobrescrita de variáveis padrão para garantir visual Dark por padrão na Login */
+:root {
+    --primary: #D32F2F;
+    --primary-hover: #B71C1C;
+    --text-color: #ffffff;
+    --input-bg: rgba(255, 255, 255, 0.08);
+    --input-border: rgba(255, 255, 255, 0.15);
+    --input-focus: rgba(211, 47, 47, 0.5);
+    
+    /* Configuração Padrão de Fundo (Caso não tenha tema escolhido) */
+    --theme-bg-image: url('https://nordesteloc.com.br/wp-content/uploads/2024/10/FOTO-SITE.png');
+    --theme-overlay-color: #0f172a; /* Dark Blue/Slate */
+    --theme-overlay-opacity: 0.85;
+    --theme-blur: 4px;
+}
+
+body {
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #121212; /* Fallback */
+    color: var(--text-color);
+}
+
+/* O global.css injeta o ::before e ::after. 
+   Aqui reforçamos o visual do background para a tela de login especificamente. */
+
+/* ===== CENA 3D (PARALLAX) ===== */
+.scene {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+/* ===== ITEMS FLUTUANTES (DECORAÇÃO) ===== */
+.layer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.floating-item {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.05); 
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    overflow: hidden; 
+    transition: transform 0.3s ease-out;
+}
+
+.floating-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.8;
+    mix-blend-mode: overlay; /* Integra a imagem com o fundo */
+    transition: all 0.5s ease;
+}
+
+/* Posicionamento Estratégico (Mantido) */
+.item-1 { width: 160px; height: 120px; top: -35%; left: -40%; opacity: 0.4; }
+.item-2 { width: 150px; height: 150px; bottom: -30%; right: -35%; opacity: 0.4; }
+.item-3 { width: 140px; height: 100px; top: -40%; right: -10%; opacity: 0.3; }
+.item-4 { width: 200px; height: 140px; top: 10%; left: -45%; }
+.item-5 { width: 180px; height: 180px; bottom: -40%; left: -20%; }
+.item-6 { width: 210px; height: 150px; top: -30%; right: -40%; }
+.item-7 { width: 240px; height: 160px; top: -15%; left: -38%; opacity: 0.6; }
+.item-8 { width: 220px; height: 220px; bottom: -25%; right: -42%; opacity: 0.6; }
+.item-9 { width: 190px; height: 190px; bottom: 15%; left: -48%; opacity: 0.5; }
+.item-10 { width: 280px; height: 180px; top: 25%; right: -48%; opacity: 0.5; }
+.item-11 { width: 300px; height: 200px; bottom: -42%; left: 15%; opacity: 0.4; }
+.item-12 { width: 180px; height: 180px; top: -42%; left: 25%; opacity: 0.4; }
+
+
+/* ===== LOGIN CARD (CENTRAL) ===== */
+.login-card {
+    position: relative;
+    z-index: 100;
+    width: 100%;
+    max-width: 420px;
+    padding: 3.5rem 3rem;
+    
+    /* Efeito Glassmorphism Premium */
+    background: rgba(15, 23, 42, 0.6); 
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    
+    border-radius: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+        
+    text-align: center;
+    animation: card-entry 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* Logo Area */
+.logo-area { margin-bottom: 2.5rem; }
+.logo-area h1 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin: 0;
+    letter-spacing: -1px;
+    text-transform: uppercase;
+    font-style: italic;
+    line-height: 0.9;
+    background: linear-gradient(to right, #fff, #ccc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+.logo-area span { 
+    color: var(--primary);
+    -webkit-text-fill-color: var(--primary);
+}
+
+.subtitle {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 3rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Formulário */
+.input-group {
+    position: relative;
+    margin-bottom: 1.25rem;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 0.5rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 16px 20px;
+    background: var(--input-bg);
+    border: 1.5px solid var(--input-border);
+    border-radius: 1rem;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.input-group input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.input-group input:focus {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--input-focus);
+    transform: translateY(-1px);
+}
+
+/* Botão */
+.btn-login {
+    width: 100%;
+    padding: 18px;
+    border: none;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1.5rem;
+    box-shadow: 0 10px 20px -5px rgba(211, 47, 47, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px -5px rgba(211, 47, 47, 0.5);
+    filter: brightness(1.1);
+}
+
+.btn-login:active {
+    transform: scale(0.98);
+}
+
+/* Mensagem de Erro */
+.error-message {
+    color: #ef4444;
+    font-size: 0.8rem;
+    margin-top: 1.5rem;
+    min-height: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    display: none; /* Hidden by default */
+}
+.error-message:not(:empty) {
+    display: block;
+    animation: shake 0.4s ease-in-out;
+}
+
+/* Rodapé do Card */
+.card-footer {
+    margin-top: 2rem;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* ===== ANIMAÇÕES ===== */
+@keyframes float-y {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+
+@keyframes card-entry {
+    from { opacity: 0; transform: translateY(40px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .item-1, .item-2, .item-3, .item-10, .item-11, .item-12 { display: none; }
+    .login-card { width: 90%; padding: 2.5rem 1.5rem; }
+}

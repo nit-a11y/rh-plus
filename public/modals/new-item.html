@@ -1,0 +1,42 @@
+<div class="modal-content-animated bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+        <h3 class="text-lg font-bold text-gray-800 uppercase tracking-tight">Entregar Item Avulso</h3>
+        <button onclick="window.modules.uniforms.closeNewItemModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <form onsubmit="window.modules.uniforms.submitNewItem(event)" class="p-6 space-y-4">
+        <div>
+            <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Peça de Fardamento</label>
+            <select id="new-item-type" class="input-field bg-white">
+                <option value="Camisa Valores">Camisa Valores</option>
+                <option value="Camisa Polo">Camisa Polo</option>
+                <option value="Calça Jeans">Calça Jeans</option>
+                <option value="Calça ASD">Calça ASD</option>
+                <option value="Bota">Bota</option>
+            </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Cor</label>
+                <select id="new-item-color" class="input-field bg-white">
+                    <option value="Vermelha">Vermelha</option>
+                    <option value="Cinza">Cinza</option>
+                    <option value="Preta">Preta</option>
+                    <option value="Azul">Azul</option>
+                    <option value="Jeans">Jeans</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Tamanho</label>
+                <input type="text" id="new-item-size" class="input-field" placeholder="Ex: G, 42..." required>
+            </div>
+        </div>
+        <div>
+            <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Data de Entrega</label>
+            <input type="date" id="new-item-date" class="input-field" required>
+        </div>
+        <div class="flex gap-3 pt-2">
+            <button type="button" onclick="window.modules.uniforms.closeNewItemModal()" class="flex-1 btn btn-outline">Cancelar</button>
+            <button type="submit" class="flex-1 btn btn-secondary">Registrar Entrega</button>
+        </div>
+    </form>
+</div>

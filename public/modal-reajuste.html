@@ -1,0 +1,137 @@
+
+<!-- 
+  ESTE ARQUIVO É UMA REFERÊNCIA DE DESIGN. 
+  A LÓGICA DE INJEÇÃO ESTÁ NO CAREER.JS 
+-->
+<div class="nrh-premium-modal">
+    <style>
+        .nrh-modal-wrapper {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 2.5rem;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .nrh-header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
+            padding: 2.5rem;
+            color: white;
+            border-bottom: 5px solid #D32F2F;
+            position: relative;
+        }
+        .nrh-header h3 {
+            font-size: 1.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+            font-style: italic;
+            margin: 0;
+        }
+        .nrh-header p {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #D32F2F;
+            margin-top: 5px;
+        }
+        .nrh-body {
+            padding: 2.5rem;
+            background: #fff;
+        }
+        .nrh-input-box {
+            background: #F8FAFC;
+            border: 2px dashed #E2E8F0;
+            border-radius: 2rem;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .nrh-input-box:focus-within {
+            border-color: #D32F2F;
+            background: #fff;
+            box-shadow: 0 10px 20px rgba(211, 47, 47, 0.05);
+        }
+        .nrh-main-input {
+            background: transparent;
+            border: none;
+            font-size: 5rem;
+            font-weight: 900;
+            color: #D32F2F;
+            width: 200px;
+            text-align: center;
+            outline: none;
+        }
+        .nrh-symbol {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #CBD5E1;
+        }
+        .nrh-warning {
+            margin-top: 1.5rem;
+            padding: 1.25rem;
+            background: #FFF1F2;
+            border-radius: 1.25rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            border: 1px solid #FECACA;
+        }
+        .nrh-warning span { font-size: 1.5rem; }
+        .nrh-warning p {
+            font-size: 0.7rem;
+            color: #991B1B;
+            font-weight: 800;
+            text-transform: uppercase;
+            line-height: 1.3;
+        }
+        .nrh-footer {
+            padding: 0 2.5rem 2.5rem;
+            display: flex;
+            gap: 1rem;
+        }
+        .nrh-btn {
+            flex: 1;
+            padding: 1.25rem;
+            border-radius: 1.25rem;
+            font-size: 0.75rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        .nrh-btn-alt { background: #F1F5F9; color: #64748B; }
+        .nrh-btn-main { background: #121212; color: white; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .nrh-btn-main:hover { transform: translateY(-2px); background: #000; box-shadow: 0 15px 30px rgba(211, 47, 47, 0.2); }
+    </style>
+
+    <div class="nrh-modal-wrapper">
+        <div class="nrh-header">
+            <h3>Ajuste Coletivo</h3>
+            <p>Nordeste RH+ • Inteligência Salarial</p>
+        </div>
+        <div class="nrh-body">
+            <div class="nrh-input-box">
+                <label class="pro-label" style="margin-bottom: 10px; display: block;">Percentual de Aumento</label>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <input type="number" step="0.01" class="nrh-main-input" placeholder="0.00">
+                    <span class="nrh-symbol">%</span>
+                </div>
+            </div>
+            <div class="nrh-warning">
+                <span>⚠️</span>
+                <p>Esta operação é irreversível. Todos os salários ativos serão atualizados e um registro será gerado no histórico de carreira.</p>
+            </div>
+        </div>
+        <div class="nrh-footer">
+            <button class="nrh-btn nrh-btn-alt">Cancelar</button>
+            <button class="nrh-btn nrh-btn-main">Aplicar Reajuste Geral</button>
+        </div>
+    </div>
+</div>

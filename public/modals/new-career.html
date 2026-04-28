@@ -1,0 +1,56 @@
+<div class="modal-content-animated bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+        <h3 class="text-lg font-bold text-gray-800 uppercase tracking-tight">Nova Movimentação Profissional</h3>
+        <button onclick="window.modules.career.closeCareerModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <form onsubmit="window.modules.career.submitCareer(event)" class="p-6 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Tipo de Movimento</label>
+                <select id="car-type" class="input-field bg-white" required>
+                    <option value="Promoção">Promoção</option>
+                    <option value="Reajuste Salarial">Reajuste Salarial</option>
+                    <option value="Mudança de Setor">Mudança de Setor</option>
+                    <option value="Desligamento">Desligamento (Arquivar)</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Data da Vigência</label>
+                <input type="date" id="car-date" class="input-field" required>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Novo Cargo</label>
+                <input type="text" id="car-role" class="input-field" required>
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Novo Setor</label>
+                <input type="text" id="car-sector" class="input-field" required>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Novo Salário</label>
+                <input type="text" id="car-salary" class="input-field" placeholder="R$ 0,00" required>
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-red-600 uppercase mb-1 block">Mudar Tipo de Kit?</label>
+                <select id="car-new-type" class="input-field border-red-100 bg-red-50 font-bold">
+                    <option value="">Não mudar Kit atual</option>
+                    <option value="ADM">Kit ADM</option>
+                    <option value="OP">Kit Operacional</option>
+                    <option value="ASD">Kit ASD</option>
+                </select>
+            </div>
+        </div>
+        <div>
+            <label class="text-[10px] font-black text-gray-400 uppercase mb-1 block">Observações</label>
+            <textarea id="car-obs" rows="2" class="input-field"></textarea>
+        </div>
+        <div class="flex gap-3 pt-2">
+            <button type="button" onclick="window.modules.career.closeCareerModal()" class="flex-1 btn btn-outline">Cancelar</button>
+            <button type="submit" class="flex-1 btn btn-secondary">Confirmar Movimentação</button>
+        </div>
+    </form>
+</div>

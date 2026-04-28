@@ -1,0 +1,251 @@
+
+/* --- ESTILO DOS CRACHÁS (LISTA) --- */
+.pro-card {
+    background: white; border-radius: 1rem; border: 1px solid #e5e7eb; overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column;
+}
+.pro-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); border-color: #D32F2F; }
+
+/* Header Minimalista (Transparente com Bordinha) */
+.pro-card-header { 
+    height: 0px; /* Remove altura do bloco */
+    background: transparent; /* Fundo transparente */
+    position: relative; 
+    border-top: 3px solid #212121; /* Apenas a borda fina solicitada */
+}
+
+.pro-card-avatar-wrap { 
+    margin-top: 25px; /* Espaçamento para o avatar "respirar" */
+    display: flex; 
+    justify-content: center; 
+}
+
+.pro-card-avatar { 
+    width: 76px; 
+    height: 76px; 
+    border-radius: 50%; 
+    border: 3px solid white; 
+    object-fit: cover; 
+    background: #f3f4f6; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1); /* Sombra para destaque no branco */
+}
+
+.pro-card-status { 
+    position: absolute; top: 12px; right: 12px; padding: 2px 8px; border-radius: 20px; 
+    font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;
+    z-index: 10; /* Garante que fique sobre o conteúdo se necessário */
+}
+.status-active { background: #dcfce7; color: #15803d; }
+.status-inactive { background: #fee2e2; color: #b91c1c; }
+
+/* --- ESTILO DO EDITOR (SIDEBAR) --- */
+.nav-tab-pro { 
+    display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem;
+    font-size: 0.75rem; font-weight: 800; color: #64748b; border-radius: 0.75rem;
+    transition: all 0.2s; cursor: pointer; margin-bottom: 0.25rem; text-transform: uppercase;
+}
+.nav-tab-pro:hover { background: #f1f5f9; color: #D32F2F; }
+.nav-tab-pro.active { background: #fee2e2; color: #B71C1C; }
+
+/* --- UPLOAD DE FOTO NO EDITOR --- */
+.editor-avatar-container {
+    position: relative;
+    cursor: pointer;
+    margin-bottom: 1rem;
+}
+.editor-avatar-container:hover .avatar-overlay {
+    opacity: 1;
+}
+.avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    border: 4px solid white;
+}
+.avatar-overlay svg {
+    color: white;
+    width: 24px;
+    height: 24px;
+}
+
+/* --- COMPONENTES DE FORMULÁRIO --- */
+.pro-input { 
+    width: 100%; 
+    border: 1.5px solid #e2e8f0; 
+    border-radius: 0.75rem; 
+    padding: 0.625rem 1rem; 
+    font-size: 0.875rem; 
+    outline: none; 
+    transition: all 0.2s; 
+    background: #fff;
+    text-transform: uppercase; /* FORÇA CAIXA ALTA VISUAL */
+}
+.pro-input:focus { border-color: #D32F2F; ring: 3px rgba(211, 47, 47, 0.1); }
+
+.pro-label { 
+    display: block; 
+    font-size: 0.65rem; 
+    font-weight: 900; 
+    color: #94a3b8; 
+    text-transform: uppercase; /* FORÇA LABEL EM CAIXA ALTA */
+    margin-bottom: 0.35rem; 
+    letter-spacing: 0.5px; 
+}
+
+.pro-card-section { background: white; border-radius: 1.5rem; border: 1px solid #e2e8f0; padding: 2.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+
+/* --- DOSSIÊ PAPER VIEW --- */
+.paper-dossier-container {
+    scroll-behavior: smooth;
+}
+
+.paper-dossier {
+    background: #fdfbf7;
+    width: 100%;
+    max-width: 210mm; 
+    min-height: 297mm;
+    padding: 2.5rem;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    position: relative;
+    font-family: 'Courier New', Courier, monospace;
+    color: #333;
+    border: 1px solid #e5e1d8;
+    margin: 2rem auto;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.paper-stamp {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    border: 3px double #b71c1c;
+    color: #b71c1c;
+    padding: 8px 16px;
+    font-size: 1.3rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    transform: rotate(-12deg);
+    opacity: 0.5;
+    letter-spacing: 2px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.paper-header {
+    border-bottom: 2px solid #333;
+    padding-bottom: 1.25rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.paper-title h2 { font-size: 2rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: #111; margin: 0; }
+.paper-title p { font-size: 0.75rem; font-weight: bold; color: #666; text-transform: uppercase; margin-top: 4px; }
+
+.paper-photo-frame {
+    width: 110px;
+    height: 130px;
+    border: 1px solid #ccc;
+    padding: 5px;
+    background: white;
+    transform: rotate(1deg);
+    box-shadow: 3px 3px 10px rgba(0,0,0,0.05);
+}
+.paper-photo-frame img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(0.1) contrast(1.1); }
+
+.paper-dashed-box {
+    border: 1.5px dashed #cbd5e1;
+    padding: 1.25rem;
+    background: rgba(255,255,255,0.6);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.paper-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    margin-bottom: 0.65rem;
+}
+
+.paper-field {
+    border-bottom: 1px dotted #999;
+    padding-bottom: 5px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.paper-field-label { font-size: 0.65rem; font-weight: 800; color: #777; text-transform: uppercase; white-space: nowrap; }
+.paper-field-value { font-size: 0.9rem; font-weight: 700; color: #000; text-transform: uppercase; }
+
+.paper-section-bar {
+    background: #333;
+    color: white;
+    padding: 6px 15px;
+    font-size: 0.85rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    margin-top: 2rem;
+    margin-bottom: 1.25rem;
+    letter-spacing: 1px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.paper-section-bar.red { background: #b71c1c; }
+.paper-section-bar.blue { background: #1e40af; }
+.paper-section-bar.orange { background: #c2410c; }
+.paper-section-bar.green { background: #15803d; }
+
+.paper-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-bottom: 1.5rem; }
+.paper-table th { text-align: left; border-bottom: 2px solid #333; padding: 10px; text-transform: uppercase; color: #333; font-weight: 900; }
+.paper-table td { border-bottom: 1px solid #ddd; padding: 10px; font-weight: 600; color: #222; }
+
+.paper-footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    font-weight: bold;
+    color: #999;
+    text-transform: uppercase;
+}
+
+/* --- PAINEL DE VARIAÇÃO SALARIAL --- */
+.salary-variation-panel {
+    border-radius: 12px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* --- CUSTOM SCROLL --- */
+.custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; border: 1px solid #f1f1f1; }
+.custom-scroll::-webkit-scrollbar-thumb:hover { background: #b71c1c; }
+
+/* --- REGRAS DE IMPRESSÃO (PDF) --- */
+@media print {
+    @page { margin: 10mm; size: A4; }
+    body { background: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+    header, aside, button, .nav-tab-pro, #btn-back-to-list, #btn-save-master { display: none !important; }
+    #main-container { overflow: visible !important; height: auto !important; }
+    #module-dossier { display: block !important; position: static !important; background: white !important; height: auto !important; overflow: visible !important; }
+    #dossier-pages-container { padding: 0 !important; margin: 0 !important; overflow: visible !important; height: auto !important; display: block !important; }
+    .paper-dossier { box-shadow: none !important; border: none !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; background: #fdfbf7 !important; }
+    .dossier-print-section { break-before: page; padding-top: 20mm; }
+    .dossier-print-section:first-child { break-before: auto; padding-top: 0; }
+    .paper-stamp { opacity: 0.3 !important; }
+}

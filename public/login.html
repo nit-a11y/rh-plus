@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Nordeste Locações</title>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/tutorial.css">
+    <!-- Fonte Moderna: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="scene" id="scene">
+        <!-- Elementos Flutuantes (Parallax Layers) -->
+        <!-- Container ID adicionado para permitir injeção de imagens customizadas do tema -->
+        <div id="login-floating-container">
+            <div class="layer" data-depth="0.1">
+                <div class="floating-item item-1"><img src="https://nordesteloc.com.br/wp-content/uploads/2024/10/FOTO-SITE.png" alt="Frota"></div>
+                <div class="floating-item item-2"><img src="https://nordesteloc.com.br/wp-content/smush-webp/2025/11/FOR.png.webp" alt="Logística"></div>
+            </div>
+            <div class="layer" data-depth="0.2">
+                <div class="floating-item item-4"><img src="https://nordesteloc.com.br/wp-content/smush-webp/2025/07/Captura-de-tela-2025-07-28-142939.png.webp" alt="Equipamentos"></div>
+                <div class="floating-item item-5"><img src="https://nordesteloc.com.br/wp-content/uploads/2024/10/FOTO_SITE-3.png" alt="Caminhão Munck"></div>
+            </div>
+            <div class="layer" data-depth="0.4">
+                <div class="floating-item item-7"><img src="https://nordesteloc.com.br/wp-content/smush-webp/2025/07/Captura-de-tela-2025-07-28-142758.png.webp" alt="Detalhe"></div>
+                <div class="floating-item item-8"><img src="https://nordesteloc.com.br/wp-content/uploads/2024/10/FOTO-SITE.png" alt="Frota Destaque"></div>
+            </div>
+        </div>
+        
+        <!-- Card de Login -->
+        <div class="login-card">
+            <div class="logo-area">
+                <h1><span>N</span>ordeste</h1>
+                <h1><span>L</span>ocações</h1>
+            </div>
+            <p class="subtitle">Sistema de Gestão RH+</p>
+            
+            <form id="login-form" autocomplete="off">
+                <div class="input-group">
+                    <label for="username">Identificação</label>
+                    <input type="text" id="username" name="username" placeholder="Digite seu usuário" required autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label for="password">Acesso</label>
+                    <input type="password" id="password" name="password" placeholder="Digite sua senha" required autocomplete="current-password">
+                </div>
+                
+                <button type="submit" class="btn-login">Entrar na Plataforma</button>
+                <div id="error-message" class="error-message"></div>
+            </form>
+
+            <div class="card-footer">
+                <p>&copy; 2026 Nordeste Locações • Tecnologia & Inteligência</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/auth.js"></script>
+    <script type="module" src="js/tutorial/engine.js"></script>
+
+    <!-- Inicialização Auth -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Verifica se já existe sessão válida (redireciona se sim)
+            Auth.check();
+        });
+    </script>
+</body>
+</html>

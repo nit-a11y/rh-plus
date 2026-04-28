@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Termo de Devolução</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Montserrat', Arial, sans-serif;
+      margin: 0;
+      padding: 10px;
+      background: #f4f4f4;
+    }
+
+    .header {
+      background: #d32f2f;
+      color: white;
+      text-align: center;
+      padding: 15px 10px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .section {
+      margin-bottom: 10px;
+      padding: 0 15px;
+    }
+
+    .section-title {
+      background: #eee;
+      padding: 5px 8px;
+      font-weight: 600;
+      border-left: 3px solid #d32f2f;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+
+    .row {
+      margin-bottom: 3px;
+      padding: 3px 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      font-size: 11px;
+    }
+
+    .label {
+      font-weight: 600;
+      color: #333;
+      min-width: 120px;
+      font-size: 11px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      font-size: 18px;
+      font-weight: 700;
+      margin: 15px 0;
+      text-transform: uppercase;
+    }
+
+    .box {
+      border: 1px solid #ccc;
+      height: 50px;
+      margin-top: 10px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+      font-size: 11px;
+    }
+
+    .checkbox-row input {
+      margin-right: 8px;
+    }
+
+    .signatures {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      padding: 0 15px 20px 15px;
+    }
+
+    .signature-box {
+      width: 45%;
+      text-align: center;
+      font-size: 11px;
+    }
+
+    .line {
+      border-bottom: 2px solid #000;
+      margin: 20px 0 5px 0;
+    }
+
+    @media print {
+      body { background: white; padding: 0; }
+      .container { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>NIT - NORDESTE LOCAÇÕES</h1>
+    <small>{{empresa_nome}} — {{cidade}}</small>
+  </div>
+
+  <div class="container">
+
+    <div class="section">
+      <div class="section-title">DADOS DA EMPRESA</div>
+      <div class="row"><span class="label">Razão Social:</span> {{empresa_nome}}</div>
+      <div class="row"><span class="label">CNPJ:</span> {{empresa_cnpj}}</div>
+      <div class="row"><span class="label">Endereço:</span> {{empresa_endereco}}</div>
+    </div>
+
+    <h2>TERMO DE DEVOLUÇÃO</h2>
+
+    <div class="section">
+      <div class="section-title">1. DADOS DO COLABORADOR</div>
+      <div class="row"><span class="label">Nome:</span> {{colaborador_nome}}</div>
+      <div class="row"><span class="label">Matrícula:</span> {{colaborador_cpf}}</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">2. DADOS DO EQUIPAMENTO</div>
+      <div class="row"><span class="label">Patrimônio:</span> {{patrimonio}}</div>
+      <div class="row"><span class="label">Equipamento:</span> {{tipo_equipamento}}</div>
+      <div class="row"><span class="label">Processador:</span> {{processador}}</div>
+      <div class="row"><span class="label">Memória:</span> {{memoria}}</div>
+      <div class="row"><span class="label">Armazenamento:</span> {{armazenamento}}</div>
+      <div class="row"><span class="label">Classificação:</span> {{tier}}</div>
+      <div class="row"><span class="label">Acessórios:</span> {{acessorios}}</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">3. DECLARAÇÃO</div>
+      <p style="line-height:1.6; text-align: justify;">
+        Declaro que estou devolvendo o equipamento descrito acima à empresa {{empresa_nome}}, encerrando minha responsabilidade sobre o mesmo.
+      </p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">4. CONFERÊNCIA</div>
+      <div class="checkbox-row">
+        <input type="checkbox"> Em perfeito estado
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox"> Com avarias
+      </div>
+
+      <div class="box"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">5. ASSINATURAS</div>
+
+      <div class="signatures">
+        <div class="signature-box">
+          <div class="line"></div>
+          <strong>{{colaborador_nome}}</strong><br>
+          <small>Matrícula: {{colaborador_cpf}}</small>
+        </div>
+
+        <div class="signature-box">
+          <div class="line"></div>
+          <strong>{{responsavel_nome}}</strong><br>
+          <small>Cargo: {{responsavel_cargo}}</small>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

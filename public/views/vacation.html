@@ -1,0 +1,44 @@
+<div class="space-y-6">
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-center">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">🌴 Gestão de Férias</h2>
+            <p class="text-sm text-gray-500">Regra: 18 meses de carência + Janela de 6 meses.</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="card p-4 border-l-4 border-gray-400">
+            <p class="text-[10px] font-bold text-gray-400 uppercase">Em Carência</p>
+            <h4 id="vac-stat-care" class="text-2xl font-black">0</h4>
+        </div>
+        <div class="card p-4 border-l-4 border-yellow-500">
+            <p class="text-[10px] font-bold text-gray-400 uppercase">Janela Aberta</p>
+            <h4 id="vac-stat-open" class="text-2xl font-black">0</h4>
+        </div>
+        <div class="card p-4 border-l-4 border-blue-500">
+            <p class="text-[10px] font-bold text-gray-400 uppercase">Aguardando Aprovação</p>
+            <h4 id="vac-stat-wait" class="text-2xl font-black">0</h4>
+        </div>
+        <div class="card p-4 border-l-4 border-red-600">
+            <p class="text-[10px] font-bold text-gray-400 uppercase">Férias Vencidas</p>
+            <h4 id="vac-stat-expired" class="text-2xl font-black">0</h4>
+        </div>
+    </div>
+
+    <div class="card p-6">
+        <div class="table-container">
+            <table class="styled-table w-full">
+                <thead>
+                    <tr>
+                        <th>Colaborador</th>
+                        <th>Liberação</th>
+                        <th>Limite Máx.</th>
+                        <th class="text-center">Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="vacation-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+</div>

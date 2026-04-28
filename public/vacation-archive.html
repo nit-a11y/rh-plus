@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquivo Histórico Inteligente | Nordeste RH+</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nordeste: { red: '#D32F2F', darkRed: '#B71C1C', black: '#121212', gray: '#F1F5F9' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/vacation-archive.css">
+</head>
+<body class="bg-nordeste-gray h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center z-50">
+        <div class="flex items-center gap-6">
+            <button onclick="location.href='/vacation-unified.html'" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            </button>
+            <div>
+                <h1 class="text-xl font-black uppercase italic tracking-tighter text-gray-800">Arquivo <span class="text-nordeste-red">Histórico</span></h1>
+                <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Base de Auditoria & Compliance</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="exportArchiveExcel()" class="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl font-black text-[10px] uppercase border border-green-100 hover:bg-green-100 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> Exportar Dados
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-8 custom-scroll">
+        <div class="max-w-7xl mx-auto space-y-8">
+            
+            <!-- INSIGHTS DASHBOARD -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="insight-card">
+                    <p class="insight-label">Total de Registros</p>
+                    <h3 id="ins-total" class="insight-value">0</h3>
+                </div>
+                <div class="insight-card border-l-4 border-amber-400">
+                    <p class="insight-label">Venda de Férias (Abono)</p>
+                    <h3 id="ins-abono" class="insight-value text-amber-600">0%</h3>
+                    <p class="insight-sub">Taxa de conversão pecuniária</p>
+                </div>
+                <div class="insight-card border-l-4 border-blue-500">
+                    <p class="insight-label">Setor com Mais Férias</p>
+                    <h3 id="ins-sector" class="insight-value text-blue-600 text-lg truncate">...</h3>
+                    <p class="insight-sub">Maior volume de saídas</p>
+                </div>
+                <div class="insight-card border-l-4 border-green-500">
+                    <p class="insight-label">Investimento Total</p>
+                    <h3 id="ins-cost" class="insight-value text-green-700 text-lg">R$ 0,00</h3>
+                    <p class="insight-sub">Soma de proventos + 1/3</p>
+                </div>
+            </div>
+
+            <!-- FILTROS AVANÇADOS -->
+            <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="text-[9px] font-black text-gray-400 uppercase mb-1 block">Colaborador</label>
+                    <input type="text" id="arc-search" placeholder="Nome ou Matrícula..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-nordeste-red">
+                </div>
+                <div class="w-40">
+                    <label class="text-[9px] font-black text-gray-400 uppercase mb-1 block">Setor</label>
+                    <select id="arc-sector" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-xs font-bold outline-none"></select>
+                </div>
+                <div class="w-32">
+                    <label class="text-[9px] font-black text-gray-400 uppercase mb-1 block">Ano</label>
+                    <select id="arc-year" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-xs font-bold outline-none"></select>
+                </div>
+                <div class="w-40">
+                    <label class="text-[9px] font-black text-gray-400 uppercase mb-1 block">Tipo</label>
+                    <select id="arc-type" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-xs font-bold outline-none">
+                        <option value="all">Todos</option>
+                        <option value="abono">Com Abono</option>
+                        <option value="integral">Integral (30d)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- TABELA DE REGISTROS -->
+            <div class="bg-white rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-[9px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                            <th class="p-5 pl-8">Colaborador</th>
+                            <th class="p-5">Período Aquisitivo / Gozo</th>
+                            <th class="p-5 text-center">Dias / Abono</th>
+                            <th class="p-5 text-right">Valor Pago</th>
+                            <th class="p-5 text-center">Docs</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archive-table-body" class="divide-y divide-gray-50">
+                        <!-- Injetado via JS -->
+                    </tbody>
+                </table>
+                <div id="archive-empty" class="hidden p-12 text-center text-gray-300 font-black uppercase text-xs italic">Nenhum registro encontrado.</div>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module" src="js/pages/vacation-archive.js"></script>
+</body>
+</html>

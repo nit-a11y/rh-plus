@@ -1,0 +1,43 @@
+<div class="space-y-6">
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex justify-between items-center">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">🩺 Saúde Ocupacional</h2>
+            <p class="text-sm text-gray-500">Monitoramento de exames ASO e conformidade legal.</p>
+        </div>
+        <div class="flex gap-4">
+            <div class="text-center px-4 border-r">
+                <span id="aso-stat-ok" class="block text-2xl font-bold text-green-600">0</span>
+                <span class="text-[10px] uppercase font-bold text-gray-400">Em Dia</span>
+            </div>
+            <div class="text-center px-4 border-r">
+                <span id="aso-stat-warning" class="block text-2xl font-bold text-yellow-600">0</span>
+                <span class="text-[10px] uppercase font-bold text-gray-400">Vencendo</span>
+            </div>
+            <div class="text-center px-4">
+                <span id="aso-stat-expired" class="block text-2xl font-bold text-red-600">0</span>
+                <span class="text-[10px] uppercase font-bold text-gray-400">Vencidos</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="font-bold text-gray-800">Monitoramento de ASO</h3>
+            <input type="text" id="aso-search" placeholder="Buscar colaborador..." class="input-field w-64 text-sm" oninput="window.modules.aso.filterAso()">
+        </div>
+        <div class="table-container">
+            <table class="styled-table w-full">
+                <thead>
+                    <tr>
+                        <th>Colaborador</th>
+                        <th>Último Exame</th>
+                        <th>Validade</th>
+                        <th class="text-center">Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="aso-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+</div>

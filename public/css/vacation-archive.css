@@ -1,0 +1,22 @@
+
+.insight-card {
+    background: white; padding: 1.5rem; border-radius: 1.5rem; border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column;
+}
+.insight-label { font-size: 0.65rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+.insight-value { font-size: 1.8rem; font-weight: 900; color: #1e293b; margin-top: 4px; line-height: 1; }
+.insight-sub { font-size: 0.6rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase; margin-top: 4px; }
+
+/* Tabela Personalizada */
+.arch-row { transition: all 0.2s; }
+.arch-row:hover { background: #f8fafc; }
+
+.arch-avatar { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; }
+.arch-doc-btn { 
+    padding: 6px 12px; border-radius: 8px; background: #f1f5f9; color: #64748b; font-size: 9px; font-black uppercase; 
+    transition: all 0.2s; border: 1px solid transparent; 
+}
+.arch-doc-btn:hover { background: #121212; color: white; }
+
+.custom-scroll::-webkit-scrollbar { width: 6px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }

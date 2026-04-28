@@ -1,0 +1,52 @@
+<div class="modal-content-animated bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden my-4">
+    <div class="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+        <h3 class="text-lg font-bold text-gray-800">Novo Colaborador</h3>
+        <button onclick="window.modules.employees.closeNewEmployeeModal()" class="text-gray-400">✕</button>
+    </div>
+    <form onsubmit="window.modules.employees.submitNewEmployee(event)" class="p-6 space-y-4">
+        <div class="flex flex-col items-center mb-4">
+            <div class="relative w-24 h-24 mb-2 group">
+                <div class="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200 bg-gray-100 flex items-center justify-center">
+                    <img id="new-emp-preview" src="" class="w-full h-full object-cover hidden-custom">
+                    <i data-lucide="user" class="w-10 h-10 text-gray-400"></i>
+                </div>
+                <label for="new-emp-photo" class="absolute bottom-0 right-0 bg-red-600 text-white p-1.5 rounded-full cursor-pointer hover:bg-red-700 shadow-md">
+                    <i data-lucide="camera" class="w-3 h-3"></i>
+                </label>
+                <input type="file" id="new-emp-photo" class="hidden" accept="image/*" onchange="window.modules.employees.previewNewEmployeeImage(this)">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase">Nome Completo</label><input id="new-emp-name" class="input-field" required></div>
+            <div><label class="text-xs font-bold text-gray-500 uppercase">Matrícula</label><input id="new-emp-reg" class="input-field" required></div>
+            <div><label class="text-xs font-bold text-gray-500 uppercase">Nascimento</label><input type="date" id="new-emp-birth" class="input-field" required></div>
+            <div><label class="text-xs font-bold text-gray-500 uppercase">Admissão</label><input type="date" id="new-emp-date" class="input-field" required></div>
+            <div><label class="text-xs font-bold text-gray-500 uppercase">Salário Base</label><input type="text" id="new-emp-salary" class="input-field" placeholder="R$ 0,00" required></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+            <div><label class="text-xs font-bold text-gray-500 uppercase">Setor</label><input id="new-emp-sector" class="input-field" required></div>
+            <div><label class="text-xs font-bold text-gray-500 uppercase">Cargo</label><input id="new-emp-role" class="input-field" required></div>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-xl border">
+            <label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Regras de Fardamento (Kit Inicial)</label>
+            <select id="new-emp-type" class="input-field mb-3">
+                <option value="ADM">Administrativo (2 Valores + 1 Polo Azul)</option>
+                <option value="OP">Operacional (2 Valores + 1 Polo Preta + 1 Jeans)</option>
+                <option value="ASD">Serviços Gerais (2 Valores + 1 Calça ASD)</option>
+            </select>
+            <div class="grid grid-cols-3 gap-3">
+                <div><label class="text-[10px] font-bold">Camisa</label><select id="new-emp-shirt" class="input-field text-sm"><option>P</option><option>M</option><option>G</option><option>GG</option></select></div>
+                <div><label class="text-[10px] font-bold">Calça</label><select id="new-emp-pants" class="input-field text-sm"><option>38</option><option>40</option><option>42</option><option>44</option></select></div>
+                <div><label class="text-[10px] font-bold">Pé</label><select id="new-emp-shoe" class="input-field text-sm"><option>38</option><option>39</option><option>40</option><option>41</option></select></div>
+            </div>
+        </div>
+
+        <div class="flex gap-3 pt-2">
+            <button type="button" onclick="window.modules.employees.closeNewEmployeeModal()" class="flex-1 btn btn-outline">Cancelar</button>
+            <button type="submit" class="flex-1 btn btn-secondary">Cadastrar Colaborador</button>
+        </div>
+    </form>
+</div>

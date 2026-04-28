@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventário de Ativos | Nordeste RH+</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nordeste: { red: '#D32F2F', darkRed: '#B71C1C', black: '#121212', gray: '#F4F7F9' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/global.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F4F7F9; height: 100vh; overflow: hidden; display: flex; }
+        .sidebar-nav { width: 330px; background: white; border-right: 1px solid #E2E8F0; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 15px 0 40px rgba(0,0,0,0.03); z-index: 40; }
+        .emp-item { padding: 1.25rem 1.5rem; border-bottom: 1px solid #F8FAFC; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; gap: 14px; }
+        .emp-item:hover { background: #F1F5F9; padding-left: 1.75rem; }
+        .emp-item.active { background: #F0F9FF; border-left: 5px solid #0284c7; box-shadow: inset 10px 0 20px rgba(2, 132, 199, 0.03); }
+        .tab-btn { flex: 1; padding: 11px; font-size: 10px; font-weight: 950; text-transform: uppercase; text-align: center; cursor: pointer; border-radius: 14px; transition: all 0.3s; border: none; outline: none; }
+        .tab-btn.active { background: white; color: #0284c7; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); transform: scale(1.02); }
+        .tab-btn.inactive { color: #94a3b8; }
+        .main-container { flex: 1; overflow-y: auto; padding: 3rem; background: #fbfcfd; }
+        
+        @media (max-width: 768px) {
+            body { flex-direction: column; overflow-y: auto; height: auto; }
+            .sidebar-nav { width: 100%; border-right: none; height: auto; border-bottom: 1px solid #E2E8F0; position: sticky; top: 0; z-index: 50; }
+            .main-container { padding: 1.5rem; overflow-y: visible; }
+            .history-box { padding: 1rem; border-radius: 1.5rem; overflow-x: auto; }
+            #global-sidebar-nav.collapsed { display: none !important; }
+        }
+        .profile-card { background: white; border-radius: 2.5rem; padding: 2rem; border: 2px solid #0284c7; display: flex; flex-direction: column; align-items: center; box-shadow: 0 10px 25px rgba(0,0,0,0.05); height: fit-content; }
+        .profile-img { width: 140px; height: 140px; border-radius: 2rem; object-fit: cover; border: 4px solid white; box-shadow: 0 15px 30px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
+        .profile-name { font-size: 1.1rem; font-weight: 900; text-transform: uppercase; font-style: italic; color: #1e293b; text-align: center; line-height: 1.2; }
+        .profile-reg { font-size: 10px; font-family: monospace; font-weight: 800; color: #94a3b8; background: #f8fafc; padding: 4px 12px; border-radius: 8px; margin-top: 10px; }
+        .item-card { background: white; border-radius: 2rem; padding: 1.5rem; border: 1.5px solid #e2e8f0; transition: all 0.3s; position: relative; }
+        .item-card:hover { border-color: #0284c7; transform: translateY(-3px); }
+        .status-badge-ok { background: #d0f2ff; color: #0c4a6e; font-size: 10px; font-weight: 900; padding: 4px 10px; border-radius: 8px; }
+        .btn-action-blue { background: #0284c7; color: white; padding: 12px; border-radius: 12px; font-size: 10px; font-weight: 900; text-transform: uppercase; flex: 1; }
+        .btn-action-outline { border: 1px solid #e2e8f0; color: #94a3b8; padding: 12px; border-radius: 12px; font-size: 10px; font-weight: 900; text-transform: uppercase; flex: 1; }
+        .history-box { background: white; border-radius: 2rem; border: 1px solid #e2e8f0; padding: 2rem; width: 100%; }
+        .history-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .history-table th { text-align: left; padding: 12px 15px; color: #94a3b8; font-weight: 900; text-transform: uppercase; }
+        .history-table td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; font-weight: 700; color: #475569; }
+        .pro-label { font-size: 9px; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; display: block; }
+        .pro-input { width: 100%; padding: 12px 15px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 12px; font-weight: 700; outline: none; transition: border 0.2s; }
+        .pro-input:focus { border-color: #0284c7; }
+        .hidden-pro { display: none !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.4s ease-out; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar-nav">
+        <div class="p-6 border-b border-gray-50">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-10 h-10 bg-nordeste-red rounded-xl flex items-center justify-center text-white shadow-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                </div>
+                <div onclick="window.location.href='/dashboard.html'" style="cursor: pointer;">
+                   <h1 class="text-[11px] font-black uppercase italic text-gray-800 leading-none tracking-tighter">Gestão de <span class="text-[#0284c7]">Ativos & TI</span></h1>
+                   <p class="text-[7px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-1">Acervo Patrimonial</p>
+                </div>
+            </div>
+            
+            <div class="bg-gray-100 p-1.5 rounded-[1.2rem] flex items-center mb-6 shadow-inner border border-gray-100/50 gap-1">
+                <button id="tab-active" onclick="window.setFilterStatus('active')" class="tab-btn active">Ativos</button>
+                <button id="tab-inactive" onclick="window.setFilterStatus('inactive')" class="tab-btn inactive">Desligados</button>
+            </div>
+            <div class="relative"><input type="text" id="emp-search" oninput="filterList()" placeholder="Buscar colaborador..." class="w-full pl-10 pr-4 py-3 bg-gray-100 border-none rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#0284c7]"><svg class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>
+        </div>
+        <div id="employees-list" class="flex-1 overflow-y-auto custom-scroll"></div>
+        <button onclick="window.toggleGlobalView()" class="p-6 border-t bg-gray-50 text-[10px] text-gray-800 text-center font-black uppercase hover:bg-gray-100 transition-all flex items-center justify-center gap-2 group">
+            <span class="w-6 h-6 bg-nordeste-black text-white rounded-lg flex items-center justify-center text-[10px] group-hover:scale-110 transition-transform">📊</span>
+            PAINEL DE GESTÃO GLOBAL
+        </button>
+    </aside>
+    <main class="main-container custom-scroll" id="individual-main">
+        <div id="welcome-msg" class="h-full flex flex-col items-center justify-center text-gray-300"><svg class="w-20 h-20 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg><p class="font-black uppercase text-xs tracking-widest italic">Acesse um colaborador para conferir o acervo</p></div>
+        <div id="selection-view" class="hidden-pro animate-fade">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-12">
+                <div class="profile-card">
+                    <img id="view-photo" src="" class="profile-img">
+                    <h2 id="view-name" class="profile-name">...</h2>
+                    <span id="view-reg" class="profile-reg">#0000</span>
+                    <div class="w-full mt-8 pt-8 border-t border-gray-100 space-y-4">
+                        <div><p class="text-[8px] font-black text-gray-400 uppercase">Empresa / Empregador</p><p id="view-employer" class="text-[10px] font-bold text-gray-800 uppercase italic">...</p></div>
+                        <div><p class="text-[8px] font-black text-gray-400 uppercase">Unidade de Lotação</p><p id="view-workplace" class="text-[10px] font-bold text-gray-800 uppercase italic">...</p></div>
+                        <div><p class="text-[8px] font-black text-gray-400 uppercase">Setor / Localização</p><p id="view-sector" class="text-[10px] font-bold text-gray-600 uppercase">...</p></div>
+                    </div>
+                    <div class="w-full mt-8 pt-6 border-t border-gray-100 flex flex-col gap-3">
+                        <button onclick="window.generateNITDocument('ENTREGA')" class="w-full bg-[#0284c7] text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2">Termo de Comodato</button>
+                        <button onclick="window.generateNITDocument('DEVOLUCAO')" class="w-full bg-gray-800 text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-lg hover:bg-black transition-all flex items-center justify-center gap-2">Protocolo de Devolução</button>
+                    </div>
+                </div>
+                <div class="lg:col-span-3 space-y-10">
+                    <div class="flex justify-between items-center">
+                        <div class="bg-gray-800 text-white px-6 py-3 rounded-2xl font-black uppercase text-[10px] italic shadow-xl">Hardware & Ferramentas</div>
+                        <button onclick="window.openStandaloneToolModal()" class="bg-[#0284c7] text-white px-6 py-3 rounded-2xl font-black uppercase text-[9px] shadow-lg hover:scale-105 transition-all">+ Nova Entrega de Ativo</button>
+                    </div>
+                    <div id="items-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+                    <div class="history-box">
+                        <h4 class="text-[9px] font-black text-gray-400 uppercase mb-4 tracking-widest italic border-b pb-2">Log de Rastreabilidade Patrimonial</h4>
+                        <table class="history-table" id="main-history-table"><thead><tr><th>Data/Hora</th><th>Ação</th><th>Ferramenta / Descrição</th><th>Observação</th><th>Responsável</th></tr></thead><tbody id="history-rows"></tbody></table>
+                        <p id="history-empty-msg" class="text-[10px] font-black uppercase text-gray-300 italic text-center py-6">Sem histórico de movimentação.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- PAINEL DE GESTÃO GLOBAL (SECONDARY VIEW) -->
+    <div id="global-view" class="hidden-pro fixed inset-0 bg-nordeste-gray z-[150] flex flex-col md:flex-row animate-fade overflow-hidden">
+        <aside class="w-full md:w-72 bg-white border-b md:border-r flex flex-col shadow-[20px_0_40px_rgba(0,0,0,0.02)] z-10 shrink-0">
+             <div class="px-6 py-4 md:p-10 border-b border-gray-100 flex md:flex-col items-center md:items-start justify-between md:justify-start gap-4">
+                 <div class="flex items-center gap-3">
+                    <div class="bg-nordeste-red w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center text-white font-black text-sm md:text-xl shadow-lg italic">NIT</div>
+                    <div class="md:hidden">
+                        <h2 class="text-[10px] font-black uppercase italic text-gray-800 leading-tight">Central NIT</h2>
+                        <p class="text-[7px] font-bold text-gray-400 uppercase tracking-widest">Gestão Ativos</p>
+                    </div>
+                 </div>
+                 <div class="hidden md:block">
+                    <h2 class="text-[12px] font-black uppercase italic text-gray-800 tracking-tighter">Central de Operações</h2>
+                    <p class="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">Gestão de Ativos RH+</p>
+                 </div>
+                 <!-- Mobile toggle menu -->
+                 <button onclick="window.toggleMobileGlobalMenu()" class="md:hidden p-2 text-gray-400 hover:text-red-600 transition-colors">
+                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+                 </button>
+             </div>
+             <nav id="global-sidebar-nav" class="collapsed p-2 md:px-4 md:py-6 space-y-1 md:space-y-3 flex md:flex-col flex-row overflow-x-auto custom-scroll shrink-0 md:!flex">
+                 <button onclick="window.setGlobalSubTab('dashboard')" class="global-nav-btn active flex items-center gap-3 whitespace-nowrap min-w-fit" id="btn-g-dashboard">
+                     <span class="w-6 h-6 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-current/10 flex items-center justify-center text-[10px] md:text-[12px]">📊</span>
+                     <span class="hidden md:inline">PAINEL DE CONTROLE</span>
+                     <span class="md:hidden">PAINEL</span>
+                 </button>
+                 <button onclick="window.setGlobalSubTab('form')" class="global-nav-btn flex items-center gap-3 whitespace-nowrap min-w-fit" id="btn-g-form">
+                     <span class="w-6 h-6 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-current/10 flex items-center justify-center text-[10px] md:text-[12px]">📖</span>
+                     <span class="hidden md:inline">CADERNO CADASTRAL</span>
+                     <span class="md:hidden">CADERNO</span>
+                 </button>
+                 <button onclick="window.setGlobalSubTab('inventory')" class="global-nav-btn flex items-center gap-3 whitespace-nowrap min-w-fit" id="btn-g-inventory">
+                     <span class="w-6 h-6 md:w-8 md:h-8 rounded-lg md:rounded-xl bg-current/10 flex items-center justify-center text-[10px] md:text-[12px]">📦</span>
+                     <span class="hidden md:inline">INVENTÁRIO GERAL</span>
+                     <span class="md:hidden">ESTOQUE</span>
+                 </button>
+             </nav>
+             <div class="p-4 md:p-6 mt-auto hidden md:block">
+                 <button onclick="window.toggleGlobalView()" class="w-full p-4 text-[10px] font-black uppercase text-red-600 rounded-2xl bg-red-50 hover:bg-red-100 transition-all text-center border border-red-100">
+                    ← VOLTAR PARA O RH
+                 </button>
+             </div>
+        </aside>
+        
+        <main class="flex-1 overflow-y-auto p-4 md:p-12 custom-scroll bg-gray-50/50">
+             <!-- Mobile return button for global view -->
+             <div class="md:hidden mb-6 flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm">
+                 <button onclick="window.toggleGlobalView()" class="text-[9px] font-black uppercase text-red-500">← Voltar</button>
+                 <div class="h-4 w-px bg-gray-100"></div>
+                 <span class="text-[9px] font-black uppercase text-gray-400 italic">Central de Ativos</span>
+             </div>
+            <div id="g-subtab-dashboard" class="space-y-6 md:space-y-8 animate-fade">
+                 <div class="flex flex-col mb-4">
+                    <h2 class="text-xl md:text-2xl font-black text-gray-800">Painel de Gestão</h2>
+                    <p class="text-[10px] md:text-xs text-gray-400 font-bold uppercase italic">Balanço geral de ativos e saúde do inventário NIT.</p>
+                 </div>
+                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                     <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-l-8 border-red-600">
+                         <div class="flex justify-between items-start mb-2"><span class="text-[9px] font-black text-gray-400 uppercase">Total de Ativos</span><span class="text-blue-500 font-black text-[9px]">+2% este mês</span></div>
+                         <h3 class="text-3xl font-black text-gray-800" id="stat-total-tools">0</h3>
+                         <p class="text-[9px] text-gray-400 font-bold mt-2 uppercase">Cadernos cadastrados</p>
+                     </div>
+                     <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-l-8 border-blue-600">
+                         <div class="flex justify-between items-start mb-2"><span class="text-[9px] font-black text-gray-400 uppercase">Colaboradores</span><span class="text-green-500 font-black text-[9px]">Equipe em crescimento</span></div>
+                         <h3 class="text-3xl font-black text-gray-800" id="stat-colab-count">0</h3>
+                         <p class="text-[9px] text-gray-400 font-bold mt-2 uppercase">Membros ativos</p>
+                     </div>
+                     <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-l-8 border-purple-600">
+                         <div class="flex justify-between items-start mb-2"><span class="text-[9px] font-black text-gray-400 uppercase">Acessórios</span><span class="text-gray-400 font-black text-[9px]">Estoque</span></div>
+                         <h3 class="text-3xl font-black text-gray-800">0</h3>
+                         <p class="text-[9px] text-gray-400 font-bold mt-2 uppercase">Mouses, teclados, etc</p>
+                     </div>
+                     <div class="bg-white p-6 rounded-[2rem] border shadow-sm border-l-8 border-amber-500">
+                         <div class="flex justify-between items-start mb-2"><span class="text-[9px] font-black text-gray-400 uppercase">Chamados Abertos</span><span class="text-amber-500 font-black text-[9px]">Atenção</span></div>
+                         <h3 class="text-3xl font-black text-gray-800">0</h3>
+                         <p class="text-[9px] text-gray-400 font-bold mt-2 uppercase">0 em andamento</p>
+                     </div>
+                 </div>
+
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+                     <div class="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border shadow-sm flex flex-col items-center">
+                         <h3 class="text-[10px] font-black text-gray-400 uppercase mb-6 md:mb-8 self-start italic">Distribuição de Status</h3>
+                         <div class="w-36 h-36 md:w-48 md:h-48 rounded-full border-[8px] md:border-[10px] border-red-600 flex items-center justify-center relative shadow-inner">
+                            <h4 class="text-xl md:text-2xl font-black" id="stat-aloc-perc">89%</h4>
+                            <div class="absolute -bottom-3 bg-white px-3 md:px-4 py-1 rounded-full border text-[8px] md:text-[9px] font-black uppercase text-gray-400">Alocação</div>
+                         </div>
+                         <div class="w-full mt-8 md:mt-10 grid grid-cols-2 gap-3 md:gap-4">
+                             <div class="p-3 md:p-4 bg-gray-50 rounded-2xl flex flex-col"><span class="text-[7px] md:text-[8px] font-black text-gray-400 uppercase">Alocados</span><span class="font-black text-sm md:text-base" id="stat-status-aloc">0</span></div>
+                             <div class="p-3 md:p-4 bg-gray-50 rounded-2xl flex flex-col border-r-4 border-green-400"><span class="text-[7px] md:text-[8px] font-black text-gray-400 uppercase">Disponível</span><span class="font-black text-sm md:text-base" id="stat-status-disp">0</span></div>
+                         </div>
+                     </div>
+                     <div class="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border shadow-sm lg:col-span-2 space-y-6">
+                         <h3 class="text-[10px] font-black text-gray-400 uppercase mb-2 italic">Distribuição de Ativos por Unidade</h3>
+                         <div id="unit-distribution-rows" class="space-y-4 max-h-48 overflow-y-auto pr-4 custom-scroll">
+                             <!-- Populado via JS -->
+                         </div>
+                         <div class="pt-4 border-t border-gray-50 flex items-center justify-center text-gray-300">
+                             <p class="text-[9px] md:text-[10px] font-black uppercase italic tracking-widest">Monitoramento em Tempo Real</p>
+                         </div>
+                     </div>
+                 </div>
+            </div>
+
+            <div id="g-subtab-form" class="hidden-pro animate-fade">
+                <!-- Título e Contexto -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-10 pb-6 border-b border-gray-200/50 gap-6">
+                    <div class="flex flex-col">
+                        <h2 class="text-xl md:text-3xl font-black text-nordeste-black tracking-tighter italic">📖 CADERNO CADASTRAL <span class="text-nordeste-red text-lg md:text-2xl">V3.0</span></h2>
+                        <div class="flex gap-2 mt-2">
+                            <button onclick="window.setFormMode('notebook')" id="mode-btn-notebook" class="px-4 py-1.5 rounded-full text-[8px] font-black uppercase border-2 border-nordeste-black bg-nordeste-black text-white transition-all">💻 Notebook</button>
+                            <button onclick="window.setFormMode('smartphone')" id="mode-btn-smartphone" class="px-4 py-1.5 rounded-full text-[8px] font-black uppercase border-2 border-gray-100 text-gray-400 hover:border-blue-400 transition-all">📱 Smartphone</button>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 overflow-x-auto pb-2 md:pb-0">
+                        <button type="button" onclick="window.setGlobalSubTab('inventory')" class="whitespace-nowrap px-5 md:px-6 py-2.5 md:py-3 bg-white border border-gray-200 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase hover:bg-gray-50 transition-all">Cancelar</button>
+                        <button type="button" onclick="window.saveGeneralForm()" class="whitespace-nowrap px-6 md:px-8 py-2.5 md:py-3 bg-nordeste-red text-white rounded-xl md:rounded-2xl text-[9px] md:text-[10px] font-black uppercase shadow-xl hover:bg-red-700 transition-all flex items-center gap-2">💾 Persistir Dados</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-10">
+                    <!-- Lado Esquerdo: Formulário Robusto -->
+                    <div class="lg:col-span-8 space-y-6 md:space-y-8">
+                        
+                        <!-- CARD 1 -->
+                        <div class="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm space-y-6">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="w-7 h-7 md:w-8 md:h-8 bg-blue-50 text-blue-500 rounded-lg md:rounded-xl flex items-center justify-center font-black text-xs italic">01</span>
+                                <h3 class="text-[10px] md:text-xs font-black uppercase italic text-gray-800">Destinatário & Responsabilidade</h3>
+                            </div>
+
+                            <div class="flex items-center gap-4 p-4 md:p-5 bg-blue-50/30 border border-blue-100 rounded-2xl md:rounded-3xl">
+                                <input type="checkbox" id="alloc-now" checked class="w-5 h-5 md:w-6 md:h-6 accent-blue-600 rounded-lg" onchange="window.toggleAllocFields()">
+                                <div>
+                                    <label for="alloc-now" class="text-[10px] md:text-[11px] font-black uppercase text-gray-700 block">Vincular Ativo Instantaneamente?</label>
+                                    <p class="text-[8px] md:text-[9px] text-gray-400 font-bold uppercase italic">Atribuição imediata no ato do salvamento.</p>
+                                </div>
+                            </div>
+
+                            <div id="alloc-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 pt-4">
+                                <div class="sm:col-span-2 relative">
+                                    <label for="pc-emp-search" class="pro-label">Busca Preditiva de Colaborador</label>
+                                    <div class="relative">
+                                        <input type="text" id="pc-emp-search" class="pro-input pl-10 h-12 md:h-14" placeholder="Nome, Matrícula ou CPF..." oninput="window.searchFormEmployee()">
+                                        <svg class="w-4 h-4 md:w-5 md:h-5 text-gray-300 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                    </div>
+                                    <div id="pc-emp-results" class="hidden-pro mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl max-h-48 overflow-y-auto p-1 z-50 absolute w-full font-bold text-[10px]"></div>
+                                </div>
+                                <input type="hidden" id="pc-emp-id">
+                                <div><label for="pc-emp-name" class="pro-label">Nome Completo</label><input type="text" id="pc-emp-name" class="pro-input bg-gray-50 h-10 md:h-12" placeholder="-" readonly></div>
+                                <div><label for="pc-emp-cpf" class="pro-label">CPF / ID Único</label><input type="text" id="pc-emp-cpf" class="pro-input bg-gray-50 h-10 md:h-12" placeholder="-" readonly></div>
+                            </div>
+                        </div>
+
+                        <!-- CARD 2 (HARDWARE - CONDICIONAL) -->
+                        <div class="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm space-y-6">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="w-7 h-7 md:w-8 md:h-8 bg-nordeste-red/10 text-nordeste-red rounded-lg md:rounded-xl flex items-center justify-center font-black text-xs italic">02</span>
+                                <h3 class="text-[10px] md:text-xs font-black uppercase italic text-gray-800" id="hardware-card-title">Núcleo de Performance & Hardware</h3>
+                            </div>
+
+                            <!-- Campos exclusivos de Notebook -->
+                            <div id="fields-notebook" class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                                <div class="sm:col-span-2 relative">
+                                    <label for="pc-cpu" class="pro-label">Unidade de Processamento (CPU)</label>
+                                    <div class="flex group">
+                                        <span class="bg-gray-100 border border-gray-200 border-r-0 px-4 md:px-5 py-3 md:py-4 rounded-l-xl md:rounded-l-2xl text-[9px] md:text-[10px] font-black text-gray-400 flex items-center uppercase italic">Intel® Core™</span>
+                                        <input type="text" id="pc-cpu" class="pro-input !rounded-l-none h-12 md:h-14 !border-l-0" placeholder="i3-14400F" oninput="window.updateFormPreview()">
+                                    </div>
+                                </div>
+                                <div class="sm:col-span-1 relative">
+                                    <label for="pc-storage" class="pro-label">Capacidade de Armazenamento</label>
+                                    <input type="text" id="pc-storage" class="pro-input h-10 md:h-12 uppercase" placeholder="SSD NVMe 512GB" oninput="window.updateFormPreview()">
+                                </div>
+                                <div class="sm:col-span-1 relative">
+                                    <label for="pc-ram" class="pro-label">RAM (GB)</label>
+                                    <input type="number" id="pc-ram" class="pro-input h-10 md:h-12 uppercase" value="8" oninput="window.updateFormPreview()">
+                                </div>
+                            </div>
+
+                            <!-- Campos exclusivos de Smartphone -->
+                            <div id="fields-smartphone" class="hidden-pro grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                                <div class="col-span-1">
+                                    <label for="phone-brand" class="pro-label">Fabricante / Marca</label>
+                                    <select id="phone-brand" class="pro-input h-10 md:h-12 uppercase font-bold" onchange="window.updateFormPreview()">
+                                        <option>Apple</option>
+                                        <option>Samsung</option>
+                                        <option>Motorola</option>
+                                        <option>Xiaomi</option>
+                                        <option>Outros</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-1">
+                                    <label for="phone-model" class="pro-label">Modelo / Estrutura</label>
+                                    <input type="text" id="phone-model" class="pro-input h-10 md:h-12 uppercase" placeholder="Ex: iPhone 14 Pro" oninput="window.updateFormPreview()">
+                                </div>
+                                <div class="col-span-1 relative">
+                                    <label for="phone-storage" class="pro-label">Armazenamento (Internal)</label>
+                                    <select id="phone-storage" class="pro-input h-10 md:h-12 uppercase font-bold" onchange="window.updateFormPreview()">
+                                        <option>64GB</option>
+                                        <option>128GB</option>
+                                        <option>256GB</option>
+                                        <option>512GB</option>
+                                        <option>1TB</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-1 relative">
+                                    <label for="phone-ram" class="pro-label">Memória RAM</label>
+                                    <select id="phone-ram" class="pro-input h-10 md:h-12 uppercase font-bold" onchange="window.updateFormPreview()">
+                                        <option>4GB</option>
+                                        <option>6GB</option>
+                                        <option>8GB</option>
+                                        <option>12GB</option>
+                                        <option>16GB</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-1">
+                                    <label for="phone-line" class="pro-label text-green-600">Número da Linha (SIM)</label>
+                                    <input type="text" id="phone-line" class="pro-input h-10 md:h-12 font-bold" placeholder="(00) 00000-0000">
+                                </div>
+                                <div class="col-span-1">
+                                    <label for="phone-carrier" class="pro-label text-green-600">Operadora</label>
+                                    <select id="phone-carrier" class="pro-input h-10 md:h-12 uppercase font-black">
+                                        <option value="VIVO">VIVO</option>
+                                        <option value="TIM">TIM</option>
+                                        <option value="CLARO">CLARO</option>
+                                        <option value="OI">OI</option>
+                                        <option value="OUTRA">OUTRA</option>
+                                    </select>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label for="phone-imei" class="pro-label text-blue-600">Identificador IMEI (15 dígitos)</label>
+                                    <input type="text" id="phone-imei" class="pro-input h-10 md:h-12 font-mono" placeholder="000000000000000" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CARD 3 -->
+                        <div class="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm space-y-6">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="w-7 h-7 md:w-8 md:h-8 bg-amber-50 text-amber-500 rounded-lg md:rounded-xl flex items-center justify-center font-black text-xs italic">03</span>
+                                <h3 class="text-[10px] md:text-xs font-black uppercase italic text-gray-800">Identidade & Rastreabilidade</h3>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                                <div class="col-span-1"><label for="pc-pat" class="pro-label">Código de Patrimônio (Editável)</label><input type="text" id="pc-pat" class="pro-input h-10 md:h-12 font-black text-nordeste-red uppercase bg-red-50/20 focus:ring-2 focus:ring-red-400 focus:bg-white transition-all" placeholder="Digitando..." oninput="this.value = this.value.toUpperCase(); window.updateFormPreview();"></div>
+                                <div class="col-span-1">
+                                    <label for="pc-unid" class="pro-label text-blue-600">Localização Geográfica (Unidade)</label>
+                                    <select id="pc-unid" class="pro-input h-10 md:h-12 uppercase italic font-black text-blue-700 bg-blue-50/10" onchange="window.updateFormPreview()">
+                                        <option value="FORTALEZA">FORTALEZA</option>
+                                        <option value="EUSEBIO">EUSÉBIO</option>
+                                        <option value="SÃO LUIS">SÃO LUÍS</option>
+                                        <option value="JUAZEIRO DO NORTE">JUAZEIRO DO NORTE</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lado Direito: Preview & Checklist -->
+                    <div class="lg:col-span-4 space-y-6 md:space-y-8">
+                        <div class="sticky top-4 md:top-8 space-y-6 md:space-y-8">
+                            <!-- PREVIEW DO ATIVO -->
+                            <div class="bg-nordeste-black p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-2xl text-white relative overflow-hidden group">
+                                <div class="absolute -right-5 md:-right-10 -top-5 md:-top-10 w-24 md:w-40 h-24 md:h-40 bg-white/5 rounded-full blur-2xl md:blur-3xl transition-all"></div>
+                                <div class="flex justify-between items-start mb-6 md:mb-8 relative z-10">
+                                    <div id="preview-icon-type" class="w-10 h-10 md:w-12 md:h-12 bg-white/10 rounded-xl md:rounded-2xl flex items-center justify-center text-lg md:text-xl">💻</div>
+                                    <div id="preview-tier-tag" class="bg-nordeste-red px-3 md:px-4 py-1 rounded-full text-[8px] md:text-[9px] font-black uppercase">Tier 1</div>
+                                </div>
+                                <div class="space-y-3 relative z-10">
+                                    <h4 id="preview-pat" class="text-2xl md:text-3xl font-black tracking-tighter italic">...</h4>
+                                    <div class="space-y-0.5 md:space-y-1">
+                                        <p id="preview-model" class="text-[10px] md:text-xs font-bold text-gray-400 uppercase leading-none">Configuração Notebook</p>
+                                        <p id="preview-cpu" class="text-[8px] md:text-[9px] text-nordeste-red font-black uppercase italic tracking-widest">Processador Não Definido</p>
+                                    </div>
+                                </div>
+                                <div class="mt-6 md:mt-10 pt-4 md:pt-6 border-t border-white/10 flex justify-between items-end relative z-10">
+                                    <div><p class="text-[7px] md:text-[8px] font-black text-gray-500 uppercase">Unidade Atual</p><p id="preview-unid" class="text-[9px] md:text-[10px] font-bold">ESTOQUE</p></div>
+                                    <div class="text-right"><p class="text-[7px] md:text-[8px] font-black text-gray-500 uppercase">Data Registro</p><p id="preview-date" class="text-[9px] md:text-[10px] font-bold">-</p></div>
+                                </div>
+                            </div>
+
+                            <!-- SELEÇÃO DE TIER -->
+                            <div class="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm space-y-4 md:space-y-6">
+                                <label class="pro-label mb-2">Nível de Performance (Tier)</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+                                    <input type="hidden" id="pc-tier" value="T1">
+                                    <div class="tier-card active flex items-start gap-3 md:gap-4 p-3 md:p-4 !rounded-2xl" onclick="window.selectTier(this, 'T1')">
+                                        <div class="w-8 h-8 md:w-10 md:h-10 bg-gray-100 rounded-lg md:rounded-xl flex items-center justify-center font-black text-gray-400 text-xs">T1</div>
+                                        <div><span class="font-black text-[10px] md:text-[11px] uppercase block">Básico / ADM</span><p class="text-[8px] md:text-[9px] text-gray-400 leading-tight">Uso administrativo simples.</p></div>
+                                    </div>
+                                    <div class="tier-card flex items-start gap-3 md:gap-4 p-3 md:p-4 !rounded-2xl" onclick="window.selectTier(this, 'T2')">
+                                        <div class="w-8 h-8 md:w-10 md:h-10 bg-amber-50 rounded-lg md:rounded-xl flex items-center justify-center font-black text-amber-500 text-xs">T2</div>
+                                        <div><span class="font-black text-[10px] md:text-[11px] uppercase block">Multi-Sítio</span><p class="text-[8px] md:text-[9px] text-gray-400 leading-tight">Uso intermediário.</p></div>
+                                    </div>
+                                    <div class="tier-card flex items-start gap-4 p-4 !rounded-2xl lg:col-span-1 sm:col-span-2" onclick="window.selectTier(this, 'T3')">
+                                        <div class="w-10 h-10 bg-nordeste-red/10 rounded-xl flex items-center justify-center font-black text-nordeste-red text-xs">T3</div>
+                                        <div><span class="font-black text-[10px] md:text-[11px] uppercase block">Alto Desempenho</span><p class="text-[8px] md:text-[9px] text-gray-400 leading-tight">Engenharia e Design.</p></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CHECKLIST DE ACESSÓRIOS -->
+                            <div id="form-acc-section" class="bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-gray-100 shadow-sm space-y-4">
+                                <div class="flex justify-between items-center mb-4">
+                                    <label class="pro-label text-nordeste-red !mb-0">Pack de Acessórios (Checklist)*</label>
+                                    <span id="acc-count" class="text-[8px] font-black text-white bg-red-400 px-3 py-1 rounded-full uppercase italic animate-pulse">0 Itens</span>
+                                </div>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3" id="acc-grid">
+                                    <!-- Populado via JS -->
+                                </div>
+                                <div class="mt-4 pt-4 border-t border-dashed border-gray-100 italic">
+                                    <label for="pc-other-acc" class="pro-label text-gray-400">Outros Diferenciados (OPCIONAL)</label>
+                                    <input type="text" id="pc-other-acc" class="pro-input h-10 text-[10px] bg-gray-50/50" placeholder="Ex: Monitor de Vídeo, Webcam...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="g-subtab-inventory" class="hidden-pro animate-fade">
+                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                     <h2 class="text-xl md:text-2xl font-black text-gray-800">Inventário Geral</h2>
+                     <div class="flex flex-wrap gap-2 md:gap-3 w-full md:w-auto">
+                         <button onclick="window.makeAllAvailable()" class="flex-none bg-red-50 text-red-600 px-4 py-3 rounded-2xl font-black uppercase text-[9px] hover:bg-red-100 transition-all border border-red-100 italic">Reset</button>
+                         
+                         <div class="flex-1 md:flex-none flex gap-2">
+                             <select id="g-filter-type" onchange="window.applyGlobalFilters()" class="pro-input h-10 md:h-12 text-[10px] uppercase font-black bg-blue-50 border-blue-100 min-w-[100px] text-blue-600">
+                                 <option value="">TODOS OS TIPOS</option>
+                                 <option value="Notebook">NOTEBOOKS</option>
+                                 <option value="Smartphone">CELULARES</option>
+                             </select>
+                             <select id="g-filter-chip" onchange="window.applyGlobalFilters()" class="pro-input h-10 md:h-12 text-[10px] uppercase font-black bg-green-50 border-green-100 min-w-[120px] text-green-600">
+                                 <option value="">STATUS CHIP</option>
+                                 <option value="com_linha">COM LINHA</option>
+                                 <option value="sem_linha">SEM LINHA</option>
+                             </select>
+                             <select id="g-filter-status" onchange="window.applyGlobalFilters()" class="pro-input h-10 md:h-12 text-[10px] uppercase font-black bg-gray-50 border-gray-100 min-w-[100px]">
+                                 <option value="">STATUS</option>
+                                 <option value="estoque">EM ESTOQUE</option>
+                                 <option value="alocado">ALOCADOS</option>
+                             </select>
+                             <select id="g-filter-tier" onchange="window.applyGlobalFilters()" class="pro-input h-10 md:h-12 text-[10px] uppercase font-black bg-gray-50 border-gray-100">
+                                 <option value="">TIER</option>
+                                 <option value="T1">T1</option>
+                                 <option value="T2">T2</option>
+                                 <option value="T3">T3</option>
+                             </select>
+                             <select id="g-filter-unid" onchange="window.applyGlobalFilters()" class="pro-input h-10 md:h-12 text-[10px] uppercase font-black bg-gray-50 border-gray-100 min-w-[120px]">
+                                 <option value="">LOCALIZAÇÃO</option>
+                                 <option value="FORTALEZA">FORTALEZA</option>
+                                 <option value="EUSEBIO">EUSÉBIO</option>
+                                 <option value="SÃO LUIS">SÃO LUÍS</option>
+                                 <option value="JUAZEIRO DO NORTE">JUAZEIRO DO NORTE</option>
+                             </select>
+                         </div>
+
+                         <div class="relative flex-1 md:flex-none">
+                            <input type="text" id="g-search-pat" oninput="window.applyGlobalFilters()" placeholder="Buscar por Patrimônio..." class="pro-input w-full md:w-64 h-10 md:h-12 pl-10">
+                            <svg class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                         </div>
+                     </div>
+                 </div>
+                 <div class="bg-white rounded-[1.5rem] md:rounded-[2.5rem] border shadow-sm overflow-hidden overflow-x-auto custom-scroll hidden md:block">
+                      <table class="history-table w-full min-w-[800px]">
+                          <thead><tr class="bg-gray-50"><th>Patrimônio</th><th>Ativo / Modelo</th><th>Tier</th><th>RAM / Slots</th><th>Geo</th><th>Colaborador</th><th>Empregador</th><th>Unidade</th><th>Status</th><th class="text-right">Ações</th></tr></thead>
+                          <tbody id="global-inventory-rows"></tbody>
+                      </table>
+                 </div>
+
+                 <!-- Mobilidade: Visão em Cards -->
+                 <div id="inventory-cards-mobile" class="md:hidden space-y-4">
+                     <!-- Populados via JS -->
+                 </div>
+            </div>
+        </main>
+    </div>
+
+    <style>
+        .global-nav-btn { width: 100%; text-align: left; padding: 12px 20px; border-radius: 1.2rem; font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid transparent; }
+        .global-nav-btn.active { background: #fef2f2; color: #b91c1c; border-color: #fee2e2; box-shadow: 0 4px 12px rgba(185, 28, 28, 0.05); }
+        .global-nav-btn:hover:not(.active) { background: #f8fafc; color: #1e293b; transform: translateX(5px); }
+        .tier-card { border: 2px solid #f1f5f9; border-radius: 1.5rem; padding: 1.5rem; cursor: pointer; transition: all 0.2s; }
+        .tier-card:hover { border-color: #cbd5e1; }
+        .tier-card.active { border-color: #ef4444; background: #fef2f2; }
+    </style>
+
+    <div id="pro-modal-container" class="hidden fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"><div id="pro-modal-content" class="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-y-auto max-h-[90vh] custom-scroll animate-pop"></div></div>
+    <script src="js/auth.js"></script>
+    <script type="module" src="js/pages/tools-module.js"></script>
+</body>
+</html>

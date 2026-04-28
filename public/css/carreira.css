@@ -1,0 +1,42 @@
+
+.sidebar-nav { width: 320px; background: #fff; border-right: 1px solid #E2E8F0; display: flex; flex-direction: column; flex-shrink: 0; }
+.emp-item { padding: 1rem 1.5rem; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px; }
+.emp-item:hover { background: #F8FAFC; }
+.emp-item.active { background: #FFF1F2; border-left: 4px solid #D32F2F; }
+
+.main-container { padding: 4rem; }
+
+.tab-btn { flex: 1; padding: 10px; font-size: 10px; font-weight: 900; text-transform: uppercase; text-align: center; cursor: pointer; border-radius: 12px; transition: all 0.2s; }
+.tab-btn.active { background: white; color: #D32F2F; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+.tab-btn.inactive { color: #94a3b8; }
+
+/* Timeline Design */
+.career-item { position: relative; }
+.timeline-dot {
+    position: absolute; left: -53px; top: 5px; width: 24px; height: 24px;
+    background: white; border: 4px solid #D32F2F; border-radius: 50%; z-index: 10;
+    box-shadow: 0 0 15px rgba(211,47,47,0.2);
+}
+.career-card {
+    background: white; padding: 1.5rem; border-radius: 1.5rem; border: 1px solid #e2e8f0;
+    transition: all 0.3s ease; position: relative;
+}
+.career-card:hover { border-color: #D32F2F; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+
+.move-badge {
+    padding: 3px 8px; border-radius: 6px; font-size: 8px; font-weight: 900; text-transform: uppercase;
+}
+.bg-promocao { background: #fef3c7; color: #92400e; }
+.bg-reajuste { background: #dcfce7; color: #15803d; }
+.bg-admissao { background: #dbeafe; color: #1e40af; }
+.bg-desligamento { background: #fee2e2; color: #b91c1c; }
+
+.custom-scroll::-webkit-scrollbar { width: 4px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+.pro-input { width: 100%; padding: 12px 15px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 12px; font-weight: 700; outline: none; transition: border 0.2s; }
+.pro-input:focus { border-color: #D32F2F; }
+.pro-label { font-size: 9px; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px; display: block; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade { animation: fadeIn 0.4s ease-out; }
