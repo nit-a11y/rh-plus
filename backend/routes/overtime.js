@@ -13,19 +13,21 @@ const generateId = () => crypto.randomBytes(4).toString('hex');
 // ROTA: Listar todos os registros de hora extra (com filtros opcionais)
 router.get('/', async (req, res) => {
     try {
-        const { month, employee_id, search } = req.query;
+        const { month, year, unit, employee_id, search } = req.query;
         
         let sql = `
             SELECT 
                 o.id,
                 o.employee_id,
-                o.month_year,
-                o.overtime_time,
-                o.overtime_value,
+                o.mes,
+                o.unidade,
+                o.nome,
+                o.extra,
+                o.valor,
                 o.created_at,
                 o.created_by,
                 e.name as employee_name,
-                e.registrationNumber,
+                e."registrationNumber",
                 e.role,
                 e.sector
             FROM overtime_records o
@@ -37,8 +39,20 @@ router.get('/', async (req, res) => {
         
         if (month) {
             paramIndex++;
-            sql += ` AND o.month_year = $${paramIndex}`;
+            sql += ` AND o.mes = $${paramIndex}`;
             params.push(month);
+        }
+        
+        if (year) {
+            paramIndex++;
+            sql += ` AND o.mes ILIKE $${paramIndex}`;
+            params.push(`%${year}%`);
+        }
+        
+        if (unit) {
+            paramIndex++;
+            sql += ` AND o.unidade = $${paramIndex}`;
+            params.push(unit);
         }
         
         if (employee_id) {
@@ -49,14 +63,35 @@ router.get('/', async (req, res) => {
         
         if (search) {
             paramIndex++;
-            sql += ` AND (e.name ILIKE $${paramIndex} OR e.registrationNumber ILIKE $${paramIndex})`;
+            sql += ` AND (e.name ILIKE $${paramIndex} OR e."registrationNumber" ILIKE $${paramIndex} OR o.nome ILIKE $${paramIndex})`;
             params.push(`%${search}%`);
         }
         
-        sql += ` ORDER BY o.month_year DESC, e.name ASC`;
+        sql += ` ORDER BY o.mes DESC, e.name ASC`;
         
         const result = await query(sql, params);
-        res.json({ success: true, data: result.rows || [] });
+        
+        // Calcular contagem de colaboradores ativos no período
+        let employeesCount = 0;
+        if (result.rows.length > 0) {
+            // Extrair período dos filtros
+            const filterMonth = month;
+            const filterYear = year;
+            
+            if (filterMonth || filterYear || unit) {
+                // Calcular contagem baseada nos filtros
+                employeesCount = await countActiveEmployees(filterMonth, filterYear, unit);
+            } else {
+                // Contar todos os colaboradores ativos
+                employeesCount = await countAllActiveEmployees();
+            }
+        }
+        
+        res.json({ 
+            success: true, 
+            data: result.rows || [],
+            employees_count: employeesCount
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -69,14 +104,14 @@ router.get('/summary', async (req, res) => {
         
         let sql = `
             SELECT 
-                month_year,
+                mes as month_year,
                 COUNT(*) as total_records,
-                SUM(overtime_value) as total_value,
+                SUM(valor) as total_value,
                 SUM(
                     CASE 
-                        WHEN overtime_time LIKE '%:%' THEN 
-                            CAST(SUBSTRING(overtime_time, 1, POSITION(':' IN overtime_time) - 1) AS NUMERIC) * 60 +
-                            CAST(SUBSTRING(overtime_time, POSITION(':' IN overtime_time) + 1) AS NUMERIC)
+                        WHEN extra LIKE '%:%' THEN 
+                            CAST(SUBSTRING(extra, 1, POSITION(':' IN extra) - 1) AS NUMERIC) * 60 +
+                            CAST(SUBSTRING(extra, POSITION(':' IN extra) + 1) AS NUMERIC)
                         ELSE 0 
                     END
                 ) as total_minutes
@@ -88,11 +123,11 @@ router.get('/summary', async (req, res) => {
         
         if (year) {
             paramIndex++;
-            sql += ` AND month_year ILIKE $${paramIndex}`;
+            sql += ` AND mes ILIKE $${paramIndex}`;
             params.push(`%${year}%`);
         }
         
-        sql += ` GROUP BY month_year ORDER BY month_year DESC`;
+        sql += ` GROUP BY mes ORDER BY mes DESC`;
         
         const result = await query(sql, params);
         
@@ -121,11 +156,14 @@ router.get('/:id', async (req, res) => {
             SELECT 
                 o.*,
                 e.name as employee_name,
-                e.registrationNumber,
+                e."registrationNumber",
                 e.role,
-                e.sector
+                e.sector,
+                wp.name as workplace_name
             FROM overtime_records o
             JOIN employees e ON o.employee_id = e.id
+            LEFT JOIN employee_vinculos ev ON e.id = ev.employee_id AND ev.principal = 1
+            LEFT JOIN companies wp ON ev.workplace_id = wp.id
             WHERE o.id = $1
         `, [id]);
         if (!result.rows[0]) return res.status(404).json({ error: 'Registro não encontrado' });
@@ -189,10 +227,33 @@ router.post('/', async (req, res) => {
             time = time.toString().trim();
         }
         
+        // Buscar informações do colaborador para preenchimento automático
+        const empInfo = await query(`
+            SELECT 
+                e.name,
+                wp.name as workplace_name
+            FROM employees e
+            LEFT JOIN employee_vinculos ev ON e.id = ev.employee_id AND ev.principal = 1
+            LEFT JOIN companies wp ON ev.workplace_id = wp.id
+            WHERE e.id = $1
+        `, [employee_id]);
+        
+        const employeeName = empInfo.rows[0]?.name || '';
+        const workplaceName = empInfo.rows[0]?.workplace_name || '';
+        
         await query(`
-            INSERT INTO overtime_records (id, employee_id, month_year, overtime_time, overtime_value, created_by)
-            VALUES ($1, $2, $3, $4, $5, $6)
-        `, [id, employee_id, month_year.toUpperCase().trim(), time, value, created_by || '']);
+            INSERT INTO overtime_records (id, employee_id, mes, unidade, nome, extra, valor, created_by)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `, [
+            id, 
+            employee_id, 
+            month_year.toUpperCase().trim(),
+            workplaceName,               // unidade
+            employeeName,               // nome
+            time,                      // extra
+            value,                     // valor
+            created_by || ''
+        ]);
         
         res.json({ success: true, id, message: 'Registro criado com sucesso' });
     } catch (err) {
@@ -204,22 +265,34 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { overtime_time, overtime_value } = req.body;
+        const { extra, valor, unidade, nome } = req.body;
         
         const updates = [];
         const params = [];
         let paramIndex = 0;
         
-        if (overtime_time !== undefined) {
+        if (unidade !== undefined) {
             paramIndex++;
-            updates.push(`overtime_time = $${paramIndex}`);
-            params.push(overtime_time.toString().trim());
+            updates.push(`unidade = $${paramIndex}`);
+            params.push(unidade.toString().trim());
         }
         
-        if (overtime_value !== undefined && overtime_value !== null) {
+        if (nome !== undefined) {
+            paramIndex++;
+            updates.push(`nome = $${paramIndex}`);
+            params.push(nome.toString().trim());
+        }
+        
+        if (extra !== undefined) {
+            paramIndex++;
+            updates.push(`extra = $${paramIndex}`);
+            params.push(extra.toString().trim());
+        }
+        
+        if (valor !== undefined && valor !== null) {
             // Normalizar valor - suporta número ou string formatada
             let value = 0;
-            const strValue = overtime_value.toString().trim();
+            const strValue = valor.toString().trim();
             
             // Se tem vírgula, assume formato brasileiro (100,73)
             if (strValue.includes(',')) {
@@ -239,7 +312,7 @@ router.put('/:id', async (req, res) => {
             }
             
             paramIndex++;
-            updates.push(`overtime_value = $${paramIndex}`);
+            updates.push(`valor = $${paramIndex}`);
             params.push(value);
         }
         
@@ -319,10 +392,32 @@ router.post('/bulk', async (req, res) => {
             }
             
             try {
+                // Buscar informações do colaborador para preenchimento automático
+                const empInfo = await query(`
+                    SELECT 
+                        e.name,
+                        wp.name as workplace_name
+                    FROM employees e
+                    LEFT JOIN employee_vinculos ev ON e.id = ev.employee_id AND ev.principal = 1
+                    LEFT JOIN companies wp ON ev.workplace_id = wp.id
+                    WHERE e.id = $1
+                `, [employee_id]);
+                
+                const employeeName = empInfo.rows[0]?.name || '';
+                const workplaceName = empInfo.rows[0]?.workplace_name || '';
+                
                 await query(`
-                    INSERT INTO overtime_records (id, employee_id, month_year, overtime_time, overtime_value)
-                    VALUES ($1, $2, $3, $4, $5)
-                `, [id, employee_id, month_year.toUpperCase().trim(), overtime_time || '', value]);
+                    INSERT INTO overtime_records (id, employee_id, mes, unidade, nome, extra, valor)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                `, [
+                    id, 
+                    employee_id, 
+                    month_year.toUpperCase().trim(),
+                    workplaceName,               // unidade
+                    employeeName,               // nome
+                    overtime_time || '',        // extra
+                    value                      // valor
+                ]);
                 created.push(id);
             } catch (err) {
                 errors.push({ index, error: err.message });
@@ -342,4 +437,25 @@ router.post('/bulk', async (req, res) => {
     }
 });
 
+/**
+ * Contar todos os colaboradores ativos
+ */
+async function countAllActiveEmployees() {
+    try {
+        const result = await query(`
+            SELECT COUNT(*) as count
+            FROM employees 
+            WHERE type != 'Desligado' OR type IS NULL
+        `);
+        
+        return parseInt(result.rows[0]?.count || 0);
+    } catch (error) {
+        console.error('Erro ao contar colaboradores ativos:', error);
+        return 0;
+    }
+}
+
+const { countActiveEmployees } = require('./overtime-fixed');
+
 module.exports = router;
+module.exports.countActiveEmployees = countActiveEmployees;

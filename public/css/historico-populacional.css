@@ -1,0 +1,268 @@
+/**
+ * CSS DO MÓDULO DE HISTÓRICO POPULACIONAL - CÓPIA INDEPENDENTE
+ * Estilos específicos para a tabela de histórico em outros módulos
+ */
+
+/* Container principal do histórico */
+.historico-populacional-container {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+/* Cabeçalho do histórico */
+.historico-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.historico-title {
+    font-size: 1.125rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-style: italic;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+}
+
+.historico-subtitle {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* Filtros do histórico */
+.historico-filters {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.historico-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.historico-filter-group svg {
+    width: 1rem;
+    height: 1rem;
+    color: #9ca3af;
+}
+
+.historico-filter-select {
+    font-size: 0.75rem;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-weight: 700;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.historico-filter-select:hover {
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.historico-filter-select:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: #d32f2f;
+    border-color: #d32f2f;
+}
+
+.historico-filter-button {
+    background-color: #d32f2f;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.historico-filter-button:hover {
+    background-color: #b71c1c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Tabela do histórico */
+.historico-table-container {
+    overflow-x: auto;
+}
+
+.historico-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.historico-table thead {
+    background-color: #f9fafb;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.historico-table th {
+    text-align: left;
+    padding: 1rem;
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.historico-table th.text-center {
+    text-align: center;
+}
+
+.historico-table tbody {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.historico-table tbody tr {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+.historico-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.historico-table td {
+    padding: 1rem;
+    font-size: 0.875rem;
+}
+
+.historico-table td.font-black {
+    font-weight: 900;
+    color: #1f2937;
+}
+
+.historico-table td.font-bold {
+    font-weight: 700;
+    color: #374151;
+}
+
+.historico-table td.text-green-600 {
+    font-weight: 900;
+    color: #059669;
+}
+
+.historico-table td.text-center {
+    text-align: center;
+}
+
+/* Loading do histórico */
+.historico-loading {
+    padding: 2rem;
+    text-align: center;
+    color: #9ca3af;
+}
+
+.historico-loading svg {
+    width: 2rem;
+    height: 2rem;
+    margin: 0 auto 1rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.historico-loading p {
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+/* Estados de mensagem */
+.historico-message {
+    padding: 2rem;
+    text-align: center;
+}
+
+.historico-message svg {
+    width: 2rem;
+    height: 2rem;
+    margin: 0 auto 1rem;
+}
+
+.historico-message.text-gray-400 svg {
+    color: #9ca3af;
+}
+
+.historico-message.text-red-400 svg {
+    color: #f87171;
+}
+
+.historico-message p {
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.historico-message.text-gray-400 p {
+    color: #9ca3af;
+}
+
+.historico-message.text-red-400 p {
+    color: #f87171;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .historico-filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .historico-filter-group {
+        justify-content: space-between;
+    }
+    
+    .historico-filter-button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .historico-table-container {
+        overflow-x: auto;
+    }
+    
+    .historico-table {
+        min-width: 600px;
+    }
+}
+
+@media (max-width: 640px) {
+    .historico-header {
+        padding: 1rem;
+    }
+    
+    .historico-title {
+        font-size: 1rem;
+    }
+    
+    .historico-table th,
+    .historico-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}

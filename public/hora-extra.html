@@ -92,6 +92,7 @@
         .summary-card.records { border-color: #3B82F6; }
         .summary-card.hours { border-color: #DC2626; }
         .summary-card.value { border-color: #059669; }
+        .summary-card.employees { border-color: #8B5CF6; }
         .summary-card h3 { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #9CA3AF; margin-bottom: 8px; letter-spacing: 0.05em; }
         .summary-card .value { font-size: 28px; font-weight: 800; color: #111827; }
         .form-input { width: 100%; padding: 12px 16px; border: 2px solid #E5E7EB; border-radius: 12px; font-size: 13px; outline: none; transition: all 0.2s; }
@@ -173,8 +174,12 @@
                         <h2 class="text-sm font-black uppercase italic text-gray-800">Histórico de Horas Extra</h2>
                         <div class="flex gap-2">
                             <label for="filter-month" class="sr-only">Filtrar por mês</label>
-                            <select id="filter-month" onchange="loadEmployeeOvertime()" class="form-input w-40">
+                            <select id="filter-month" onchange="loadEmployeeOvertime()" class="form-input w-32">
                                 <option value="">Todos os meses</option>
+                            </select>
+                            <label for="filter-year" class="sr-only">Filtrar por ano</label>
+                            <select id="filter-year" onchange="loadEmployeeOvertime()" class="form-input w-28">
+                                <option value="">Todos os anos</option>
                             </select>
                             <button onclick="exportEmployeeData()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-bold text-[10px] uppercase hover:bg-gray-200 transition-all">
                                 📥 Exportar
@@ -187,13 +192,15 @@
                             <thead>
                                 <tr>
                                     <th>Mês/Ano</th>
-                                    <th>Tempo</th>
+                                    <th>Unidade</th>
+                                    <th>Nome</th>
+                                    <th>Extra</th>
                                     <th>Valor</th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="overtime-list">
-                                <tr><td colspan="4" class="text-center py-8 text-gray-400">Carregando...</td></tr>
+                                <tr><td colspan="6" class="text-center py-8 text-gray-400">Carregando...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -204,7 +211,7 @@
         <!-- Painel Geral (quando nenhum colaborador selecionado) -->
         <div id="general-view" class="hidden animate-fade max-w-6xl mx-auto w-full p-8">
             <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <div class="summary-card records">
                     <h3>Total de Registros</h3>
                     <div class="value" id="total-records">0</div>
@@ -217,6 +224,10 @@
                     <h3>Valor Total</h3>
                     <div class="value" id="total-value">R$ 0,00</div>
                 </div>
+                <div class="summary-card employees">
+                    <h3>Total de Colaboradores</h3>
+                    <div class="value" id="total-employees">0</div>
+                </div>
             </div>
 
             <!-- Tabela Geral -->
@@ -225,8 +236,16 @@
                     <h2 class="text-sm font-black uppercase italic text-gray-800">Todos os Registros de Hora Extra</h2>
                     <div class="flex gap-2">
                         <label for="general-month-filter" class="sr-only">Filtrar por mês</label>
-                        <select id="general-month-filter" onchange="loadGeneralData()" class="form-input w-40">
+                        <select id="general-month-filter" onchange="loadGeneralData()" class="form-input w-32">
                             <option value="">Todos os meses</option>
+                        </select>
+                        <label for="general-year-filter" class="sr-only">Filtrar por ano</label>
+                        <select id="general-year-filter" onchange="loadGeneralData()" class="form-input w-28">
+                            <option value="">Todos os anos</option>
+                        </select>
+                        <label for="general-unit-filter" class="sr-only">Filtrar por unidade</label>
+                        <select id="general-unit-filter" onchange="loadGeneralData()" class="form-input w-48">
+                            <option value="">Todas as unidades</option>
                         </select>
                         <button onclick="exportGeneralData()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-bold text-[10px] uppercase hover:bg-gray-200 transition-all">
                             📥 Exportar
@@ -238,15 +257,16 @@
                         <thead>
                             <tr>
                                 <th>Mês/Ano</th>
-                                <th>Colaborador</th>
+                                <th>Unidade</th>
+                                <th>Nome</th>
                                 <th>Matrícula</th>
                                 <th>Cargo</th>
-                                <th>Tempo</th>
+                                <th>Extra</th>
                                 <th>Valor</th>
                             </tr>
                         </thead>
                         <tbody id="general-table-body">
-                            <tr><td colspan="6" class="text-center py-8 text-gray-400">Carregando...</td></tr>
+                            <tr><td colspan="8" class="text-center py-8 text-gray-400">Carregando...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -265,7 +285,7 @@
                 <input type="hidden" id="record-id">
                 <input type="hidden" id="record-emp-id">
                 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-4">
                     <div>
                         <label for="mes" class="form-label">Mês *</label>
                         <select id="mes" class="form-input uppercase" required>
@@ -288,9 +308,17 @@
                         <label for="ano" class="form-label">Ano *</label>
                         <input type="number" id="ano" class="form-input uppercase" placeholder="2025" min="2020" max="2099" required>
                     </div>
+                    <div>
+                        <label for="unidade" class="form-label">Unidade</label>
+                        <input type="text" id="unidade" class="form-input uppercase" placeholder="Unidade do colaborador" readonly>
+                    </div>
                 </div>
                 
                 <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label for="nome" class="form-label">Nome</label>
+                        <input type="text" id="nome" class="form-input uppercase" placeholder="Nome do colaborador" readonly>
+                    </div>
                     <div>
                         <label for="hora" class="form-label">Horas</label>
                         <input type="number" id="hora" class="form-input uppercase" placeholder="00" min="0" max="23" step="1">
@@ -298,10 +326,6 @@
                     <div>
                         <label for="minuto" class="form-label">Minutos</label>
                         <input type="number" id="minuto" class="form-input uppercase" placeholder="00" min="0" max="59" step="1">
-                    </div>
-                    <div>
-                        <label for="segundo" class="form-label">Segundos</label>
-                        <input type="number" id="segundo" class="form-input uppercase" placeholder="00" min="0" max="59" step="1">
                     </div>
                 </div>
                 
@@ -515,12 +539,21 @@
             if (!currentEmployeeId) return;
             
             const month = document.getElementById('filter-month').value;
+            const year = document.getElementById('filter-year').value;
+            
+            let url = `/api/overtime?employee_id=${currentEmployeeId}`;
+            
+            // Combinar mês e ano se ambos estiverem selecionados
+            if (month && year) {
+                const combinedMonth = `${month} ${year}`;
+                url += `&month=${encodeURIComponent(combinedMonth)}`;
+            } else if (month) {
+                url += `&month=${encodeURIComponent(month)}`;
+            } else if (year) {
+                url += `&year=${encodeURIComponent(year)}`;
+            }
             
             try {
-                const url = month 
-                    ? `/api/overtime?employee_id=${currentEmployeeId}&month=${encodeURIComponent(month)}`
-                    : `/api/overtime?employee_id=${currentEmployeeId}`;
-                
                 const res = await fetch(url);
                 const data = await res.json();
                 const records = data.data || [];
@@ -538,18 +571,36 @@
         // Carregar dados gerais
         async function loadGeneralData() {
             const month = document.getElementById('general-month-filter').value;
+            const year = document.getElementById('general-year-filter').value;
+            const unit = document.getElementById('general-unit-filter').value;
+            
+            // Construir URL com filtros
+            let url = '/api/overtime';
+            const params = [];
+            
+            // Combinar mês e ano se ambos estiverem selecionados
+            if (month && year) {
+                const combinedMonth = `${month} ${year}`;
+                params.push(`month=${encodeURIComponent(combinedMonth)}`);
+            } else if (month) {
+                params.push(`month=${encodeURIComponent(month)}`);
+            } else if (year) {
+                params.push(`year=${encodeURIComponent(year)}`);
+            }
+            
+            if (unit) params.push(`unit=${encodeURIComponent(unit)}`);
+            
+            if (params.length > 0) {
+                url += '?' + params.join('&');
+            }
             
             try {
-                const url = month 
-                    ? `/api/overtime?month=${encodeURIComponent(month)}`
-                    : '/api/overtime';
-                
                 const res = await fetch(url);
                 const data = await res.json();
                 const records = data.data || [];
                 
                 // Atualizar resumo
-                updateGeneralSummary(records);
+                updateGeneralSummary(records, data.employees_count || 0);
                 
                 // Renderizar tabela
                 renderGeneralTable(records);
@@ -562,8 +613,9 @@
         function updateEmployeeSummary(records) {
             let totalMinutes = 0;
             records.forEach(r => {
-                if (r.overtime_time?.includes(':')) {
-                    const [h, m] = r.overtime_time.split(':').map(Number);
+                const timeStr = r.extra || r.EXTRA || r.overtime_time;
+                if (timeStr?.includes(':')) {
+                    const [h, m] = timeStr.split(':').map(Number);
                     totalMinutes += (h * 60) + m;
                 }
             });
@@ -573,19 +625,20 @@
             document.getElementById('emp-total-hours').textContent = 
                 `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
             
-            const totalValue = records.reduce((sum, r) => sum + (r.overtime_value || 0), 0);
+            const totalValue = records.reduce((sum, r) => sum + (r.valor || r.VALOR || r.overtime_value || 0), 0);
             document.getElementById('emp-total-value').textContent = 
                 'R$ ' + totalValue.toFixed(2).replace('.', ',');
         }
 
         // Atualizar resumo geral
-        function updateGeneralSummary(records) {
+        function updateGeneralSummary(records, employeesCount = 0) {
             document.getElementById('total-records').textContent = records.length;
             
             let totalMinutes = 0;
             records.forEach(r => {
-                if (r.overtime_time?.includes(':')) {
-                    const [h, m] = r.overtime_time.split(':').map(Number);
+                const timeStr = r.extra || r.EXTRA || r.overtime_time;
+                if (timeStr?.includes(':')) {
+                    const [h, m] = timeStr.split(':').map(Number);
                     totalMinutes += (h * 60) + m;
                 }
             });
@@ -595,9 +648,12 @@
             document.getElementById('total-hours').textContent = 
                 `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
             
-            const totalValue = records.reduce((sum, r) => sum + (r.overtime_value || 0), 0);
+            const totalValue = records.reduce((sum, r) => sum + (r.valor || r.VALOR || r.overtime_value || 0), 0);
             document.getElementById('total-value').textContent = 
                 'R$ ' + totalValue.toFixed(2).replace('.', ',');
+            
+            // Atualizar total de colaboradores
+            document.getElementById('total-employees').textContent = employeesCount;
         }
 
         // Renderizar lista de horas extra
@@ -605,15 +661,17 @@
             const container = document.getElementById(containerId);
             
             if (records.length === 0) {
-                container.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-400">Nenhum registro encontrado</td></tr>';
+                container.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">Nenhum registro encontrado</td></tr>';
                 return;
             }
             
             container.innerHTML = records.map(r => `
                 <tr>
-                    <td><strong>${r.month_year}</strong></td>
-                    <td><span class="time-badge">${r.overtime_time || '--:--'}</span></td>
-                    <td><span class="value-badge">${r.overtime_value ? 'R$ ' + r.overtime_value.toFixed(2).replace('.', ',') : '--'}</span></td>
+                    <td><strong>${r.mes || r.MES || '-'}</strong></td>
+                    <td><span class="text-xs font-bold text-gray-600">${r.unidade || r.UNIDADE || '-'}</span></td>
+                    <td><span class="text-xs font-bold text-gray-800">${r.nome || r.NOME || r.employee_name || '-'}</span></td>
+                    <td><span class="time-badge">${r.extra || r.EXTRA || r.overtime_time || '--:--'}</span></td>
+                    <td><span class="value-badge">${r.valor || r.VALOR || r.overtime_value ? 'R$ ' + (r.valor || r.VALOR || r.overtime_value).toFixed(2).replace('.', ',') : '--'}</span></td>
                     <td>
                         <button class="text-blue-600 hover:text-blue-800 font-bold text-xs mr-2" onclick="editRecord('${r.id}')">✏️</button>
                         <button class="text-red-600 hover:text-red-800 font-bold text-xs" onclick="deleteRecord('${r.id}')">🗑️</button>
@@ -627,26 +685,49 @@
             const container = document.getElementById('general-table-body');
             
             if (records.length === 0) {
-                container.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">Nenhum registro encontrado</td></tr>';
+                container.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-400">Nenhum registro encontrado</td></tr>';
                 return;
             }
             
             container.innerHTML = records.map(r => `
                 <tr onclick="selectEmployee('${r.employee_id}')" class="cursor-pointer hover:bg-gray-50">
-                    <td><strong>${r.month_year}</strong></td>
-                    <td>${r.employee_name}</td>
+                    <td><strong>${r.mes || r.MES || '-'}</strong></td>
+                    <td><span class="text-xs font-bold text-gray-800">${r.unidade || r.UNIDADE || '-'}</span></td>
+                    <td><span class="text-xs font-bold text-gray-800">${r.nome || r.NOME || r.employee_name || '-'}</span></td>
                     <td>${r.registrationNumber || '-'}</td>
                     <td>${r.role || '-'}</td>
-                    <td><span class="time-badge">${r.overtime_time || '--:--'}</span></td>
-                    <td><span class="value-badge">${r.overtime_value ? 'R$ ' + r.overtime_value.toFixed(2).replace('.', ',') : '--'}</span></td>
+                    <td><span class="time-badge">${r.extra || r.EXTRA || r.overtime_time || '--:--'}</span></td>
+                    <td><span class="value-badge">${r.valor || r.VALOR || r.overtime_value ? 'R$ ' + (r.valor || r.VALOR || r.overtime_value).toFixed(2).replace('.', ',') : '--'}</span></td>
                 </tr>
             `).join('');
         }
 
-        // Popular filtros de mês
+        // Popular filtros de mês, ano e unidade
         function populateMonthFilters() {
-            const months = [...new Set(allOvertime.map(r => r.month_year))].sort().reverse();
+            // Extrair meses puros (sem ano)
+            const months = [...new Set(allOvertime.map(r => {
+                const monthStr = r.mes || r.MES || r.month_year;
+                if (monthStr) {
+                    const parts = monthStr.split(' ');
+                    return parts[0]; // Pegar apenas o primeiro elemento (mês)
+                }
+                return null;
+            }).filter(Boolean))].sort().reverse();
             
+            // Extrair anos puros
+            const years = [...new Set(allOvertime.map(r => {
+                const monthStr = r.mes || r.MES || r.month_year;
+                if (monthStr) {
+                    const parts = monthStr.split(' ');
+                    return parts[parts.length - 1]; // Pegar o último elemento (ano)
+                }
+                return null;
+            }).filter(Boolean))].sort().reverse();
+            
+            // Extrair unidades
+            const units = [...new Set(allOvertime.map(r => r.unidade || r.UNIDADE || '').filter(Boolean))].sort();
+            
+            // Popular filtros de mês
             ['filter-month', 'general-month-filter'].forEach(id => {
                 const select = document.getElementById(id);
                 if (select) {
@@ -659,6 +740,32 @@
                     });
                 }
             });
+            
+            // Popular filtros de ano
+            ['filter-year', 'general-year-filter'].forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.innerHTML = '<option value="">Todos os anos</option>';
+                    years.forEach(y => {
+                        const option = document.createElement('option');
+                        option.value = y;
+                        option.textContent = y;
+                        select.appendChild(option);
+                    });
+                }
+            });
+            
+            // Popular filtro de unidade (apenas na visão geral)
+            const unitSelect = document.getElementById('general-unit-filter');
+            if (unitSelect) {
+                unitSelect.innerHTML = '<option value="">Todas as unidades</option>';
+                units.forEach(u => {
+                    const option = document.createElement('option');
+                    option.value = u;
+                    option.textContent = u;
+                    unitSelect.appendChild(option);
+                });
+            }
         }
 
         // Modal
@@ -671,31 +778,55 @@
             
             document.getElementById('record-emp-id').value = currentEmployeeId || '';
             
+            // Preencher automaticamente nome e unidade
+            if (emp) {
+                document.getElementById('nome').value = emp.name || '';
+                
+                // Buscar dados completos do colaborador incluindo vínculos
+                fetch(`/api/employees-pro/${currentEmployeeId}/dossier`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const vinculos = data.vinculos || [];
+                            const vinculoPrincipal = vinculos.find(v => v.principal) || vinculos[0];
+                            const workplaceName = vinculoPrincipal?.workplace_name;
+                            
+                            document.getElementById('unidade').value = workplaceName || '';
+                        } else {
+                            document.getElementById('unidade').value = '';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Erro ao buscar dados do colaborador:', err);
+                        document.getElementById('unidade').value = '';
+                    });
+            }
+            
             if (record) {
                 document.getElementById('record-id').value = record.id;
                 
                 // Separar mês e ano
-                if (record.month_year) {
-                    const parts = record.month_year.split(' ');
+                if (record.mes || record.MES) {
+                    const monthYear = record.mes || record.MES;
+                    const parts = monthYear.split(' ');
                     document.getElementById('mes').value = parts[0] || '';
                     document.getElementById('ano').value = parts[1] || '';
                 }
                 
                 // Separar hora, minuto e segundo
-                if (record.overtime_time) {
-                    const timeParts = record.overtime_time.split(':');
+                const timeStr = record.extra || record.EXTRA;
+                if (timeStr) {
+                    const timeParts = timeStr.split(':');
                     document.getElementById('hora').value = timeParts[0] || '';
                     document.getElementById('minuto').value = timeParts[1] || '';
-                    document.getElementById('segundo').value = timeParts[2] || '';
                 } else {
                     document.getElementById('hora').value = '';
                     document.getElementById('minuto').value = '';
-                    document.getElementById('segundo').value = '';
                 }
                 
                 // Preencher valor monetário formatado
-                if (record.overtime_value || record.overtime_value === 0) {
-                    const valueNum = parseFloat(record.overtime_value);
+                const valueNum = record.valor || record.VALOR;
+                if (valueNum !== undefined && valueNum !== null) {
                     document.getElementById('valor-monetario').value = formatCurrency(valueNum);
                 } else {
                     document.getElementById('valor-monetario').value = '0,00';
@@ -710,7 +841,6 @@
                 document.getElementById('ano').value = now.getFullYear();
                 document.getElementById('hora').value = '';
                 document.getElementById('minuto').value = '';
-                document.getElementById('segundo').value = '';
                 document.getElementById('valor-monetario').value = '0,00';
                 
                 // Aplicar máscara inicial
@@ -737,8 +867,7 @@
             // Juntar hora, minuto e segundo
             const hora = document.getElementById('hora').value || '00';
             const minuto = document.getElementById('minuto').value || '00';
-            const segundo = document.getElementById('segundo').value || '00';
-            const timeStr = `${hora.padStart(2, '0')}:${minuto.padStart(2, '0')}:${segundo.padStart(2, '0')}`;
+            const timeStr = `${hora.padStart(2, '0')}:${minuto.padStart(2, '0')}`;
             
             // Pegar valor monetário e converter
             const valorStr = document.getElementById('valor-monetario').value || '0,00';
@@ -746,9 +875,11 @@
             
             const data = {
                 employee_id: empId,
-                month_year: monthYear,
-                overtime_time: timeStr,
-                overtime_value: valueNum,
+                mes: monthYear,
+                unidade: document.getElementById('unidade').value,
+                nome: document.getElementById('nome').value,
+                extra: timeStr,
+                valor: valueNum,
                 created_by: 'Sistema'
             };
             
@@ -812,9 +943,9 @@
             const emp = allEmployees.find(e => e.id === currentEmployeeId);
             const records = allOvertime.filter(r => r.employee_id === currentEmployeeId);
             
-            let csv = 'Mês,Tempo,Valor\n';
+            let csv = 'Mês,Unidade,Nome,Extra,Valor\n';
             records.forEach(r => {
-                csv += `"${r.month_year}","${r.overtime_time || ''}","${r.overtime_value ? r.overtime_value.toFixed(2) : ''}"\n`;
+                csv += `"${r.mes || r.MES || r.month_year}","${r.unidade || r.UNIDADE || ''}","${r.nome || r.NOME || r.employee_name || ''}","${r.extra || r.EXTRA || r.overtime_time || ''}","${r.valor || r.VALOR || r.overtime_value ? (r.valor || r.VALOR || r.overtime_value).toFixed(2) : ''}"\n`;
             });
             
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -827,9 +958,9 @@
         function exportGeneralData() {
             const records = allOvertime;
             
-            let csv = 'Mês,Colaborador,Matrícula,Tempo,Valor\n';
+            let csv = 'Mês,Unidade,Nome,Matrícula,Cargo,Extra,Valor\n';
             records.forEach(r => {
-                csv += `"${r.month_year}","${r.employee_name}","${r.registrationNumber || ''}","${r.overtime_time || ''}","${r.overtime_value ? r.overtime_value.toFixed(2) : ''}"\n`;
+                csv += `"${r.mes || r.MES || r.month_year}","${r.unidade || r.UNIDADE || ''}","${r.nome || r.NOME || r.employee_name || ''}","${r.registrationNumber || ''}","${r.role || ''}","${r.extra || r.EXTRA || r.overtime_time || ''}","${r.valor || r.VALOR || r.overtime_value ? (r.valor || r.VALOR || r.overtime_value).toFixed(2) : ''}"\n`;
             });
             
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Populacional | Nordeste RH+</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nordeste: { red: '#D32F2F', darkRed: '#B71C1C', black: '#212121', gray: '#F5F5F5' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/populacao.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-gray-100 h-screen flex flex-col overflow-hidden">
+    <header class="bg-nordeste-black text-white px-6 py-3 flex justify-between items-center shadow-lg z-[100] flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="bg-nordeste-red p-2 rounded-lg shadow-md">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="font-black uppercase italic tracking-tighter text-sm">Controle <span class="text-nordeste-red">Populacional</span></h1>
+                <p class="text-[8px] text-gray-400 font-bold uppercase tracking-widest">Análise de Colaboradores por Unidade</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="btn-refresh" onclick="refreshData()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase shadow-lg transition-all flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Atualizar Dados
+            </button>
+            <button id="btn-export-pdf" onclick="exportPDF()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase shadow-lg transition-all flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                PDF
+            </button>
+            <button id="btn-export-excel" onclick="exportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase shadow-lg transition-all flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="2.5" d="M9 17v2a2 2 0 002 2h6a2 2 0 002-2v-2M9 11l3-3m0 0l3 3m-3-3v8" />
+                </svg>
+                Excel
+            </button>
+            <a href="/" class="bg-nordeste-red hover:bg-red-700 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase transition-all flex items-center gap-2 shadow-lg">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="3" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                Início
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-hidden relative">
+        <div class="h-full overflow-y-auto p-8 custom-scroll">
+            <!-- Seção de Métricas Principais -->
+            <section class="mb-8">
+                <div class="max-w-screen-2xl mx-auto w-full">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-black text-gray-800 uppercase italic">Visão Geral</h2>
+                            <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">Métricas populacionais em tempo real</p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="text-right">
+                                <p class="text-[8px] text-gray-400 font-bold uppercase">Última Atualização</p>
+                                <p id="last-update" class="text-xs font-black text-gray-600">--</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cards de Métricas -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="bg-blue-100 p-3 rounded-xl">
+                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                    </svg>
+                                </div>
+                                <span id="total-units-loading" class="text-xs text-gray-400">Carregando...</span>
+                            </div>
+                            <h3 id="total-units" class="text-2xl font-black text-gray-800">--</h3>
+                            <p class="text-xs text-gray-500 font-bold uppercase">Total de Unidades</p>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="bg-green-100 p-3 rounded-xl">
+                                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                </div>
+                                <span id="total-employees-loading" class="text-xs text-gray-400">Carregando...</span>
+                            </div>
+                            <h3 id="total-employees" class="text-2xl font-black text-gray-800">--</h3>
+                            <p class="text-xs text-gray-500 font-bold uppercase">Total de Colaboradores</p>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="bg-amber-100 p-3 rounded-xl">
+                                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    </svg>
+                                </div>
+                                <span id="avg-employees-loading" class="text-xs text-gray-400">Carregando...</span>
+                            </div>
+                            <h3 id="avg-employees" class="text-2xl font-black text-gray-800">--</h3>
+                            <p class="text-xs text-gray-500 font-bold uppercase">Média por Unidade</p>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="bg-purple-100 p-3 rounded-xl">
+                                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                    </svg>
+                                </div>
+                                <span id="growth-rate-loading" class="text-xs text-gray-400">Carregando...</span>
+                            </div>
+                            <h3 id="growth-rate" class="text-2xl font-black text-gray-800">--</h3>
+                            <p class="text-xs text-gray-500 font-bold uppercase">Média de Ativos por Unidade</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seção de Gráficos -->
+            <section class="mb-8">
+                <div class="max-w-screen-2xl mx-auto w-full">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Gráfico de Evolução Temporal -->
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <h3 class="text-lg font-black text-gray-800 uppercase italic">Evolução Temporal</h3>
+                                    <p class="text-xs text-gray-400 font-bold uppercase">Colaboradores ao longo do tempo</p>
+                                </div>
+                                <select id="period-filter" onchange="updateCharts()" class="text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-bold">
+                                    <option value="6">Últimos 6 meses</option>
+                                    <option value="12" selected>Últimos 12 meses</option>
+                                    <option value="24">Últimos 24 meses</option>
+                                </select>
+                            </div>
+                            <div class="h-64">
+                                <canvas id="evolution-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Admissões vs Desligamentos -->
+                        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <h3 class="text-lg font-black text-gray-800 uppercase italic">Movimentação</h3>
+                                    <p class="text-xs text-gray-400 font-bold uppercase">Admissões vs Desligamentos</p>
+                                </div>
+                            </div>
+                            <div class="h-64">
+                                <canvas id="movement-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tabela Detalhada por Unidade -->
+            <section class="mb-8">
+                <div class="max-w-screen-2xl mx-auto w-full">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                        <div class="p-6 border-b border-gray-100">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="text-lg font-black text-gray-800 uppercase italic">Detalhamento por Unidade</h3>
+                                    <p class="text-xs text-gray-400 font-bold uppercase">Contagem de colaboradores por local de atuação</p>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <input type="text" id="unit-search" placeholder="Buscar unidade..." 
+                                           class="text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-bold"
+                                           oninput="filterUnits()">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 border-b border-gray-100">
+                                    <tr>
+                                        <th class="text-left p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Unidade</th>
+                                        <th class="text-center p-4 text-xs font-black text-gray-600 uppercase tracking-wider">CNPJ</th>
+                                        <th class="text-center p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Total</th>
+                                        <th class="text-center p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Ativos</th>
+                                        <th class="text-center p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Inativos</th>
+                                        <th class="text-center p-4 text-xs font-black text-gray-600 uppercase tracking-wider">% Ativos</th>
+                                        <th class="text-center p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Crescimento</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="units-table-body" class="divide-y divide-gray-100">
+                                    <!-- Dados serão inseridos via JavaScript -->
+                                </tbody>
+                            </table>
+                            <div id="units-loading" class="p-8 text-center text-gray-400">
+                                <svg class="w-8 h-8 mx-auto mb-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <p class="text-xs font-black uppercase">Carregando dados das unidades...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seção de Histórico -->
+            <section>
+                <div class="max-w-screen-2xl mx-auto w-full">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                        <div class="p-6 border-b border-gray-100">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="text-lg font-black text-gray-800 uppercase italic">Histórico Temporal</h3>
+                                    <p class="text-xs text-gray-400 font-bold uppercase">Registros históricos por período</p>
+                                </div>
+                                <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <select id="history-start-month" class="text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-bold">
+                                    <option value="01">Janeiro</option>
+                                    <option value="02">Fevereiro</option>
+                                    <option value="03">Março</option>
+                                    <option value="04">Abril</option>
+                                    <option value="05">Maio</option>
+                                    <option value="06">Junho</option>
+                                    <option value="07">Julho</option>
+                                    <option value="08">Agosto</option>
+                                    <option value="09">Setembro</option>
+                                    <option value="10">Outubro</option>
+                                    <option value="11">Novembro</option>
+                                    <option value="12">Dezembro</option>
+                                </select>
+                                <select id="history-start-year" class="text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-bold">
+                                    <!-- Anos serão preenchidos via JavaScript -->
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <select id="history-end-month" class="text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-bold">
+                                    <option value="01">Janeiro</option>
+                                    <option value="02">Fevereiro</option>
+                                    <option value="03">Março</option>
+                                    <option value="04">Abril</option>
+                                    <option value="05">Maio</option>
+                                    <option value="06">Junho</option>
+                                    <option value="07">Julho</option>
+                                    <option value="08">Agosto</option>
+                                    <option value="09">Setembro</option>
+                                    <option value="10">Outubro</option>
+                                    <option value="11">Novembro</option>
+                                    <option value="12">Dezembro</option>
+                                </select>
+                                <select id="history-end-year" class="text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-bold">
+                                    <!-- Anos serão preenchidos via JavaScript -->
+                                </select>
+                            </div>
+                            <button onclick="loadHistory()" class="bg-nordeste-red text-white px-4 py-2 rounded-lg font-black text-xs uppercase hover:bg-red-700 transition-colors">
+                                Filtrar
+                            </button>
+                        </div>        </div>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 border-b border-gray-100">
+                                    <tr>
+                                        <th class="text-left p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Data</th>
+                                        <th class="text-left p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Unidade</th>
+                                        <th class="text-center p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Total</th>
+                                        <th class="text-center p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Ativos</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body" class="divide-y divide-gray-100">
+                                    <!-- Dados serão inseridos via JavaScript -->
+                                </tbody>
+                            </table>
+                            <div id="history-loading" class="p-8 text-center text-gray-400">
+                                <svg class="w-8 h-8 mx-auto mb-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <p class="text-xs font-black uppercase">Carregando histórico...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Toast de Notificações -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[200] space-y-2"></div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/populacao.js"></script>
+</body>
+
+</html>

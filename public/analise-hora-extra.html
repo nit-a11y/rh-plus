@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise de Hora Extra | Nordeste RH+</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nordeste: { red: '#D32F2F', darkRed: '#B71C1C', black: '#121212', gray: '#F4F7F9' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/carreira.css">
+    <style>
+        .summary-card { background: white; border-radius: 1.5rem; padding: 1.5rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid; }
+        .summary-card.records { border-color: #3B82F6; }
+        .summary-card.hours { border-color: #DC2626; }
+        .summary-card.value { border-color: #059669; }
+        .summary-card.employees { border-color: #8B5CF6; }
+        .summary-card.units { border-color: #F59E0B; }
+        .summary-card h3 { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #9CA3AF; margin-bottom: 8px; letter-spacing: 0.05em; }
+        .summary-card .value { font-size: 28px; font-weight: 800; color: #111827; }
+        .form-input { width: 100%; padding: 12px 16px; border: 2px solid #E5E7EB; border-radius: 12px; font-size: 13px; outline: none; transition: all 0.2s; }
+        .form-input:focus { border-color: #D32F2F; }
+        .form-label { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; color: #6B7280; margin-bottom: 6px; letter-spacing: 0.05em; }
+        .analysis-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .analysis-table th { background: #F9FAFB; padding: 12px 16px; text-align: left; font-size: 10px; font-weight: 800; text-transform: uppercase; color: #6B7280; letter-spacing: 0.05em; border-bottom: 2px solid #E5E7EB; }
+        .analysis-table td { padding: 16px; border-bottom: 1px solid #F3F4F6; font-size: 13px; }
+        .analysis-table tr:hover { background: #F9FAFB; }
+        .time-badge { font-family: monospace; font-weight: 700; color: #DC2626; background: #FEE2E2; padding: 4px 10px; border-radius: 6px; font-size: 12px; }
+        .value-badge { font-weight: 700; color: #059669; background: #D1FAE5; padding: 4px 10px; border-radius: 6px; font-size: 12px; }
+        .chart-container { background: white; border-radius: 1.5rem; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-nordeste-gray h-screen flex overflow-hidden">
+    <!-- Sidebar de navegação -->
+    <aside class="w-64 bg-white shadow-lg">
+        <div class="p-6 border-b">
+            <div class="flex items-center gap-3 mb-6">
+                <a href="/" class="p-2 bg-nordeste-black text-white rounded-lg hover:bg-nordeste-red transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                </a>
+                <h1 class="text-lg font-bold text-gray-800">Nordeste RH+</h1>
+            </div>
+        </div>
+        <nav class="p-4">
+            <a href="hora-extra.html" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span class="font-medium text-gray-700">Registrar Hora Extra</span>
+            </a>
+            <a href="analise-hora-extra.html" class="flex items-center gap-3 p-3 rounded-lg bg-nordeste-red text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span class="font-medium">Análise de Hora Extra</span>
+            </a>
+            <a href="#" onclick="showHistoricoTemporal()" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="font-medium text-gray-700">Histórico Temporal</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b sticky top-0 z-10">
+            <div class="px-6 py-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Análise de Hora Extra</h2>
+                        <p class="text-gray-600">Dashboard completo de horas extras</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button onclick="refreshData()" class="bg-nordeste-red text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                            Atualizar Dados
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <div class="p-6">
+            <!-- Loading -->
+            <div id="loading" class="text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-nordeste-red"></div>
+                <p class="mt-2 text-gray-600">Carregando dados...</p>
+            </div>
+
+            <!-- Error -->
+            <div id="error" class="hidden bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">Erro ao carregar dados</h3>
+                        <p id="error-message" class="text-sm text-red-700 mt-1"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div id="dashboard" class="hidden space-y-6">
+                <!-- Filtros -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Filtros</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label for="filter-month" class="form-label">Mês</label>
+                            <select id="filter-month" onchange="applyFilters()" class="form-input">
+                                <option value="">Todos os meses</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filter-year" class="form-label">Ano</label>
+                            <select id="filter-year" onchange="applyFilters()" class="form-input">
+                                <option value="">Todos os anos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filter-unit" class="form-label">Unidade</label>
+                            <select id="filter-unit" onchange="applyFilters()" class="form-input">
+                                <option value="">Todas as unidades</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="clearFilters()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                                Limpar Filtros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4">
+                    <div class="summary-card records">
+                        <h3>Total de Registros</h3>
+                        <div class="value" id="total-records">0</div>
+                    </div>
+                    <div class="summary-card hours">
+                        <h3>Total de Horas</h3>
+                        <div class="value" id="total-hours">00:00</div>
+                    </div>
+                    <div class="summary-card value">
+                        <h3>Valor Total</h3>
+                        <div class="value" id="total-value">R$ 0,00</div>
+                    </div>
+                    <div class="summary-card employees">
+                        <h3>Colaboradores com Extra</h3>
+                        <div class="value" id="overtime-employees-count">0</div>
+                    </div>
+                    <div class="summary-card units">
+                        <h3>Unidades</h3>
+                        <div class="value" id="overtime-units-count">0</div>
+                    </div>
+                    <div class="summary-card" style="border-color: #10B981;">
+                        <h3>Colaboradores Ativos</h3>
+                        <div class="value" id="active-employees-total">0</div>
+                    </div>
+                    <div class="summary-card" style="border-color: #3B82F6;">
+                        <h3>Horas Esperadas (220h/ativo)</h3>
+                        <div class="value" id="expected-hours-total">00:00</div>
+                    </div>
+                    <div class="summary-card" style="border-color: #F59E0B;">
+                        <h3>% Extras vs Esperado</h3>
+                        <div class="value" id="overtime-percentage-expected">0%</div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Evolução Mensal</h3>
+                        <div style="height: 350px; position: relative;">
+                            <canvas id="evolution-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Distribuição por Unidade</h3>
+                        <div style="height: 350px; position: relative;">
+                            <canvas id="units-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tables -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- Units Table -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Horas Extras por Unidade</h3>
+                        <div class="overflow-x-auto">
+                            <table class="analysis-table">
+                                <thead>
+                                    <tr>
+                                        <th>Unidade</th>
+                                        <th>Registros</th>
+                                        <th>Colaboradores</th>
+                                        <th>Horas</th>
+                                        <th>Valor Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="units-table">
+                                    <tr><td colspan="5" class="text-center py-8 text-gray-400">Carregando...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Top Employees Table -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Colaboradores</h3>
+                        <div class="overflow-x-auto">
+                            <table class="analysis-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Matrícula</th>
+                                        <th>Registros</th>
+                                        <th>Horas</th>
+                                        <th>Valor Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="employees-table">
+                                    <tr><td colspan="5" class="text-center py-8 text-gray-400">Carregando...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Table -->
+                <div class="bg-white rounded-lg shadow p-6 mb-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">Registros Detalhados</h3>
+                        <button onclick="exportData()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                            Exportar CSV
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="analysis-table">
+                            <thead>
+                                <tr>
+                                    <th>Mês/Ano</th>
+                                    <th>Unidade</th>
+                                    <th>Nome</th>
+                                    <th>Matrícula</th>
+                                    <th>Cargo</th>
+                                    <th>Extra</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detailed-table">
+                                <tr><td colspan="7" class="text-center py-8 text-gray-400">Carregando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Histórico Temporal Section (Hidden by default) -->
+            <div id="historico-temporal-section" class="hidden space-y-6">
+                <!-- Header do Histórico -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Histórico Temporal</h2>
+                            <p class="text-gray-600">Registros históricos por período</p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <button onclick="showAnaliseHoraExtra()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+                                Voltar para Análise
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visão Geral -->
+                <section class="mb-8">
+                    <div class="max-w-screen-2xl mx-auto w-full">
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 class="text-lg font-black text-gray-800 uppercase italic">Visão Geral</h3>
+                                    <p class="text-xs text-gray-400 font-bold uppercase">Métricas populacionais em tempo real</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-gray-400 font-bold uppercase">Última Atualização</p>
+                                    <p id="last-update-time" class="text-sm font-black text-gray-600">--</p>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                <!-- Total de Unidades -->
+                                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="bg-blue-100 p-3 rounded-xl">
+                                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                            </svg>
+                                        </div>
+                                        <span id="historico-total-units-loading" class="text-xs text-gray-400">Carregando...</span>
+                                    </div>
+                                    <h3 id="historico-total-units" class="text-2xl font-black text-gray-800">--</h3>
+                                    <p class="text-xs text-gray-500 font-bold uppercase">Total de Unidades</p>
+                                </div>
+
+                                <!-- Total de Colaboradores -->
+                                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="bg-green-100 p-3 rounded-xl">
+                                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                        </div>
+                                        <span id="historico-total-employees-loading" class="text-xs text-gray-400">Carregando...</span>
+                                    </div>
+                                    <h3 id="historico-total-employees" class="text-2xl font-black text-gray-800">--</h3>
+                                    <p class="text-xs text-gray-500 font-bold uppercase">Total de Colaboradores</p>
+                                </div>
+
+                                <!-- Média por Unidade -->
+                                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="bg-amber-100 p-3 rounded-xl">
+                                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            </svg>
+                                        </div>
+                                        <span id="historico-avg-employees-loading" class="text-xs text-gray-400">Carregando...</span>
+                                    </div>
+                                    <h3 id="historico-avg-employees" class="text-2xl font-black text-gray-800">--</h3>
+                                    <p class="text-xs text-gray-500 font-bold uppercase">Média por Unidade</p>
+                                </div>
+
+                                <!-- Média de Ativos por Unidade -->
+                                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="bg-purple-100 p-3 rounded-xl">
+                                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                            </svg>
+                                        </div>
+                                        <span id="historico-growth-rate-loading" class="text-xs text-gray-400">Carregando...</span>
+                                    </div>
+                                    <h3 id="historico-growth-rate" class="text-2xl font-black text-gray-800">--</h3>
+                                    <p class="text-xs text-gray-500 font-bold uppercase">Média de Ativos por Unidade</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Detalhamento por Unidade -->
+                <section class="mb-8">
+                    <div class="max-w-screen-2xl mx-auto w-full">
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                            <div class="p-6 border-b border-gray-100">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h3 class="text-lg font-black text-gray-800 uppercase italic">Detalhamento por Unidade</h3>
+                                        <p class="text-xs text-gray-400 font-bold uppercase">Contagem de colaboradores por local de atuação</p>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <input type="text" id="unit-search" placeholder="Buscar unidade..." 
+                                               class="text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-bold"
+                                               oninput="filterUnits()">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-gray-50 border-b border-gray-100">
+                                        <tr>
+                                            <th class="text-left p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Unidade</th>
+                                            <th class="text-center p-4 text-xs font-black text-gray-600 uppercase tracking-wider">CNPJ</th>
+                                            <th class="text-center p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Total</th>
+                                            <th class="text-center p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Ativos</th>
+                                            <th class="text-center p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Inativos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="units-table-body" class="divide-y divide-gray-100">
+                                        <!-- Dados serão inseridos via JavaScript -->
+                                    </tbody>
+                                </table>
+                                <div id="units-loading" class="p-8 text-center text-gray-400">
+                                    <svg class="w-8 h-8 mx-auto mb-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    <p class="text-xs font-black uppercase">Carregando dados das unidades...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Histórico Temporal -->
+                <section>
+                    <div class="max-w-screen-2xl mx-auto w-full">
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                            <div class="p-6 border-b border-gray-100">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h3 class="text-lg font-black text-gray-800 uppercase italic">Histórico Temporal</h3>
+                                        <p class="text-xs text-gray-400 font-bold uppercase">Registros históricos por período</p>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <div class="flex items-center gap-4">
+                                            <input type="text" id="history-unit-filter" placeholder="Filtrar por unidade..." class="text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-bold flex-1">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <button onclick="loadHistory()" class="bg-nordeste-red text-white px-4 py-2 rounded-lg font-black text-xs uppercase hover:bg-red-700 transition-colors">
+                                                Filtrar
+                                            </button>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <select id="history-start-month" class="text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-bold">
+                                                <option value="01">Janeiro</option>
+                                                <option value="02">Fevereiro</option>
+                                                <option value="03">Março</option>
+                                                <option value="04" selected>Abril</option>
+                                                <option value="05">Maio</option>
+                                                <option value="06">Junho</option>
+                                                <option value="07">Julho</option>
+                                                <option value="08">Agosto</option>
+                                                <option value="09">Setembro</option>
+                                                <option value="10">Outubro</option>
+                                                <option value="11">Novembro</option>
+                                                <option value="12">Dezembro</option>
+                                            </select>
+                                            <select id="history-start-year" class="text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-bold">
+                                                <option value="2024">2024</option>
+                                                <option value="2025">2025</option>
+                                                <option value="2026" selected>2026</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <select id="history-end-month" class="text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-bold">
+                                                <option value="01">Janeiro</option>
+                                                <option value="02">Fevereiro</option>
+                                                <option value="03">Março</option>
+                                                <option value="04" selected>Abril</option>
+                                                <option value="05">Maio</option>
+                                                <option value="06">Junho</option>
+                                                <option value="07">Julho</option>
+                                                <option value="08">Agosto</option>
+                                                <option value="09">Setembro</option>
+                                                <option value="10">Outubro</option>
+                                                <option value="11">Novembro</option>
+                                                <option value="12">Dezembro</option>
+                                            </select>
+                                            <select id="history-end-year" class="text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 font-bold">
+                                                <option value="2024">2024</option>
+                                                <option value="2025">2025</option>
+                                                <option value="2026" selected>2026</option>
+                                            </select>
+                                        </div>
+                                        <button onclick="loadHistory()" class="bg-nordeste-red text-white px-4 py-2 rounded-lg font-black text-xs uppercase hover:bg-red-700 transition-colors">
+                                            Filtrar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-gray-50 border-b border-gray-100">
+                                        <tr>
+                                            <th class="text-left p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Data</th>
+                                            <th class="text-left p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Unidade</th>
+                                            <th class="text-center p-4 text-xs font-black text-gray-600 uppercase tracking-wider">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="history-table-body" class="divide-y divide-gray-100">
+                                        <!-- Dados serão inseridos via JavaScript -->
+                                    </tbody>
+                                </table>
+                                <div id="history-loading" class="p-8 text-center text-gray-400">
+                                    <svg class="w-8 h-8 mx-auto mb-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    <p class="text-xs font-black uppercase">Selecione um período para carregar os dados</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        <script src="js/auth.js"></script>
+    <script src="js/analise-hora-extra.js"></script>
+    <script src="js/historico-temporal.js"></script>
+    <script>
+        // Funções de navegação globais
+        function showHistoricoTemporal() {
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('historico-temporal-section').classList.remove('hidden');
+            
+            // Atualizar menu lateral
+            document.querySelectorAll('nav a').forEach(link => {
+                link.classList.remove('bg-nordeste-red', 'text-white');
+                link.classList.add('hover:bg-gray-100');
+            });
+            
+            // Destacar aba atual
+            event.target.closest('a').classList.add('bg-nordeste-red', 'text-white');
+            event.target.closest('a').classList.remove('hover:bg-gray-100');
+        }
+        
+        function showAnaliseHoraExtra() {
+            document.getElementById('historico-temporal-section').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            
+            // Atualizar menu lateral
+            document.querySelectorAll('nav a').forEach(link => {
+                link.classList.remove('bg-nordeste-red', 'text-white');
+                link.classList.add('hover:bg-gray-100');
+            });
+            
+            // Destacar aba atual
+            event.target.closest('a').classList.add('bg-nordeste-red', 'text-white');
+            event.target.closest('a').classList.remove('hover:bg-gray-100');
+        }
+        
+        // Inicializar ambos os módulos automaticamente
+        document.addEventListener("DOMContentLoaded", function() {
+            // Inicializar módulo de análise de hora extra
+            if (typeof initializeDashboard === "function") {
+                initializeDashboard();
+            }
+            
+            // Inicializar módulo de histórico temporal
+            if (typeof initHistoricoTemporal === "function") {
+                setTimeout(() => {
+                    initHistoricoTemporal();
+                }, 500); // Pequeno delay para garantir que os elementos DOM estejam disponíveis
+            }
+        });
+        
+        function showAnaliseHoraExtra() {
+            document.getElementById('historico-temporal-section').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            
+            // Atualizar menu lateral
+            document.querySelectorAll('nav a').forEach(link => {
+                link.classList.remove('bg-nordeste-red', 'text-white');
+                link.classList.add('hover:bg-gray-100');
+            });
+            
+            // Destacar aba de análise
+            document.querySelectorAll('nav a')[1].classList.add('bg-nordeste-red', 'text-white');
+            document.querySelectorAll('nav a')[1].classList.remove('hover:bg-gray-100');
+        }
+        
+        // A função loadHistoricoData() agora está no historico-temporal.js simplificado
+    </script>
+</body>
+</html>

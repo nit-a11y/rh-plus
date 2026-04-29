@@ -1,0 +1,501 @@
+{
+  "summary": {
+    "total_vinculos": 0,
+    "total_companies": 0,
+    "total_employees": 159,
+    "disconnected_employees": 54,
+    "disconnected_with_vinculos": 0,
+    "disconnected_without_vinculos": 54
+  },
+  "disconnected_with_vinculos": [],
+  "disconnected_without_vinculos": [
+    {
+      "id": "54df5d4c",
+      "name": "ADRIELY DOS SANTOS EVANGELISTA",
+      "registrationNumber": "5941",
+      "role": "ALMOXARIFE",
+      "sector": "ALMOXARIFADO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "57020966",
+      "name": "AGATHA LOURENCO DA SILVA MONTEIRO",
+      "registrationNumber": "2202",
+      "role": "ANALISTA DP PLENO",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "a1af8ff1",
+      "name": "ALINA DE SÁ MARQUES",
+      "registrationNumber": "1630",
+      "role": "ASSISTENTE DE PCM I",
+      "sector": "MANUTENÇÃO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "e081c52c",
+      "name": "AMANDA CONCEICAO SOUSA AGUIAR",
+      "registrationNumber": "3690",
+      "role": "ASSISTENTE COMERCIAL I",
+      "sector": "COMERCIAL",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "e0a50cc0",
+      "name": "ANDREZA EMANUELLY GONÇALVES ALVES",
+      "registrationNumber": "9487",
+      "role": "ESTAGIARIA DE MARKETING",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "b69bd686",
+      "name": "ANILTON ARAUJO DE AGUIAR",
+      "registrationNumber": "1287",
+      "role": "MECANICO SENIOR II",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "2a86ebaf",
+      "name": "ANTONIO EDER DE OLIVEIRA",
+      "registrationNumber": "3463",
+      "role": "MECANICO SENIOR II",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "1b57aa70",
+      "name": "BRUNA DA SILVA LEMOS",
+      "registrationNumber": "8250",
+      "role": "ASSISTENTE DE PCM I",
+      "sector": "MANUTENÇÃO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "e171116e",
+      "name": "CARLOS FELIPE SANTOS DE ARAUJO",
+      "registrationNumber": "1507",
+      "role": "ANALISTA FINANCEIRO JR",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "c7e5ec96",
+      "name": "DAVI NASCIMENTO DA SILVA SOUSA",
+      "registrationNumber": "4365",
+      "role": "CONTROLER JR",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "1dfb229e",
+      "name": "DIEGO BRAZ DOS SANTOS",
+      "registrationNumber": "6167",
+      "role": "ASSISTENTE DE TRANSPORTES I",
+      "sector": "LOGÍSTICA",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "0cb0999a",
+      "name": "ELIVALDO ROCHA GOMES",
+      "registrationNumber": "1497",
+      "role": "ASSISTENTE DE LOGISTICA I",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "c4427775",
+      "name": "ERLAN DE SOUSA SOARES",
+      "registrationNumber": "8875",
+      "role": "MECÂNICO JÚNIOR I",
+      "sector": "MANUTENÇÃO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "5d021212",
+      "name": "FILIPE LOPES FONTENELES",
+      "registrationNumber": "4865",
+      "role": "ESTAGIARIO DE PCM",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "c49304bb",
+      "name": "FRANCISCO DAS CHAGAS FERREIRA PEREIRA",
+      "registrationNumber": "4835",
+      "role": "AUX DE SERVICOS DIVERSOS",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "a773f7c9",
+      "name": "FRANCISCO GEILSON RODRIGUES PEREIRA",
+      "registrationNumber": "1537",
+      "role": "AUXILIAR DE EXPEDICAO",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "381c9548",
+      "name": "FRANCISCO JOEL GALDINO FREIRES",
+      "registrationNumber": "7683",
+      "role": "MECANICO PLENO II",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "82d27984",
+      "name": "FRANCISCO LUCIANO ALVES DO NASCIMENTO",
+      "registrationNumber": "3069",
+      "role": "ASSISTENTE DE PCM",
+      "sector": "MANUTENÇÃO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "f636d8f7",
+      "name": "GABRIEL ARAUJO DE PONTES",
+      "registrationNumber": "6279",
+      "role": "ASSISTENTE DE PCM",
+      "sector": "MANUTENÇÃO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "f14c0bfa",
+      "name": "GABRIEL MENDES MARTINS",
+      "registrationNumber": "1628",
+      "role": "ASSISTENTE FINANCEIRO I",
+      "sector": "FINANCEIRO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "53ce5ae3",
+      "name": "HELANIO FERNANDES DE ALMEIDA",
+      "registrationNumber": "6547",
+      "role": "AUX. SERVICOS DIVERSOS",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "1a34fb6c",
+      "name": "IGOR DE OLIVEIRA FLORENCIO",
+      "registrationNumber": "4089",
+      "role": "ASSISTENTE FINANCEIRO II",
+      "sector": "FINANCEIRO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "1564fa7b",
+      "name": "ITALO DE ALENCAR ARAUJO",
+      "registrationNumber": "2783",
+      "role": "DIRETOR ADMINISTRATIVO",
+      "sector": "CONTÁBIL",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "da1bf944",
+      "name": "JESSICA DO NASCIMENTO DE SOUSA",
+      "registrationNumber": "5935",
+      "role": "ANALISTA DE RH JR",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "d3d5047f",
+      "name": "JOCASTA DE SOUZA GONÇALVES",
+      "registrationNumber": "3826",
+      "role": "CONSULTORA COMERCIAL JR",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "8a168148",
+      "name": "JOSE LOPES DE PAULA",
+      "registrationNumber": "8783",
+      "role": "SERVIÇOS GERAIS",
+      "sector": "SERVIÇOS GERAIS",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "90d9f8ce",
+      "name": "JOSE LUCIANO DAS CHAGAS MARTINS JUNIOR",
+      "registrationNumber": "3249",
+      "role": "ASSISTENTE ADMINISTRATIVO I",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "283df450",
+      "name": "KASSIO GASPARINHO DA SILVA ALVES",
+      "registrationNumber": "8388",
+      "role": "ANALISTA DE MANUTENCAO",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "20d11e58",
+      "name": "LUAN DE CASTRO SANTOS",
+      "registrationNumber": "9770",
+      "role": "ANALISTA DE PCM JR",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "b047de4d",
+      "name": "LUCAS ALMEIDA CUTRIM",
+      "registrationNumber": "4428",
+      "role": "MECÂNICO JÚNIOR I",
+      "sector": "MANUTENÇÃO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "d0fa7ee4",
+      "name": "LUCAS CAMPOS MAIA",
+      "registrationNumber": "2062",
+      "role": "AUX DE SERVICOS DIVERSOS",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "8e694d5b",
+      "name": "LUCAS DE PAULA SILVA",
+      "registrationNumber": "5272",
+      "role": "ANALISTA DE LOGISTICA PLENO",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "90327f25",
+      "name": "LUCAS VINICIO SILVA RIBEIRO",
+      "registrationNumber": "5090",
+      "role": "AUXILIAR DE ALMOXARIFADO",
+      "sector": "ALMOXARIFADO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "30403f4c",
+      "name": "LUIS FELIPE MORAIS GOMES",
+      "registrationNumber": "3423",
+      "role": "ASSISTENTE DE LOGISTICA",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "da138f08",
+      "name": "LUYLMA SILVA DE OLIVEIRA ENES",
+      "registrationNumber": "6449",
+      "role": "CONSULTOR COMERCIAL EXTERNO JR",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "ed013397",
+      "name": "MANOEL LUCAS FREITAS MORAES",
+      "registrationNumber": "8246",
+      "role": "AUXILIAR DE ALMOXARIFADO",
+      "sector": "ALMOXARIFADO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "3ee18124",
+      "name": "MARIA DE FATIMA DO NASCIMENTO SILVA",
+      "registrationNumber": "7736",
+      "role": "CONSULTORA COMERCIAL JR",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "d07af5c2",
+      "name": "MARIA VANESSA DE SOUSA OLIVEIRA",
+      "registrationNumber": "2433",
+      "role": "LIDER FINANCEIRA",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "55ff2f21",
+      "name": "MIKAEL PRUDENCIO FERNANDES",
+      "registrationNumber": "4801",
+      "role": "CONSULTOR COMERCIAL EXTERNO SENIOR I",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "4071eba8",
+      "name": "OLAVO MONTEIRO CARVALHO",
+      "registrationNumber": "5677",
+      "role": "MECÂNICO JÚNIOR I",
+      "sector": "MANUTENÇÃO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "a2d7327f",
+      "name": "PABLO MATEUS SOUSA OLIVEIRA",
+      "registrationNumber": "3677",
+      "role": "AUX DE SERVICOS DIVERSOS",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "3a864594",
+      "name": "PAULA CAROLINE MOREIRA TANZI",
+      "registrationNumber": "5864",
+      "role": "ESTAGIARIA DE MKT",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "23a1f383",
+      "name": "PAULO LINCOLN SANTOS DO NASCIMENTO",
+      "registrationNumber": "4947",
+      "role": "CONSULTOR COMERCIAL EXTERNO JR",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "2bf36f0b",
+      "name": "RAFAEL NAZARETH MORAES",
+      "registrationNumber": "4586",
+      "role": "AUX. SERVICOS DIVERSOS",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "68f81387",
+      "name": "RAMON ALVES RABELO CIDADE",
+      "registrationNumber": "1663",
+      "role": "ESPECIALISTA DE RECURSOS HUMANOS",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "c29bde9f",
+      "name": "REBECA MATIAS PARENTE",
+      "registrationNumber": "9892",
+      "role": "ASSISTENTE FINANCEIRO II",
+      "sector": "FINANCEIRO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "0924c43d",
+      "name": "RICHERD MICHAEL VERAS SOUSA",
+      "registrationNumber": "1008",
+      "role": "MECÂNICO JÚNIOR I",
+      "sector": "MANUTENÇÃO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "a61e0d87",
+      "name": "ROGERIO BATISTA CORREIA",
+      "registrationNumber": "1895",
+      "role": "AUX. SERVICOS DIVERSOS",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "280f7c47",
+      "name": "SILVIA RAQUEL DAS GRAÇAS PINTO",
+      "registrationNumber": "7299",
+      "role": "CONSULTORA COMERCIAL JR",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "95f4b7f8",
+      "name": "TIAGO CILAS ALVES DE OLIVEIRA",
+      "registrationNumber": "4059",
+      "role": "AUX DE SERVICOS DIVERSOS",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "95cdc736",
+      "name": "VERIDIANA DOS REIS LIMA",
+      "registrationNumber": "7942",
+      "role": "COMPRADOR JR",
+      "sector": "ADMINISTRATIVO",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "5b097522",
+      "name": "VICTOR DIEGO SOUZA DE ALMEIDA",
+      "registrationNumber": "02313347370101140120260101",
+      "role": "CONSULTOR COMERCIAL EXTERNO JÚNIOR",
+      "sector": "COMERCIAL",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "d6d7a6fa",
+      "name": "VINICIUS PIRES FERREIRA",
+      "registrationNumber": "5791",
+      "role": "MOTOCICLISTA",
+      "sector": "LOGÍSTICA",
+      "type": "Desligado",
+      "admissionDate": null
+    },
+    {
+      "id": "dfae8ab2",
+      "name": "VITOR CRUZ DOS SANTOS",
+      "registrationNumber": "4747",
+      "role": "ASSISTENTE FINANCEIRO II",
+      "sector": "FINANCEIRO",
+      "type": "Desligado",
+      "admissionDate": null
+    }
+  ],
+  "companies": {},
+  "all_vinculos": []
+}

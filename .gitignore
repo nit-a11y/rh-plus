@@ -4,26 +4,40 @@
 # ===========================================
 # 🔐 DADOS SENSÍVEIS E CONFIGURAÇÕES
 # ===========================================
-# Proteger apenas arquivos com senhas e dados críticos
-# Permitir documentação geral
+# Proteger APENAS arquivos com senhas e dados críticos
+# Permitir documentação geral e arquivos de configuração (sem senhas)
 
-# Arquivos de ambiente com senhas
+# Arquivos de ambiente com senhas (proteger apenas os que contêm senhas reais)
 .env
 .env.local
-.env.development
 .env.production
-.env.test
 
-# Backup de bancos de dados
+# PERMITIR arquivos de exemplo para análise do Cascade
+!.env.example
+!.env.test
+!.env.development.example
+
+# Backup de bancos de dados (proteger apenas backups reais)
 *.sql
 *.sql.gz
 *.backup
 *.dump
 
-# Scripts com credenciais
-scripts/backup-*
+# PERMITIR arquivos SQL de migração e estrutura
+!migrations/**/*.sql
+!dados-config/bancos/**/*.sql
+!scripts/*.sql
+
+# Scripts com credenciais (proteger apenas os com senhas reais)
+scripts/backup-*.sh
 scripts/deploy-*.sh
 scripts/migrar-*.sh
+
+# PERMITIR scripts de documentação e exemplo
+!dados-config/**/*.sh
+!scripts/setup*.js
+!scripts/db-*.js
+!scripts/check-*.js
 
 # ===========================================
 # 📁 DEPENDÊNCIAS E NODE.JS
@@ -38,11 +52,17 @@ yarn.lock
 # ===========================================
 # 📊 LOGS E ARQUIVOS TEMPORÁRIOS
 # ===========================================
+# Proteger logs reais com dados sensíveis
 logs/
 *.log
 access.log
 error.log
 pm2-logs/
+
+# PERMITIR estrutura de diretórios para análise
+!logs/.gitkeep
+
+# Arquivos temporários
 tmp/
 temp/
 
@@ -83,19 +103,30 @@ dist/
 # ===========================================
 # 📱 ARQUIVOS DE UPLOAD E MÍDIA
 # ===========================================
+# Proteger uploads reais com dados de usuários
 uploads/
 public/uploads/
 public/assets/temp/
 *.tmp
 
+# PERMITIR estrutura de diretórios para análise
+!uploads/.gitkeep
+!public/uploads/.gitkeep
+!public/assets/temp/.gitkeep
+
 # ===========================================
 # 🗂️ BACKUPS E COMPACTADOS
 # ===========================================
+# Proteger backups reais com dados sensíveis
 backups/
 *.zip
 *.tar.gz
 *.rar
 *.7z
+
+# PERMITIR estrutura de diretórios para análise
+!backups/.gitkeep
+!dados-config/backup/
 
 # ===========================================
 # 📋 DOCUMENTOS E RELATÓRIOS TEMPORÁRIOS

@@ -1,0 +1,214 @@
+{
+  "estatisticas": {
+    "total_registros": 12,
+    "processados": 12,
+    "erros": 0,
+    "taxa_sucesso": "100.0%"
+  },
+  "dados": [
+    {
+      "linha_original": "jan/25\t\tAGATHA LOURENCO DA SILVA MONTEIRO\t\t",
+      "numero_linha": 2,
+      "status": "sucesso",
+      "dados": {
+        "mes": "JANEIRO 2025",
+        "unidade": null,
+        "nome": "AGATHA LOURENCO DA SILVA MONTEIRO",
+        "extra": null,
+        "valor": null,
+        "employee_id": "57020966",
+        "workplace_name": null,
+        "employee_type": "Desligado",
+        "match_type": "exato",
+        "similarity": 1
+      }
+    },
+    {
+      "linha_original": "jan/25\t\tAILTON VENANCIO DA FONSECA\t05:27\tR$ 66,33",
+      "numero_linha": 3,
+      "status": "sucesso",
+      "dados": {
+        "mes": "JANEIRO 2025",
+        "unidade": "NORDESTE LOCACOES - FORTALEZA",
+        "nome": "AILTON VENANCIO DA FONSECA",
+        "extra": "05:27",
+        "valor": 66.33,
+        "employee_id": "e26a2f89",
+        "workplace_name": "NORDESTE LOCACOES - FORTALEZA",
+        "employee_type": "OP",
+        "match_type": "exato",
+        "similarity": 1
+      }
+    },
+    {
+      "linha_original": "jan/25\t\tALEXANDRE DA SILVA TEIXEIRA\t07:59\tR$ 192,55",
+      "numero_linha": 4,
+      "status": "sucesso",
+      "dados": {
+        "mes": "JANEIRO 2025",
+        "unidade": "NORDESTE LOCACOES - FORTALEZA",
+        "nome": "ALEXANDRE DA SILVA TEXEIRA",
+        "extra": "07:59",
+        "valor": 192.55,
+        "employee_id": "f6b42ec3",
+        "workplace_name": "NORDESTE LOCACOES - FORTALEZA",
+        "employee_type": "OP",
+        "match_type": "similaridade",
+        "similarity": 0.9333333333333333
+      }
+    },
+    {
+      "linha_original": "jan/25\t\tALINA DE SÁ MARQUES\t\t",
+      "numero_linha": 5,
+      "status": "sucesso",
+      "dados": {
+        "mes": "JANEIRO 2025",
+        "unidade": "NORDESTE LOCAÇÕES - SÃO LUÍS",
+        "nome": "ALINA DE SÁ MARQUES",
+        "extra": null,
+        "valor": null,
+        "employee_id": "a1af8ff1",
+        "workplace_name": "NORDESTE LOCAÇÕES - SÃO LUÍS",
+        "employee_type": "Desligado",
+        "match_type": "exato",
+        "similarity": 1
+      }
+    },
+    {
+      "linha_original": "jan/25\t\tANA CAROLINY SANTOS DA SILVA\t03:21\tR$ 43,04",
+      "numero_linha": 6,
+      "status": "sucesso",
+      "dados": {
+        "mes": "JANEIRO 2025",
+        "unidade": "NORDESTE LOCAÇÕES - SÃO LUÍS",
+        "nome": "ANA CAROLINY SANTOS DA SILVA",
+        "extra": "03:21",
+        "valor": 43.04,
+        "employee_id": "4995aa60",
+        "workplace_name": "NORDESTE LOCAÇÕES - SÃO LUÍS",
+        "employee_type": "ADM",
+        "match_type": "exato",
+        "similarity": 1
+      }
+    },
+    {
+      "linha_original": "jan/25\t\tANDERSON MESQUITA DE ARAUJO\t09:00\tR$ 119,85",
+      "numero_linha": 7,
+      "status": "sucesso",
+      "dados": {
+        "mes": "JANEIRO 2025",
+        "unidade": null,
+        "nome": "ANDERSON MESQUITA DE ARAUJO",
+        "extra": "09:00",
+        "valor": 119.85,
+        "employee_id": "434ebb05",
+        "workplace_name": null,
+        "employee_type": "OP",
+        "match_type": "exato",
+        "similarity": 1
+      }
+    },
+    {
+      "linha_original": "jan/25\t\tANDRE LUCAS DE SOUSA VITORIANO\t06:15\tR$ 88,67",
+      "numero_linha": 8,
+      "status": "sucesso",
+      "dados": {
+        "mes": "JANEIRO 2025",
+        "unidade": null,
+        "nome": "ANDRE LUCAS DE SOUSA VITORIANO",
+        "extra": "06:15",
+        "valor": 88.67,
+        "employee_id": "eb48cc93",
+        "workplace_name": null,
+        "employee_type": "OP",
+        "match_type": "exato",
+        "similarity": 1
+      }
+    },
+    {
+      "linha_original": "jan/25\t\tANDRESSA DOS SANTOS XAVIER\t01:23\tR$ 29,03",
+      "numero_linha": 9,
+      "status": "sucesso",
+      "dados": {
+        "mes": "JANEIRO 2025",
+        "unidade": "NORDESTE LOCACOES - FORTALEZA",
+        "nome": "ANDRESSA DOS SANTOS XAVIER",
+        "extra": "01:23",
+        "valor": 29.03,
+        "employee_id": "43b132b2",
+        "workplace_name": "NORDESTE LOCACOES - FORTALEZA",
+        "employee_type": "ADM",
+        "match_type": "exato",
+        "similarity": 1
+      }
+    },
+    {
+      "linha_original": "jan/25\t\tANILTON ARAUJO DE AGUIAR\t00:09\tR$ 2,84",
+      "numero_linha": 10,
+      "status": "sucesso",
+      "dados": {
+        "mes": "JANEIRO 2025",
+        "unidade": "NORDESTE LOCAÇÕES - SÃO LUÍS",
+        "nome": "ANILTON ARAUJO DE AGUIAR",
+        "extra": "00:09",
+        "valor": 2.84,
+        "employee_id": "b69bd686",
+        "workplace_name": "NORDESTE LOCAÇÕES - SÃO LUÍS",
+        "employee_type": "Desligado",
+        "match_type": "exato",
+        "similarity": 1
+      }
+    },
+    {
+      "linha_original": "jan/25\t\tANTONIA MARLENE DA SILVA CONRADO\t12:00\tR$ 155,91",
+      "numero_linha": 11,
+      "status": "sucesso",
+      "dados": {
+        "mes": "JANEIRO 2025",
+        "unidade": null,
+        "nome": "ANTONIA MARLENE DA SILVA CONRADO",
+        "extra": "12:00",
+        "valor": 155.91,
+        "employee_id": "7f2f8c87",
+        "workplace_name": null,
+        "employee_type": "OP",
+        "match_type": "exato",
+        "similarity": 1
+      }
+    },
+    {
+      "linha_original": "jan/25\t\tANTONIO GABRIEL ALVES PAULINO\t11:48\tR$ 151,60",
+      "numero_linha": 12,
+      "status": "sucesso",
+      "dados": {
+        "mes": "JANEIRO 2025",
+        "unidade": null,
+        "nome": "ANTONIO GABRIEL ALVES PAULINO",
+        "extra": "11:48",
+        "valor": 151.6,
+        "employee_id": "078ca783",
+        "workplace_name": null,
+        "employee_type": "OP",
+        "match_type": "exato",
+        "similarity": 1
+      }
+    },
+    {
+      "linha_original": "jan/25\t\tANTONIO THIAGO FREITAS LEITE\t05:20\tR$ 115,93",
+      "numero_linha": 13,
+      "status": "sucesso",
+      "dados": {
+        "mes": "JANEIRO 2025",
+        "unidade": null,
+        "nome": "ANTONIO THIAGO FREITAS LEITE",
+        "extra": "05:20",
+        "valor": 115.93,
+        "employee_id": "f7681030",
+        "workplace_name": null,
+        "employee_type": "OP",
+        "match_type": "exato",
+        "similarity": 1
+      }
+    }
+  ]
+}

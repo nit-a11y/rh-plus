@@ -44,12 +44,21 @@ app.use(helmet({
 app.use(compression());
 
 // Rate limiting (proteção contra ataques)
-const limiter = rateLimit({
+const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: NODE_ENV === 'production' ? 100 : 1000, // limite de requests
     message: { success: false, error: 'Muitas requisições. Tente novamente mais tarde.' }
 });
-app.use('/api/', limiter);
+
+// Rate limit específico para APIs de população (mais permissivo)
+const populationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: NODE_ENV === 'production' ? 500 : 5000, // limite maior para população
+    message: { success: false, error: 'Muitas requisições. Tente novamente mais tarde.' }
+});
+
+app.use('/api/', generalLimiter);
+app.use('/api/population', populationLimiter);
 
 // CORS
 app.use(cors({
@@ -99,14 +108,18 @@ const toolsRoutes = require('./routes/tools');
 const transferRoutes = require('./routes/transfers');
 const archiveRoutes = require('./routes/archive');
 const overtimeRoutes = require('./routes/overtime');
+const analysisRoutes = require('./routes/analysis');
 const recruitmentRoutes = require('./routes/recruitment');
 const onboardingRoutes = require('./routes/onboarding');
 const notificationRoutes = require('./routes/notifications');
-
+const headcountRoutes = require('./routes/headcount');
+const populationRoutes = require('./routes/population');
+const populationHistoricoRoutes = require('./routes/population-historico');
+const overtimeAnalysisRoutes = require('./routes/overtime_analysis');
+const overtimeSimpleRoutes = require('./routes/overtime_simple');
 
 app.use('/api', authRoutes);
 app.use('/api/employees', employeeRoutes);
-
 app.use('/api/employees-pro', employeeProRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api', uniformRoutes);
@@ -124,10 +137,16 @@ app.use('/api/tools', toolsRoutes);
 app.use('/api/transfers', transferRoutes);
 app.use('/api/archive', archiveRoutes);
 app.use('/api/overtime', overtimeRoutes);
+app.use('/api/analysis', analysisRoutes);
 app.use('/api/recruitment', recruitmentRoutes);
 app.use('/api', onboardingRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/headcount', headcountRoutes);
+app.use('/api/population', populationRoutes);
+app.use('/api/population-historico', populationHistoricoRoutes);
+app.use('/api/overtime', overtimeSimpleRoutes);
 
+// Removido app.use('/api/overtime', overtimeAnalysisRoutes);
 
 app.use('/api', (req, res) => {
     res.status(404).json({ success: false, error: `Rota de API não encontrada: ${req.originalUrl}` });
@@ -145,6 +164,7 @@ app.get('*', (req, res) => {
     else if (p === '/colaboradores') res.sendFile(path.join(__dirname, '../public/colaboradores.html'));
     else if (p === '/human-center') res.sendFile(path.join(__dirname, '../public/human-center.html'));
     else if (p === '/perfil') res.sendFile(path.join(__dirname, '../public/perfil.html'));
+    else if (p === '/analise-hora-extra') res.sendFile(path.join(__dirname, '../public/analise-hora-extra.html'));
     else if (p === '/aso.html') res.sendFile(path.join(__dirname, '../public/aso.html'));
     else if (p === '/vacation.html') res.sendFile(path.join(__dirname, '../public/vacation-unified.html'));
     else if (p === '/acessos.html') res.sendFile(path.join(__dirname, '../public/acessos.html'));
@@ -152,6 +172,7 @@ app.get('*', (req, res) => {
     else if (p === '/test-transfer') res.sendFile(path.join(__dirname, '../test-transfer.html'));
     else if (p === '/recrutamento') res.sendFile(path.join(__dirname, '../public/recrutamento.html'));
     else if (p === '/onboarding-90dias' || p === '/onboarding') res.sendFile(path.join(__dirname, '../public/onboarding-90dias.html'));
+    else if (p === '/populacao') res.sendFile(path.join(__dirname, '../public/populacao.html'));
     else res.sendFile(path.join(__dirname, '../public/dashboard.html'));
 });
 
