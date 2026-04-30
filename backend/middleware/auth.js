@@ -7,11 +7,10 @@ function authMiddleware(req, res, next) {
         return next();
     }
     
-    db.get(`SELECT u.id, u.name, u.username, u.role, u.permissions, u.status 
-            FROM users u 
-            JOIN user_sessions s ON s.user_id = u.id 
-            WHERE s.id = ? AND s.logout_at IS NULL`, [sessionId], (err, user) => {
-        if (err || !user) {
+    db.query(`SELECT u.id, u.name, u.username, u.role, u.permissions, u.status FROM users u JOIN user_sessions s ON s.user_id = u.id WHERE s.id = $1 AND s.logout_at IS NULL`, [sessionId])
+    .then(result => {
+        const user = result.rows[0];
+        if (!user) {
             return next();
         }
         
@@ -26,6 +25,9 @@ function authMiddleware(req, res, next) {
         };
         
         next();
+    })
+    .catch(err => {
+        return next();
     });
 }
 

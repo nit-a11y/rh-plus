@@ -87,9 +87,12 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 const authMiddleware = require('./middleware/auth');
 
+const authRoutes = require('./routes/auth');
+
+app.use('/api', authRoutes);
+
 app.use('/api', authMiddleware);
 
-const authRoutes = require('./routes/auth');
 const employeeRoutes = require('./routes/employees');
 const employeeProRoutes = require('./routes/employees_pro');
 const companyRoutes = require('./routes/companies');

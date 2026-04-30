@@ -11,7 +11,7 @@ function getClientIp(req) {
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-        const sql = `SELECT id, name, username, "photoUrl", role, permissions FROM users WHERE username = $1 AND password = $2`;
+        const sql = `SELECT id, name, username, photourl, role, permissions FROM users WHERE username = $1 AND password = $2`;
         
         const result = await query(sql, [username, password]);
         const user = result.rows[0];
@@ -36,7 +36,7 @@ router.post('/login', async (req, res) => {
                 id: user.id,
                 name: user.name,
                 username: user.username,
-                photoUrl: user.photoUrl,
+                photoUrl: user.photourl,
                 role: user.role,
                 permissions: user.permissions ? JSON.parse(user.permissions) : {},
                 sessionId: sessionId
