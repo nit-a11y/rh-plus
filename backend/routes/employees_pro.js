@@ -219,10 +219,54 @@ router.post('/admit', async (req, res) => {
 
     try {
         await transaction(async (client) => {
-            const empKeys = ['id', ...Object.keys(emp)];
-            const empValues = [id, ...Object.values(emp)];
-            const empPlaceholders = empKeys.map((_, i) => `$${i + 1}`).join(',');
-            await client.query(`INSERT INTO employees (${empKeys.join(',')}) VALUES (${empPlaceholders})`, empValues);
+            // Mapeamento de campos do frontend para colunas do banco PostgreSQL
+            const fieldMapping = {
+                'admissiondate': 'admissionDate',
+                'admission_date': 'admissionDate',
+                'admissiondate': 'admissionDate',
+                'birthdate': 'birthDate',
+                'birth_date': 'birthDate',
+                'terminationdate': 'terminationDate',
+                'termination_date': 'terminationDate',
+                'postalcode': 'postalCode',
+                'pis_pasep': 'pisPasep',
+                'personal_email': 'personalEmail',
+                'personalemail': 'personalEmail',
+                'fathername': 'fatherName',
+                'mothername': 'motherName',
+                'work_schedule': 'work_schedule',
+                'work_scale': 'work_scale',
+                'educationlevel': 'educationLevel',
+                'education_level': 'educationLevel',
+                'maritalstatus': 'maritalStatus',
+                'marital_status': 'maritalStatus',
+                'placeofbirth': 'placeOfBirth',
+                'place_of_birth': 'placeOfBirth',
+                'initialrole': 'initialRole',
+                'initialsalary': 'initialSalary',
+                'terminationreason': 'terminationReason',
+                'photourl': 'photoUrl',
+                'registrationnumber': 'registrationNumber'
+            };
+
+            // Normaliza nomes de campos para PostgreSQL
+            const normalizeFieldName = (name) => {
+                const lower = name.toLowerCase();
+                return fieldMapping[lower] || name;
+            };
+
+            // Preparar campos e valores para inserção
+            const empKeys = Object.keys(emp).map(k => normalizeFieldName(k));
+            const empValues = Object.values(emp);
+            const allKeys = ['id', ...empKeys];
+            const allValues = [id, ...empValues];
+            const empPlaceholders = allKeys.map((_, i) => `$${i + 1}`).join(',');
+            
+            console.log('🔍 DEBUG - Campos recebidos:', Object.keys(emp));
+            console.log('🔍 DEBUG - Campos mapeados:', empKeys);
+            console.log('🔍 DEBUG - SQL final:', `INSERT INTO employees (${allKeys.join(',')}) VALUES (${empPlaceholders})`);
+            
+            await client.query(`INSERT INTO employees (${allKeys.map(k => `"${k}"`).join(',')}) VALUES (${empPlaceholders})`, allValues);
 
             const docKeys = ['employee_id', ...Object.keys(docs)];
             const docValues = [id, ...Object.values(docs)];
