@@ -1,4 +1,3 @@
-
 const formatarDataBR = (v) => { if (!v) return '-'; const [y, m, d] = v.split('-'); return `${d}/${m}/${y}`; };
 const formatarDataHoraBR = (v) => { if (!v) return '-'; try { const d = new Date(v); return d.toLocaleString('pt-BR'); } catch(e) { return '-'; } };
 
@@ -7,6 +6,23 @@ let selectedId = null;
 let currentEmployeeData = null;
 let currentItems = [];
 let filterStatus = 'active';
+
+// Garantir que funções estejam disponíveis globalmente
+window.toolsModuleLoaded = true;
+
+// Função de diagnóstico
+window.checkFunctions = () => {
+    const functions = ['editTool', 'openReturn', 'openSwap', 'printTermo', 'deleteTool'];
+    const missing = functions.filter(fn => typeof window[fn] !== 'function');
+    
+    if (missing.length > 0) {
+        console.error('❌ Funções não encontradas:', missing);
+        return false;
+    } else {
+        console.log('✅ Todas as funções estão disponíveis');
+        return true;
+    }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     loadAllEmployees();
@@ -109,48 +125,67 @@ function renderItems(items) {
         return;
     }
 
-    grid.innerHTML = items.map(i => `
-        <div class="item-card animate-fade">
-            <div class="flex justify-between items-start mb-6">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-300 border border-blue-100 shadow-inner">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+    grid.innerHTML = items.map(i => {
+        const isPhone = i.type === 'Smartphone';
+        const statusColor = i.status === 'Em uso' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600';
+        const deviceIcon = isPhone ? '📱' : '💻';
+        
+        return `
+        <div class="item-card animate-fade bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+            <!-- Header -->
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-lg">
+                        ${deviceIcon}
                     </div>
                     <div>
-                        <h4 class="font-black text-gray-800 text-[11px] uppercase italic leading-none">${i.type}</h4>
-                        <p class="text-[9px] text-gray-400 font-black uppercase mt-1 tracking-widest">${i.brand} ${i.model}</p>
+                        <h4 class="font-black text-gray-800 text-[11px] uppercase italic leading-none">${i.patrimonio || 'N/A'}</h4>
+                        <p class="text-[9px] text-gray-500 font-black uppercase mt-0.5">${i.brand || 'NIT'} ${i.model || ''}</p>
                     </div>
                 </div>
-                <div class="flex flex-col items-end gap-1">
-                    <span class="status-badge-ok">${i.status.toUpperCase()}</span>
-                </div>
+                <span class="px-2 py-1 rounded-full text-[8px] font-black uppercase ${statusColor}">${i.status || 'Em uso'}</span>
             </div>
             
-            <div class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 space-y-2 mb-6 text-[10px]">
-                <div class="flex justify-between items-center"><span class="font-black text-gray-400 uppercase text-[8px]">Patrimônio</span><span class="font-bold text-gray-800">${i.patrimonio || 'N/A'}</span></div>
-                <div class="flex justify-between items-center"><span class="font-black text-gray-400 uppercase text-[8px]">Serial S/N</span><span class="font-bold text-gray-800">${i.serial_number || 'N/A'}</span></div>
-                <div class="flex justify-between items-start pt-2 mt-1 border-t border-blue-200/30">
-                    <span class="font-black text-blue-400 uppercase text-[8px]">Acessórios Inc.</span>
-                    <span class="font-black text-blue-600 bg-white px-2 py-0.5 rounded border border-blue-100 max-w-[150px] leading-tight text-right">${i.accessories || 'PADRÃO'}</span>
+            <!-- Specs -->
+            <div class="bg-gray-50 p-3 rounded-xl space-y-2 mb-4 text-[10px]">
+                <div class="flex justify-between items-center">
+                    <span class="font-black text-gray-400 uppercase text-[8px]">Tier</span>
+                    <span class="font-bold text-gray-700 bg-white px-2 py-0.5 rounded border border-gray-200">${i.tier || 'T1'}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-black text-gray-400 uppercase text-[8px]">Config</span>
+                    <span class="font-bold text-gray-700">${isPhone ? (i.ram || '8GB') : (i.ram || '8GB')} ${isPhone ? '' : '[' + (i.slots || '2/4') + ']'}</span>
+                </div>
+                ${isPhone && i.serial_number ? `
+                <div class="flex justify-between items-center">
+                    <span class="font-black text-blue-400 uppercase text-[8px]">IMEI</span>
+                    <span class="font-black text-blue-600 font-mono text-[9px]">${i.serial_number}</span>
+                </div>
+                ` : ''}
+                <div class="flex justify-between items-start pt-2 mt-1 border-t border-gray-200">
+                    <span class="font-black text-blue-400 uppercase text-[8px]">Acessórios</span>
+                    <span class="font-black text-blue-600 bg-white px-2 py-0.5 rounded border border-blue-100 max-w-[120px] leading-tight text-right text-[8px]">${i.accessories || 'PADRÃO'}</span>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3 mt-6">
-                <button onclick="window.openReturn('${i.id}')" class="btn-action-outline font-black text-red-400 hover:text-red-500 hover:border-red-200 transition-all text-[9px]">Baixa / Devolução</button>
-                <button onclick="window.openSwap('${i.id}')" class="btn-action-outline font-black text-blue-400 hover:text-blue-500 hover:border-blue-200 transition-all text-[9px]">Substituir / Troca</button>
-                <button onclick="window.generateSwapTermo('${i.id}')" class="btn-action-outline font-black text-red-400 hover:text-red-500 hover:border-red-200 transition-all text-[9px]">Termo de Troca 📋</button>
-                <button onclick="window.printTermo('${i.id}')" class="col-span-2 py-3 bg-gray-50 text-gray-500 rounded-xl text-[9px] font-black uppercase hover:bg-gray-100 transition-all border border-gray-100 flex items-center justify-center gap-2 italic">
-                    Recibo / Termo PDV 📄
-                </button>
+            <!-- Actions -->
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="window.editTool('${i.id}')" class="p-2 bg-gray-50 text-gray-600 rounded-xl text-[8px] font-black uppercase hover:bg-gray-100 transition-all border border-gray-100">✏️ Editar</button>
+                <button onclick="window.openReturn('${i.id}')" class="p-2 bg-red-50 text-red-600 rounded-xl text-[8px] font-black uppercase hover:bg-red-100 transition-all border border-red-100">📥 Devolução</button>
+                <button onclick="window.openSwap('${i.id}')" class="p-2 bg-blue-50 text-blue-600 rounded-xl text-[8px] font-black uppercase hover:bg-blue-100 transition-all border border-blue-100">🔄 Troca</button>
+                <button onclick="window.printTermo('${i.id}')" class="p-2 bg-green-50 text-green-600 rounded-xl text-[8px] font-black uppercase hover:bg-green-100 transition-all border border-green-100">📄 Termo</button>
             </div>
         </div>
-    `).join('');
+    `;
+}).join('');
 }
 
 function renderHistory(history) {
     const table = document.getElementById('main-history-table');
     const rows = document.getElementById('history-rows');
     const empty = document.getElementById('history-empty-msg');
+    
+    console.log('🔍 RenderHistory - Dados recebidos:', history);
     
     if (!history || history.length === 0) {
         table.classList.add('hidden-pro');
@@ -161,18 +196,530 @@ function renderHistory(history) {
     table.classList.remove('hidden-pro');
     empty.classList.add('hidden-pro');
 
-    rows.innerHTML = history.map(h => `
-        <tr>
-            <td class="font-mono text-gray-400 text-[10px]">${formatarDataHoraBR(h.data_hora)}</td>
-            <td><span class="px-2 py-1 rounded text-[8px] font-black uppercase ${h.action === 'ENTREGA' ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}">${h.action}</span></td>
-            <td class="uppercase italic text-[10px] font-black">${h.observation || 'Movimentação'}</td>
-            <td class="text-gray-400 font-medium italic text-[10px]">${h.status_item || '-'}</td>
-            <td class="text-blue-600 uppercase text-[9px] font-black">${h.responsavel || 'Sistema'}</td>
+    rows.innerHTML = history.map(h => {
+        console.log('📋 Processando item do histórico:', h);
+        console.log('🔍 Estrutura completa do item:', JSON.stringify(h, null, 2));
+        
+        const actionColor = h.action === 'ENTREGA' ? 'bg-green-50 text-green-600' : 
+                          h.action === 'DEVOLUÇÃO' ? 'bg-red-50 text-red-600' : 
+                          h.action === 'TROCA' ? 'bg-blue-50 text-blue-600' : 
+                          'bg-gray-50 text-gray-600';
+                          
+        const actionIcon = h.action === 'ENTREGA' ? '📦' : 
+                          h.action === 'DEVOLUÇÃO' ? '📥' : 
+                          h.action === 'TROCA' ? '🔄' : '📋';
+        
+        // Extrair patrimônio de múltiplas fontes - priorizar tool_id para termos de troca
+        let patrimonio = h.patrimonio;
+        console.log('🔍 Patrimônio direto:', patrimonio);
+        
+        // PRIORIDADE 1: Buscar pelo tool_id (funciona para termos de troca)
+        if (!patrimonio && h.tool_id) {
+            console.log('🔍 Buscando patrimônio pelo tool_id:', h.tool_id);
+            const toolFromCache = globalInventoryCache.find(t => t.id === h.tool_id) || 
+                                 currentItems.find(t => t.id === h.tool_id);
+            if (toolFromCache && toolFromCache.patrimonio) {
+                patrimonio = toolFromCache.patrimonio;
+                console.log('✅ Patrimônio encontrado via tool_id:', patrimonio);
+            }
+        }
+        
+        // PRIORIDADE 2: Tentar extrair da observação (para entrega/devolução normais e trocas)
+        if (!patrimonio && h.observation) {
+            // Procurar por padrões mais flexíveis: PC0001-T3, PC0001, CEL0002, CELL-0002, etc.
+            const patMatches = h.observation.match(/(PC\d{4}(?:-T\d)?|CELL?\d{4}|CELL-\d{4})/gi);
+            console.log('🔍 Regex matches no observation:', patMatches);
+            console.log('🔍 Observation text:', h.observation);
+            
+            if (patMatches) {
+                // Limpar e padronizar todos os patrimônios encontrados
+                const patrimoniosEncontrados = patMatches.map(p => p.toUpperCase().replace('CELL-', 'CELL'));
+                console.log('📋 Patrimônios encontrados:', patrimoniosEncontrados);
+                
+                // Se tiver 2 patrimônios, é uma troca - usar o primeiro para o botão
+                if (patrimoniosEncontrados.length >= 2) {
+                    patrimonio = patrimoniosEncontrados[0]; // Usar o primeiro patrimônio
+                    console.log('🔄 Troca identificada - usando primeiro patrimônio:', patrimonio);
+                } 
+                // Se tiver 1 patrimônio, é entrega/devolução normal
+                else if (patrimoniosEncontrados.length === 1) {
+                    patrimonio = patrimoniosEncontrados[0];
+                    console.log('📦 Entrega/Devolução identificada - patrimônio:', patrimonio);
+                }
+            }
+        }
+        
+        // Se ainda não encontrar, tentar buscar por data_hora e action (fallback)
+        if (!patrimonio && h.data_hora && h.action) {
+            console.log('🔍 Tentando buscar por data_hora e action:', h.data_hora, h.action);
+            // Buscar item mais recente que corresponde à ação e data
+            const matchingTool = globalInventoryCache.find(t => {
+                // Lógica para encontrar correspondência baseada em critérios
+                return t.status === 'Em uso' || t.status === 'Disponível';
+            });
+            if (matchingTool && matchingTool.patrimonio) {
+                patrimonio = matchingTool.patrimonio;
+                console.log('✅ Patrimônio encontrado via fallback:', patrimonio);
+            }
+        }
+        
+        console.log('🎯 Patrimônio final para botão:', patrimonio);
+        
+        const botaoHTML = patrimonio ? `
+                <button onclick="window.generateTermFromHistory('${h.id}', '${patrimonio}', '${h.action}', '${h.data_hora}', '${h.observation || ''}')" 
+                        class="px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[8px] font-black uppercase hover:bg-green-100 transition-all border border-green-100 flex items-center gap-1 mx-auto">
+                    📄 Baixar
+                </button>
+                ` : '-';
+        
+        console.log('🔘 HTML do botão gerado:', botaoHTML);
+        
+        return `
+        <tr class="hover:bg-gray-50 transition-colors">
+            <td class="font-mono text-gray-500 text-[10px] font-black">${formatarDataHoraBR(h.data_hora)}</td>
+            <td><span class="px-2 py-1 rounded-full text-[8px] font-black uppercase ${actionColor} flex items-center gap-1 w-fit">${actionIcon} ${h.action}</span></td>
+            <td class="text-[10px] font-black uppercase leading-tight">
+                <div class="flex flex-col">
+                    <span>${h.observation || 'Movimentação'}</span>
+                    ${patrimonio ? `<span class="text-[8px] text-gray-400 font-normal">${patrimonio}</span>` : ''}
+                </div>
+            </td>
+            <td class="text-gray-400 font-medium text-[9px] uppercase">${h.status_item || '-'}</td>
+            <td class="text-blue-600 text-[9px] font-black uppercase">${h.responsavel || 'Sistema'}</td>
+            <td class="text-center">${botaoHTML}</td>
         </tr>
-    `).join('');
+    `;
+}).join('');
 }
 
 let globalInventoryCache = [];
+
+// Cache para dados de trocas - permite regeneração de termos
+let swapTermsCache = {};
+
+// Salvar dados da troca no banco para regeneração futura
+window.saveSwapTermData = async (swapData) => {
+    try {
+        // OTIMIZAÇÃO: Salvar apenas dados essenciais do colaborador
+        const essentialEmployee = {
+            id: swapData.employee.id,
+            name: swapData.employee.name,
+            registrationNumber: swapData.employee.registrationNumber,
+            cpf: swapData.employee.cpf,
+            employer_name: swapData.employee.employer_name,
+            workplace_name: swapData.employee.workplace_name
+        };
+        
+        // Preparar dados para salvar (versão otimizada)
+        const payload = {
+            oldItem: swapData.oldItem,
+            newItem: swapData.newItem,
+            employee: essentialEmployee,
+            reason: swapData.reason,
+            observation: swapData.observation,
+            swapDate: swapData.swapDate,
+            responsavel: swapData.responsavel,
+            codigoDocumento: swapData.codigoDocumento
+        };
+        
+        // Salvar no banco via API
+        const response = await fetch('/api/tools/save-swap-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('💾 Dados da troca salvos no banco:', result.swapId);
+            
+            // Também manter cache local como backup
+            const cacheKey = result.swapId;
+            swapTermsCache[cacheKey] = {
+                ...swapData,
+                swapId: result.swapId,
+                timestamp: new Date().toISOString(),
+                cachedAt: new Date().toLocaleString('pt-BR')
+            };
+            
+            try {
+                localStorage.setItem('swapTermsCache', JSON.stringify(swapTermsCache));
+            } catch (e) {
+                console.warn('⚠️ Erro ao salvar no localStorage:', e);
+            }
+            
+            return result.swapId;
+        } else {
+            const error = await response.json();
+            console.error('❌ Erro ao salvar no banco:', error.error);
+            throw new Error(error.error);
+        }
+    } catch (error) {
+        console.error('❌ Erro ao salvar dados da troca:', error);
+        // Fallback para localStorage apenas
+        const cacheKey = `swap_${swapData.oldItem.patrimonio}_${swapData.newItem.patrimonio}_${new Date().toISOString().split('T')[0]}`;
+        swapTermsCache[cacheKey] = {
+            ...swapData,
+            timestamp: new Date().toISOString(),
+            cachedAt: new Date().toLocaleString('pt-BR')
+        };
+        
+        try {
+            localStorage.setItem('swapTermsCache', JSON.stringify(swapTermsCache));
+            console.log('💾 Dados salvos apenas no localStorage (fallback)');
+        } catch (e) {
+            console.warn('⚠️ Erro ao salvar no localStorage:', e);
+        }
+        
+        return cacheKey;
+    }
+};
+
+// Carregar cache do localStorage
+window.loadSwapTermsCache = () => {
+    try {
+        const cached = localStorage.getItem('swapTermsCache');
+        if (cached) {
+            swapTermsCache = JSON.parse(cached);
+            console.log('📂 Cache de trocas carregado:', Object.keys(swapTermsCache).length, 'termos');
+        }
+    } catch (e) {
+        console.warn('⚠️ Erro ao carregar cache do localStorage:', e);
+        swapTermsCache = {};
+    }
+};
+
+// Listar termos de troca disponíveis para regeneração
+window.listSwapTerms = () => {
+    const terms = Object.entries(swapTermsCache).map(([key, data]) => ({
+        key,
+        oldPat: data.oldItem.patrimonio,
+        newPat: data.newItem.patrimonio,
+        date: data.timestamp,
+        employee: data.employee.name,
+        reason: data.reason
+    }));
+    
+    console.table(terms);
+    return terms;
+};
+
+// Regenerar termo de troca específico (do cache ou do banco)
+window.regenerateSwapTerm = async (cacheKey) => {
+    let swapData = swapTermsCache[cacheKey];
+    
+    // Se não encontrar no cache, tentar buscar no banco
+    if (!swapData) {
+        try {
+            console.log('🔍 Buscando dados no banco:', cacheKey);
+            const response = await fetch(`/api/tools/get-swap-data/${cacheKey}`);
+            
+            if (response.ok) {
+                const result = await response.json();
+                swapData = result.swapData;
+                console.log('✅ Dados encontrados no banco:', swapData.swapId);
+            } else {
+                console.error('❌ Dados não encontrados no banco');
+                return alert('Termo de troca não encontrado.');
+            }
+        } catch (error) {
+            console.error('❌ Erro ao buscar do banco:', error);
+            return alert('Erro ao buscar dados da troca.');
+        }
+    } else {
+        console.log('📂 Dados encontrados no cache local');
+    }
+    
+    if (!swapData) {
+        console.error('❌ Termo não encontrado:', cacheKey);
+        return alert('Termo de troca não encontrado.');
+    }
+    
+    console.log('🔄 Regenerando termo de troca:', swapData);
+    window.generateSwapDocument(swapData);
+};
+
+// Listar todos os termos de troca (do banco e cache)
+window.listAllSwapTerms = async () => {
+    try {
+        // Buscar do banco
+        const response = await fetch('/api/tools/list-swaps');
+        if (response.ok) {
+            const result = await response.json();
+            const bankTerms = result.swaps || [];
+            
+            // Combinar com cache local
+            const localTerms = Object.entries(swapTermsCache).map(([key, data]) => ({
+                swapId: data.swapId || key,
+                oldPat: data.oldItem?.patrimonio,
+                newPat: data.newItem?.patrimonio,
+                employeeName: data.employee?.name,
+                reason: data.reason,
+                date: data.timestamp || data.swapDate,
+                source: 'localStorage'
+            }));
+            
+            // Combinar e remover duplicados
+            const allTerms = [...bankTerms, ...localTerms];
+            const uniqueTerms = allTerms.filter((term, index, arr) => 
+                arr.findIndex(t => t.swapId === term.swapId) === index
+            );
+            
+            console.table(uniqueTerms);
+            
+            // Criar interface de seleção
+            if (uniqueTerms.length > 0) {
+                let html = `
+                    <div style="position: fixed; top: 20px; right: 20px; background: white; border: 2px solid #d32f2f; border-radius: 8px; padding: 20px; max-width: 400px; max-height: 500px; overflow-y: auto; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                        <h3 style="margin: 0 0 15px 0; color: #d32f2f; font-size: 16px; font-weight: bold;">🔄 Termos de Troca Disponíveis</h3>
+                        <button onclick="this.parentElement.remove()" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 18px; cursor: pointer;">✕</button>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                `;
+                
+                uniqueTerms.forEach(term => {
+                    html += `
+                        <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; margin-bottom: 10px; cursor: pointer;" onclick="window.regenerateSwapTerm('${term.swapId}'); this.parentElement.parentElement.remove();">
+                            <div style="font-weight: bold; color: #1f2937;">${term.oldPat} → ${term.newPat}</div>
+                            <div style="font-size: 12px; color: #6b7280;">${term.employeeName}</div>
+                            <div style="font-size: 11px; color: #9ca3af;">${term.reason} - ${new Date(term.date).toLocaleDateString('pt-BR')}</div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #6b7280;">
+                            Clique em um termo para regenerar. Total: ${uniqueTerms.length} termos
+                        </div>
+                    </div>
+                `;
+                
+                // Adicionar ao body
+                const div = document.createElement('div');
+                div.innerHTML = html;
+                document.body.appendChild(div);
+            } else {
+                alert('Nenhum termo de troca encontrado.');
+            }
+            
+            return uniqueTerms;
+        } else {
+            console.error('❌ Erro ao listar termos do banco');
+            return [];
+        }
+    } catch (error) {
+        console.error('❌ Erro ao listar termos:', error);
+        return [];
+    }
+};
+
+// Gerar termo de troca baseado no log de rastreabilidade
+window.generateSwapFromHistory = async (patrimonio1, patrimonio2, employeeId) => {
+    try {
+        console.log('🔄 Gerando termo de troca do log:', patrimonio1, patrimonio2, employeeId);
+        
+        // Buscar histórico recente dos dois patrimônios
+        const response = await fetch(`/api/tools/employee/${employeeId}`);
+        if (!response.ok) {
+            return alert('Erro ao buscar dados do colaborador.');
+        }
+        
+        const data = await response.json();
+        const relevantHistory = data.history.filter(h => 
+            h.observation && (
+                h.observation.includes(patrimonio1) || 
+                h.observation.includes(patrimonio2)
+            )
+        ).slice(-5); // Últimas 5 movimentações
+        
+        if (relevantHistory.length === 0) {
+            return alert('Histórico não encontrado para estes patrimônios.');
+        }
+        
+        // Buscar dados dos itens
+        const oldItem = globalInventoryCache.find(i => i.patrimonio === patrimonio1) || 
+                        currentItems.find(i => i.patrimonio === patrimonio1);
+        const newItem = globalInventoryCache.find(i => i.patrimonio === patrimonio2) || 
+                        currentItems.find(i => i.patrimonio === patrimonio2);
+        
+        if (!oldItem || !newItem) {
+            return alert('Dados dos equipamentos não encontrados.');
+        }
+        
+        // Criar dados da troca
+        const swapData = {
+            oldItem: {
+                patrimonio: oldItem.patrimonio,
+                tipo: oldItem.type,
+                modelo: oldItem.model,
+                marca: oldItem.brand,
+                processador: oldItem.model || 'N/A',
+                memoria: oldItem.ram || 'N/A',
+                armazenamento: oldItem.storage || 'N/A',
+                tier: oldItem.tier || 'T1',
+                acessorios: oldItem.accessories || 'PADRÃO'
+            },
+            newItem: {
+                patrimonio: newItem.patrimonio,
+                tipo: newItem.type,
+                modelo: newItem.model,
+                marca: newItem.brand,
+                processador: newItem.model || 'N/A',
+                memoria: newItem.ram || 'N/A',
+                armazenamento: newItem.storage || 'N/A',
+                tier: newItem.tier || 'T1',
+                acessorios: newItem.accessories || 'PADRÃO'
+            },
+            employee: data.employee,
+            reason: 'Troca baseada no histórico',
+            observation: 'Termo gerado a partir do log de rastreabilidade',
+            swapDate: new Date().toISOString().split('T')[0],
+            responsavel: 'Sistema',
+            codigoDocumento: `NIT-${new Date().toLocaleDateString('pt-BR').replace(/\//g, '')}-${oldItem.patrimonio.substring(0,4).toUpperCase()}`
+        };
+        
+        // Gerar o termo
+        await window.generateSwapDocument(swapData);
+        
+    } catch (error) {
+        console.error('❌ Erro ao gerar termo do histórico:', error);
+        alert('Erro ao gerar termo do histórico.');
+    }
+};
+
+// Carregar cache ao iniciar a página
+window.loadSwapTermsCache();
+
+// Função inteligente única que identifica automaticamente o tipo de termo
+window.generateTermFromHistory = async (historyId, patrimonio, action, dataHora, observation) => {
+    console.log('📄 Gerando termo do histórico:', { historyId, patrimonio, action, dataHora, observation });
+    
+    // Análise inteligente para determinar tipo de termo
+    let termType = 'entrega';
+    let isSwap = false;
+    let swapData = null;
+    
+    // 1. Verificar padrões de troca na observação
+    if (observation) {
+        const patMatches = observation.match(/(PC\d{4}(?:-T\d)?|CELL?\d{4}|CELL-\d{4})/gi);
+        const patrimoniosEncontrados = patMatches ? patMatches.map(p => p.toUpperCase().replace('CELL-', 'CELL')) : [];
+        
+        console.log('🔍 Patrimônios encontrados na observação:', patrimoniosEncontrados);
+        
+        // Se tiver 2+ patrimônios ou padrão de troca → Termo de Troca
+        if (patrimoniosEncontrados.length >= 2 || observation.includes('→')) {
+            isSwap = true;
+            termType = 'troca';
+            console.log('🔄 Troca identificada - patrimônios:', patrimoniosEncontrados);
+            
+            // Preparar dados para termo de troca
+            swapData = await window.prepareSwapData(patrimoniosEncontrados, observation, action);
+        }
+        // Se tiver 1 patrimônio → Verificar pela ação
+        else if (patrimoniosEncontrados.length === 1) {
+            if (action === 'DEVOLUÇÃO') termType = 'devolucao';
+            else if (action === 'TROCA') termType = 'troca';
+            console.log('📦 Termo único - tipo:', termType);
+        }
+    } else {
+        // Fallback pela ação
+        if (action === 'DEVOLUÇÃO') termType = 'devolucao';
+        else if (action === 'TROCA') termType = 'troca';
+        console.log('🎯 Tipo por ação:', termType);
+    }
+    
+    // 2. Executar geração do termo
+    try {
+        if (isSwap && swapData) {
+            console.log('🔄 Gerando termo de troca completo');
+            await window.generateSwapDocument(swapData);
+        } else if (termType === 'troca') {
+            // Buscar item e gerar termo de troca manual
+            const item = globalInventoryCache.find(i => i.patrimonio === patrimonio) || 
+                         currentItems.find(i => i.patrimonio === patrimonio);
+            if (item) {
+                console.log('🔄 Gerando termo de troca manual');
+                return window.generateSwapTermo(item.id);
+            }
+        } else {
+            // Termo de responsabilidade/devolução
+            const item = globalInventoryCache.find(i => i.patrimonio === patrimonio) || 
+                         currentItems.find(i => i.patrimonio === patrimonio);
+            if (item) {
+                console.log('📄 Gerando termo padrão:', termType);
+                await window.printTermo(item.id, termType);
+            }
+        }
+    } catch (error) {
+        console.error('❌ Erro ao gerar termo:', error);
+        alert('Erro ao gerar o termo. Tente novamente.');
+    }
+};
+
+// Preparar dados de troca baseado nos patrimônios encontrados
+window.prepareSwapData = async (patrimonios, observation, action) => {
+    try {
+        console.log('🔧 Preparando dados da troca:', patrimonios);
+        
+        // Buscar dados dos itens
+        const oldItem = globalInventoryCache.find(i => i.patrimonio === patrimonios[0]) || 
+                       currentItems.find(i => i.patrimonio === patrimonios[0]);
+        const newItem = globalInventoryCache.find(i => i.patrimonio === patrimonios[1]) || 
+                       currentItems.find(i => i.patrimonio === patrimonios[1]);
+        
+        if (!oldItem || !newItem) {
+            console.error('❌ Itens não encontrados para troca');
+            return null;
+        }
+        
+        // Buscar dados do colaborador (usar currentEmployeeData se disponível)
+        const employee = currentEmployeeData || {
+            name: 'Colaborador',
+            id: 'unknown',
+            cpf: 'N/A',
+            employer_name: 'Empresa',
+            workplace_name: 'Unidade'
+        };
+        
+        // Extrair motivo da observação
+        const motivoMatch = observation.match(/(?:via troca|para troca):?\s*([^-\n]+)/i);
+        const reason = motivoMatch ? motivoMatch[1].trim() : 'Troca de Equipamento';
+        
+        return {
+            oldItem: {
+                patrimonio: oldItem.patrimonio,
+                tipo: oldItem.type,
+                modelo: oldItem.model || oldItem.patrimonio,
+                marca: oldItem.brand || 'NIT',
+                processador: oldItem.model || 'N/A',
+                memoria: oldItem.ram || 'N/A',
+                armazenamento: oldItem.storage || 'N/A',
+                tier: oldItem.tier || 'T1',
+                acessorios: oldItem.accessories || 'PADRÃO'
+            },
+            newItem: {
+                patrimonio: newItem.patrimonio,
+                tipo: newItem.type,
+                modelo: newItem.model || newItem.patrimonio,
+                marca: newItem.brand || 'NIT',
+                processador: newItem.model || 'N/A',
+                memoria: newItem.ram || 'N/A',
+                armazenamento: newItem.storage || 'N/A',
+                tier: newItem.tier || 'T1',
+                acessorios: newItem.accessories || 'PADRÃO'
+            },
+            employee: employee,
+            reason: reason,
+            observation: observation,
+            swapDate: new Date().toISOString().split('T')[0],
+            responsavel: 'Sistema',
+            codigoDocumento: `NIT-${new Date().toLocaleDateString('pt-BR').replace(/\//g, '')}-${oldItem.patrimonio.substring(0,4).toUpperCase()}`
+        };
+    } catch (error) {
+        console.error('❌ Erro ao preparar dados da troca:', error);
+        return null;
+    }
+};
 
 window.openStandaloneToolModal = async () => {
     const modal = document.getElementById('pro-modal-container');
@@ -196,18 +743,30 @@ window.openStandaloneToolModal = async () => {
                     <input type="text" id="t-search-inv" class="pro-input pl-10" placeholder="Digite o Patrimônio, Serial ou Modelo..." oninput="window.filterAvailableForNewEntry()">
                     <svg class="w-4 h-4 text-blue-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
-                <div id="t-search-results" class="hidden overflow-y-auto max-h-40 border rounded-xl bg-white shadow-xl space-y-1 p-1"></div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                 <div><label for="t-type" class="pro-label">Categoria</label><select id="t-type" class="pro-input" onchange="window.filterAvailableForNewEntry()"><option>Notebook</option><option>Smartphone</option><option>SIM Card</option><option>Tablet</option><option>Ferramenta Manual</option><option>Outros</option></select></div>
-                 <div><label for="t-pat" class="pro-label">Patrimônio</label><input id="t-pat" class="pro-input font-black text-blue-600 uppercase" placeholder="NIT-0000" required></div>
+            <!-- Lista Visual de Equipamentos Disponíveis -->
+            <div id="available-equipment-list" class="space-y-4">
+                <h4 class="text-[10px] font-black uppercase text-gray-400 border-b pb-2 italic">Equipamentos Disponíveis em Estoque</h4>
+                <div id="equipment-grid" class="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto border rounded-xl p-3 bg-gray-50">
+                    <!-- Cards de equipamentos serão inseridos aqui -->
+                </div>
+                <p class="text-[8px] text-gray-500 italic">Selecione um equipamento disponível acima para realizar a entrega.</p>
             </div>
-            <div class="grid grid-cols-2 gap-4">
-                 <div><label for="t-brand" class="pro-label">Marca</label><input id="t-brand" class="pro-input uppercase" placeholder="Dell, Apple..." required></div>
-                 <div><label for="t-model" class="pro-label">Modelo/Specs</label><input id="t-model" class="pro-input uppercase" placeholder="Ex: Latitude 3420" required></div>
+
+            <!-- Dados do Equipamento Selecionado (Apenas Leitura) -->
+            <div id="selected-equipment-info" class="hidden p-4 bg-green-50 rounded-2xl border border-green-200 space-y-3">
+                <h4 class="text-sm font-bold text-green-800 uppercase">Equipamento Selecionado</h4>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div><span class="font-bold text-gray-600">Patrimônio:</span> <span id="selected-pat" class="font-black text-green-700 uppercase"></span></div>
+                    <div><span class="font-bold text-gray-600">Tipo:</span> <span id="selected-type" class="font-black text-green-700 uppercase"></span></div>
+                    <div><span class="font-bold text-gray-600">Marca:</span> <span id="selected-brand" class="font-black text-green-700 uppercase"></span></div>
+                    <div><span class="font-bold text-gray-600">Modelo:</span> <span id="selected-model" class="font-black text-green-700 uppercase"></span></div>
+                    <div><span class="font-bold text-gray-600">RAM:</span> <span id="selected-ram" class="font-black text-green-700 uppercase"></span></div>
+                    <div><span class="font-bold text-gray-600">Armazenamento:</span> <span id="selected-storage" class="font-black text-green-700 uppercase"></span></div>
+                </div>
             </div>
-            <div><label for="t-ser" class="pro-label">Série / IMEI</label><input id="t-ser" class="pro-input font-mono uppercase" placeholder="S/N" required></div>
+
             <div class="space-y-3">
                 <label class="pro-label text-blue-600">Acessórios Inclusos (Obrigatório)*</label>
                 <div class="flex flex-wrap gap-2" id="acc-chips-container">
@@ -224,10 +783,15 @@ window.openStandaloneToolModal = async () => {
             <div><label for="t-date" class="pro-label">Data de Entrega</label><input type="date" id="t-date" class="pro-input" value="${new Date().toISOString().split('T')[0]}" required></div>
             
             <input type="hidden" id="t-existing-id">
+            <input type="hidden" id="t-pat">
+            <input type="hidden" id="t-type">
+            <input type="hidden" id="t-brand">
+            <input type="hidden" id="t-model">
+            <input type="hidden" id="t-ser">
 
             <div class="flex gap-4 pt-4 border-t">
                 <button type="button" onclick="window.closeProModal()" class="flex-1 text-[10px] font-black uppercase text-gray-400">Voltar</button>
-                <button type="submit" class="flex-[3] bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-black transition-all italic">Processar Entrega</button>
+                <button type="submit" id="submit-delivery" class="flex-[3] bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-black transition-all italic" disabled>Processar Entrega</button>
             </div>
         </form>
     `;
@@ -272,7 +836,91 @@ window.openStandaloneToolModal = async () => {
 
         if (res.ok) { window.closeProModal(); await window.selectEmployee(selectedId); }
     };
+
+    // Carregar equipamentos disponíveis na grade visual
+    await loadAvailableEquipmentGrid();
+    
     modal.classList.remove('hidden');
+};
+
+// Função para carregar equipamentos disponíveis na grade visual
+window.loadAvailableEquipmentGrid = async () => {
+    try {
+        const res = await fetch('/api/tools/available');
+        const availableMachines = await res.json();
+        
+        const gridContainer = document.getElementById('equipment-grid');
+        
+        if (availableMachines.length === 0) {
+            gridContainer.innerHTML = `
+                <div class="col-span-2 text-center py-8 border-2 border-dashed border-gray-200 rounded-xl">
+                    <p class="text-[9px] text-gray-400 font-black uppercase">Nenhum equipamento disponível</p>
+                    <p class="text-[8px] text-gray-500 mt-1">Não há equipamentos em estoque no momento.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        gridContainer.innerHTML = availableMachines.map(machine => `
+            <label class="cursor-pointer block">
+                <input type="radio" name="selected-equipment" value="${machine.id}" class="hidden peer" onchange="window.selectEquipmentForDelivery('${machine.id}')">
+                <div class="p-3 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 transition-all">
+                    <div class="text-center">
+                        <p class="text-[11px] font-black text-gray-800 mb-1">${machine.patrimonio}</p>
+                        <p class="text-[8px] text-gray-600 mb-2 leading-tight">${machine.brand || 'NIT'} ${machine.model || 'N/A'} - ${machine.ram || 'N/A'} / ${machine.storage || 'N/A'}</p>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[7px] text-blue-600 font-black">Tier: ${machine.tier || 'T1'}</span>
+                            <span class="text-[7px] text-gray-500">${machine.unit || 'ESTOQUE'}</span>
+                        </div>
+                        <span class="inline-block text-[6px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-black">DISPONÍVEL</span>
+                    </div>
+                </div>
+            </label>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Erro ao carregar equipamentos disponíveis:', error);
+        document.getElementById('equipment-grid').innerHTML = `
+            <div class="col-span-2 text-center py-8 border-2 border-dashed border-red-200 rounded-xl">
+                <p class="text-[9px] text-red-400 font-black uppercase">Erro ao carregar equipamentos</p>
+                <p class="text-[8px] text-red-500 mt-1">Tente novamente mais tarde.</p>
+            </div>
+        `;
+    }
+};
+
+// Função para selecionar equipamento para entrega
+window.selectEquipmentForDelivery = (id) => {
+    const item = globalInventoryCache.find(i => i.id === id);
+    if (!item) return;
+
+    // Preencher campos hidden com dados do equipamento
+    document.getElementById('t-pat').value = item.patrimonio;
+    document.getElementById('t-type').value = item.type;
+    document.getElementById('t-brand').value = item.brand;
+    document.getElementById('t-model').value = item.model;
+    document.getElementById('t-ser').value = item.serial_number;
+    document.getElementById('t-existing-id').value = item.id;
+    
+    // Mostrar informações do equipamento selecionado
+    const infoBox = document.getElementById('selected-equipment-info');
+    document.getElementById('selected-pat').textContent = item.patrimonio;
+    document.getElementById('selected-type').textContent = item.type;
+    document.getElementById('selected-brand').textContent = item.brand || 'N/A';
+    document.getElementById('selected-model').textContent = item.model || 'N/A';
+    document.getElementById('selected-ram').textContent = item.ram || 'N/A';
+    document.getElementById('selected-storage').textContent = item.storage || 'N/A';
+    infoBox.classList.remove('hidden');
+    
+    // Habilitar botão de entrega
+    const submitBtn = document.getElementById('submit-delivery');
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('bg-gray-400');
+    submitBtn.classList.add('bg-blue-600', 'hover:bg-black');
+    
+    // Feedback visual
+    document.getElementById('t-search-inv').classList.add('bg-green-50', 'border-green-300');
+    document.getElementById('t-search-inv').value = item.patrimonio;
 };
 
 window.filterAvailableForNewEntry = () => {
@@ -310,14 +958,31 @@ window.selectFromStock = (id) => {
     const item = globalInventoryCache.find(i => i.id === id);
     if (!item) return;
 
+    // Preencher campos hidden com dados do equipamento
     document.getElementById('t-pat').value = item.patrimonio;
+    document.getElementById('t-type').value = item.type;
     document.getElementById('t-brand').value = item.brand;
     document.getElementById('t-model').value = item.model;
     document.getElementById('t-ser').value = item.serial_number;
-    document.getElementById('t-acc').value = item.accessories || '';
     document.getElementById('t-existing-id').value = item.id;
     document.getElementById('t-search-results').classList.add('hidden');
     document.getElementById('t-search-inv').value = item.patrimonio;
+    
+    // Mostrar informações do equipamento selecionado
+    const infoBox = document.getElementById('selected-equipment-info');
+    document.getElementById('selected-pat').textContent = item.patrimonio;
+    document.getElementById('selected-type').textContent = item.type;
+    document.getElementById('selected-brand').textContent = item.brand || 'N/A';
+    document.getElementById('selected-model').textContent = item.model || 'N/A';
+    document.getElementById('selected-ram').textContent = item.ram || 'N/A';
+    document.getElementById('selected-storage').textContent = item.storage || 'N/A';
+    infoBox.classList.remove('hidden');
+    
+    // Habilitar botão de entrega
+    const submitBtn = document.getElementById('submit-delivery');
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('bg-gray-400');
+    submitBtn.classList.add('bg-blue-600', 'hover:bg-black');
     
     // Feedback visual
     document.getElementById('t-search-inv').classList.add('bg-green-50', 'border-green-300');
@@ -516,9 +1181,28 @@ window.loadAndProcessTemplate = async (templatePath, data) => {
 };
 
 window.generateNITDocument = async (type, forcedItems = null) => {
-    if (!currentEmployeeData) return alert('Selecione um colaborador primeiro.');
+    console.log('📄 Iniciando geração de documento NIT:', { type, forcedItems });
+    
+    if (!currentEmployeeData) {
+        console.error('❌ Nenhum colaborador selecionado');
+        return alert('Selecione um colaborador primeiro.');
+    }
+    
     const items = forcedItems || currentItems;
-    if (!items || items.length === 0) return alert('Nenhum item vinculado a este colaborador.');
+    if (!items || items.length === 0) {
+        console.error('❌ Nenhum item encontrado para o colaborador');
+        return alert('Nenhum item vinculado a este colaborador.');
+    }
+    
+    // Validar dados dos itens
+    for (const item of items) {
+        if (!item.patrimonio) {
+            console.error('❌ Item sem patrimônio:', item);
+            return alert(`Item ${item.id} não possui patrimônio cadastrado.`);
+        }
+    }
+    
+    console.log('✅ Validação concluída, gerando documento para', items.length, 'itens');
 
     // Determinar qual template usar
     const isReturn = type === 'DEVOLUCAO' || type === 'devolucao';
@@ -532,7 +1216,52 @@ window.generateNITDocument = async (type, forcedItems = null) => {
     // Gerar páginas para cada item
     let allPagesHTML = '';
     let allStyles = '';
-    
+
+    // Reutilizar a mesma função de dados da empresa
+    const getCompanyData = async () => {
+        try {
+            const response = await fetch('/api/company');
+            if (response.ok) {
+                const companyData = await response.json();
+                console.log('🏢 Dados da empresa carregados da API (NIT):', companyData);
+                return companyData;
+            }
+        } catch (e) {
+            console.warn('⚠️ Erro ao buscar dados da empresa (NIT), usando fallback:', e);
+        }
+        
+        const unitData = {
+            'FORTALEZA': {
+                nome: 'AR2 Serviços e Soluções Ltda',
+                cnpj: '43.529.100/0001-12',
+                endereco: 'Avenida Antônio Sales, nº 1317, sala 604, Joaquim Távora, Fortaleza/CE',
+                cidade: 'Fortaleza/CE',
+                unidade: 'Matriz Fortaleza'
+            },
+            'SÃO LUIS': {
+                nome: 'AER2 Serviços e Soluções Ltda',
+                cnpj: '43.529.100/0001-12',
+                endereco: 'Avenida dos Portugueses, nº 1505, Centro, São Luís/MA',
+                cidade: 'São Luís/MA',
+                unidade: 'Filial São Luís'
+            },
+            'EUSEBIO': {
+                nome: 'AR2 Serviços e Soluções Ltda',
+                cnpj: '43.529.100/0001-12',
+                endereco: 'Avenida Central, nº 500, Eusébio/CE',
+                cidade: 'Eusébio/CE',
+                unidade: 'Filial Eusébio'
+            }
+        };
+        
+        const unitKey = currentEmployeeData.workplace_name?.toUpperCase()?.includes('SÃO LUÍS') ? 'SÃO LUIS' :
+                       currentEmployeeData.workplace_name?.toUpperCase()?.includes('EUSÉBIO') ? 'EUSEBIO' : 'FORTALEZA';
+        
+        return unitData[unitKey] || unitData['FORTALEZA'];
+    };
+
+    const companyData = await getCompanyData();
+
     for (const item of items) {
         // Preparar dados do template
         const accessoriesList = (item.accessories || '').split(', ').filter(a => a.trim());
@@ -540,28 +1269,33 @@ window.generateNITDocument = async (type, forcedItems = null) => {
         const accessoriesEmptyHTML = accessoriesList.map(a => `( ) ${a}`).join(' ');
         
         const templateData = {
-            empresa_nome: currentEmployeeData.employer_name || 'AR2 Serviços e Soluções Ltda',
-            empresa_cnpj: '43.529.100/0001-12',
-            empresa_endereco: 'Avenida Antônio Sales, nº 1317, sala 604, Joaquim Távora, Fortaleza/CE',
-            empresa_unidade: currentEmployeeData.workplace_name || 'Matriz',
-            cidade: 'Fortaleza/CE',
+            empresa_nome: currentEmployeeData.employer_name || companyData.nome,
+            empresa_cnpj: companyData.cnpj,
+            empresa_endereco: companyData.endereco,
+            empresa_unidade: currentEmployeeData.workplace_name || companyData.unidade,
+            cidade: companyData.cidade,
             codigo_documento: docCode,
             data_emissao: now.toLocaleDateString('pt-BR'),
             colaborador_nome: currentEmployeeData.name,
-            colaborador_cpf: currentEmployeeData.registrationNumber,
-            colaborador_unidade: currentEmployeeData.workplace_name || 'N/A',
-            colaborador_empresa: currentEmployeeData.employer_name || 'AR2 Serviços e Soluções Ltda',
+            colaborador_cpf: currentEmployeeData.registrationNumber || currentEmployeeData.cpf || 'N/A',
+            colaborador_unidade: currentEmployeeData.sector || 'N/A',
+            colaborador_empresa: currentEmployeeData.employer_name || companyData.nome,
             patrimonio: item.patrimonio,
             tipo: item.type,
             tipo_equipamento: item.type,
             processador: item.model,
             memoria: item.ram,
-            armazenamento: item.storage || 'Não informado',
+            armazenamento: item.storage,
             tier: item.tier || 'T1',
             acessorios: isReturn ? (accessoriesEmptyHTML || '( ) Nenhum acessório vinculado') : (accessoriesHTML || 'PADRÃO'),
             responsavel_nome: '________________________',
             responsavel_cargo: '________________________'
         };
+        
+        console.log('📋 Template data NIT preparado:', { 
+            patrimonio: templateData.patrimonio, 
+            empresa: templateData.empresa_nome 
+        });
         
         // Carregar e processar template
         const templateResult = await window.loadAndProcessTemplate(templatePath, templateData);
@@ -668,16 +1402,21 @@ window.openSwap = async (oldId) => {
             <div id="available-machines-section" class="space-y-4">
                 <h4 class="text-[10px] font-black uppercase text-gray-400 border-b pb-2 italic">Máquinas Disponíveis em Estoque</h4>
                 ${sameTypeMachines.length > 0 ? `
-                    <div class="space-y-2 max-h-60 overflow-y-auto border rounded-xl p-2 bg-gray-50">
+                    <div class="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto border rounded-xl p-3 bg-gray-50">
                         ${sameTypeMachines.map(machine => `
-                            <label class="cursor-pointer flex items-center gap-3 p-3 bg-white rounded-lg border hover:border-blue-300 transition-colors">
-                                <input type="radio" name="selected-machine" value="${machine.id}" class="w-4 h-4 text-blue-600">
-                                <div class="flex-1">
-                                    <p class="text-[10px] font-black text-gray-800">${machine.patrimonio}</p>
-                                    <p class="text-[8px] text-gray-600">${machine.brand} ${machine.model} - ${machine.ram || 'N/A'} / ${machine.storage || 'N/A'}</p>
-                                    <p class="text-[7px] text-blue-600">Tier: ${machine.tier || 'T1'} | ${machine.unit || 'N/A'}</p>
+                            <label class="cursor-pointer block">
+                                <input type="radio" name="selected-machine" value="${machine.id}" class="hidden peer">
+                                <div class="p-3 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-300 peer-checked:border-blue-500 peer-checked:bg-blue-50 transition-all">
+                                    <div class="text-center">
+                                        <p class="text-[11px] font-black text-gray-800 mb-1">${machine.patrimonio}</p>
+                                        <p class="text-[8px] text-gray-600 mb-2 leading-tight">${machine.brand || 'NIT'} ${machine.model || 'N/A'} - ${machine.ram || 'N/A'} / ${machine.storage || 'N/A'}</p>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-[7px] text-blue-600 font-black">Tier: ${machine.tier || 'T1'}</span>
+                                            <span class="text-[7px] text-gray-500">${machine.unit || 'ESTOQUE'}</span>
+                                        </div>
+                                        <span class="inline-block text-[6px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-black">DISPONÍVEL</span>
+                                    </div>
                                 </div>
-                                <span class="text-[7px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-black">DISPONÍVEL</span>
                             </label>
                         `).join('')}
                     </div>
@@ -805,9 +1544,52 @@ window.openSwap = async (oldId) => {
             window.closeProModal(); 
             await window.selectEmployee(selectedId);
             
-            // Gerar automaticamente o termo de troca
-            setTimeout(() => {
-                window.generateSwapTermoWithDetails(oldId, result.newToolId, reason, notes, swapType);
+            // Gerar automaticamente o termo de troca com dados completos
+            setTimeout(async () => {
+                console.log('🔄 Gerando termo automático após troca bem-sucedida');
+                
+                // Buscar dados completos dos equipamentos
+                const oldEquipment = currentItems.find(i => i.id === oldId);
+                const newEquipment = currentItems.find(i => i.id === result.newToolId);
+                
+                if (oldEquipment && newEquipment && currentEmployeeData) {
+                    // Preparar dados completos da troca
+                    const swapData = {
+                        oldItem: {
+                            patrimonio: oldEquipment.patrimonio,
+                            tipo: oldEquipment.type,
+                            marca: oldEquipment.brand || 'NIT',
+                            modelo: oldEquipment.model,
+                            memoria: oldEquipment.ram,
+                            armazenamento: oldEquipment.storage,
+                            tier: oldEquipment.tier,
+                            acessorios: oldEquipment.accessories
+                        },
+                        newItem: {
+                            patrimonio: newEquipment.patrimonio,
+                            tipo: newEquipment.type,
+                            marca: newEquipment.brand || 'NIT',
+                            modelo: newEquipment.model,
+                            memoria: newEquipment.ram,
+                            armazenamento: newEquipment.storage,
+                            tier: newEquipment.tier,
+                            acessorios: newEquipment.accessories
+                        },
+                        employee: currentEmployeeData,
+                        reason: reason,
+                        observation: `Troca realizada: ${oldEquipment.patrimonio} → ${newEquipment.patrimonio}`,
+                        swapDate: new Date().toISOString().split('T')[0],
+                        responsavel: responsible,
+                        codigoDocumento: `TROCA-${new Date().toLocaleDateString('pt-BR').replace(/\//g, '')}-${oldEquipment.patrimonio.substring(0,4).toUpperCase()}`
+                    };
+                    
+                    // Gerar termo e salvar dados automaticamente
+                    await window.generateSwapDocument(swapData);
+                    console.log('✅ Termo de troca gerado e salvo automaticamente');
+                } else {
+                    console.error('❌ Erro ao buscar dados dos equipamentos para gerar termo');
+                    alert('Erro ao gerar termo automático. Use o botão "📄 Baixar" no histórico.');
+                }
             }, 500);
         } else {
             const error = await res.json();
@@ -1100,232 +1882,269 @@ function generateSwapTermoHTML(oldItem, newItem, employee, reason, notes, swapTy
     `;
 }
 
-// Gerar Termo de Troca Manual
-window.generateSwapTermo = (itemId) => {
+// Gerar Termo de Troca Automático (baseado nos dados do log)
+window.generateSwapTermo = async (itemId) => {
     if (!currentEmployeeData) return alert('Selecione um colaborador primeiro.');
     
-    const item = currentItems.find(i => i.id === itemId);
+    const item = globalInventoryCache.find(i => i.id === itemId) || 
+                 currentItems.find(i => i.id === itemId);
     if (!item) return alert('Item não encontrado.');
     
-    const modal = document.getElementById('pro-modal-container');
-    const content = document.getElementById('pro-modal-content');
+    console.log('🔄 Gerando termo de troca automático para:', item.patrimonio);
     
-    content.innerHTML = `
-        <div class="bg-green-600 p-8 text-white"><h3 class="text-xl font-black uppercase italic">Termo de Troca Manual</h3></div>
-        <div class="p-10 space-y-6">
-            <div class="bg-green-50 p-4 rounded-xl border border-green-100 mb-4">
-                <p class="text-[9px] font-black uppercase text-green-400 mb-2">Equipamento Atual:</p>
-                <div class="text-[11px] font-black uppercase text-gray-800">
-                    <p><strong>Patrimônio:</strong> ${item.patrimonio}</p>
-                    <p><strong>Tipo:</strong> ${item.type}</p>
-                    <p><strong>Modelo:</strong> ${item.model || 'N/A'}</p>
-                    <p><strong>RAM:</strong> ${item.ram || 'N/A'}</p>
-                    <p><strong>Armazenamento:</strong> ${item.storage || 'N/A'}</p>
-                </div>
-            </div>
-
-            <form id="swap-termo-form" class="space-y-4">
-                <h4 class="text-[10px] font-black uppercase text-gray-400 border-b pb-2 italic">Dados da Troca</h4>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label for="old-pat" class="pro-label">Patrimônio Antigo</label><input id="old-pat" class="pro-input font-bold uppercase" value="${item.patrimonio}" readonly></div>
-                    <div><label for="new-pat" class="pro-label">Patrimônio Novo</label><input id="new-pat" class="pro-input font-bold uppercase" placeholder="PC..." required></div>
-                </div>
-                
-                <div class="grid grid-cols-3 gap-4">
-                    <div><label for="old-storage" class="pro-label">Armazenamento</label><input id="old-storage" class="pro-input uppercase" value="${item.storage || ''}" placeholder="SSD 256GB"></div>
-                    <div><label for="old-ram" class="pro-label">Memória RAM</label><input id="old-ram" class="pro-input uppercase" value="${item.ram || ''}" placeholder="8GB"></div>
-                    <div><label for="old-tier" class="pro-label">Tier</label><select id="old-tier" class="pro-input">
-                        <option value="T1" ${item.tier === 'T1' ? 'selected' : ''}>T1 - Básico / ADM</option>
-                        <option value="T2" ${item.tier === 'T2' ? 'selected' : ''}>T2 - Multi-Sítio</option>
-                        <option value="T3" ${item.tier === 'T3' ? 'selected' : ''}>T3 - Alto Desempenho</option>
-                    </select></div>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label for="old-date" class="pro-label">Data da Troca</label><input id="old-date" type="date" class="pro-input" value="${new Date().toISOString().split('T')[0]}" required></div>
-                    <div><label for="old-reason" class="pro-label">Motivo da Troca</label><select id="old-reason" class="pro-input">
-                        <option>Upgrade de Desempenho</option>
-                        <option>Defeito no Equipamento</option>
-                        <option>Padronização de Setor</option>
-                        <option>Obsolescência</option>
-                        <option>Danos Físicos</option>
-                        <option>Outros</option>
-                    </select></div>
-                </div>
-                
-                <div><label for="old-obs" class="pro-label">Observações Adicionais</label><textarea id="old-obs" class="pro-input" rows="3" placeholder="Detalhes da troca..."></textarea></div>
-                
-                <div class="flex gap-4 pt-6">
-                    <button type="button" onclick="window.closeProModal()" class="flex-1 text-[10px] font-black uppercase text-gray-400">Cancelar</button>
-                    <button type="submit" class="flex-[2] bg-green-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl">Gerar Termo de Troca</button>
-                </div>
-            </form>
-        </div>
-    `;
-
-    document.getElementById('swap-termo-form').onsubmit = async (e) => {
-        e.preventDefault();
-        
-        const newPatrimonio = document.getElementById('new-pat').value;
-        let newItemData = {
-            patrimonio: newPatrimonio,
-            type: item.type,
-            model: newPatrimonio // Se não tiver no banco, usa o patrimônio como modelo
-        };
-        
-        // Buscar dados do novo equipamento no banco
-        try {
-            const response = await fetch(`/api/tools/patrimonio/${newPatrimonio}`);
-            if (response.ok) {
-                const data = await response.json();
-                newItemData = {
-                    patrimonio: data.patrimonio,
-                    type: data.type || item.type,
-                    model: data.model || newPatrimonio,
-                    ram: data.ram || 'N/A',
-                    storage: data.storage || 'N/A',
-                    tier: data.tier || 'T1'
-                };
-            } else {
-                // Se não encontrar no banco, oferece opção para cadastrar
-                const shouldRegister = confirm(`Equipamento ${newPatrimonio} não encontrado no banco.\n\nDeseja cadastrá-lo agora?`);
-                if (shouldRegister) {
-                    newItemData = {
-                        patrimonio: newPatrimonio,
-                        type: item.type,
-                        model: newPatrimonio,
-                        ram: '8GB', // Valor padrão
-                        storage: 'SSD 256GB', // Valor padrão
-                        tier: 'T1' // Valor padrão
-                    };
-                    
-                    // Cadastrar novo equipamento
-                    const registerResponse = await fetch('/api/tools', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            ...newItemData,
-                            employeeId: currentEmployeeData.id,
-                            status: 'Em uso',
-                            date_given: new Date().toISOString().split('T')[0],
-                            responsible: (typeof Auth !== 'undefined') ? Auth.getUser()?.name : 'Admin'
-                        })
-                    });
-                    
-                    if (!registerResponse.ok) {
-                        alert('Erro ao cadastrar equipamento: ' + (await registerResponse.text()));
-                        return;
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Erro ao buscar equipamento:', error);
-            alert('Erro ao consultar dados do equipamento. Usando dados padrão.');
+    // Buscar histórico recente para encontrar a troca correspondente
+    try {
+        const response = await fetch(`/api/tools/employee/${currentEmployeeData.id}`);
+        if (!response.ok) {
+            return alert('Erro ao buscar histórico do colaborador.');
         }
         
+        const data = await response.json();
+        const swapHistory = data.history.filter(h => 
+            h.action === 'TROCA' && 
+            h.observation && 
+            (h.observation.includes(item.patrimonio) || h.observation.includes('→'))
+        ).slice(-3); // Últimas 3 trocas
+        
+        if (swapHistory.length === 0) {
+            // Se não encontrar histórico, gerar termo básico
+            console.log('⚠️ Nenhum histórico de troca encontrado, gerando termo básico');
+            return window.generateBasicSwapTerm(item);
+        }
+        
+        // Usar a troca mais recente
+        const latestSwap = swapHistory[swapHistory.length - 1];
+        console.log('📋 Usando histórico mais recente:', latestSwap);
+        
+        // Extrair patrimônios da observação
+        const patMatches = latestSwap.observation.match(/(PC\d{4}(?:-T\d)?|CELL?\d{4}|CELL-\d{4})/gi);
+        const patrimonios = patMatches ? patMatches.map(p => p.toUpperCase().replace('CELL-', 'CELL')) : [];
+        
+        // Determinar qual é o novo equipamento
+        const newPatrimonio = patrimonios.find(p => p !== item.patrimonio) || patrimonios[1];
+        
+        if (!newPatrimonio) {
+            console.log('⚠️ Não foi possível identificar o novo equipamento');
+            return window.generateBasicSwapTerm(item);
+        }
+        
+        // Buscar dados do novo equipamento
+        const newItem = globalInventoryCache.find(i => i.patrimonio === newPatrimonio) || 
+                        currentItems.find(i => i.patrimonio === newPatrimonio);
+        
+        if (!newItem) {
+            console.log('⚠️ Novo equipamento não encontrado no cache');
+            return window.generateBasicSwapTerm(item);
+        }
+        
+        // Extrair motivo da observação
+        const motivoMatch = latestSwap.observation.match(/(?:via troca|para troca):?\s*([^-\n]+)/i);
+        const reason = motivoMatch ? motivoMatch[1].trim() : 'Troca de Equipamento';
+        
+        // Preparar dados completos da troca
         const swapData = {
             oldItem: {
-                patrimonio: document.getElementById('old-pat').value,
-                type: item.type,
-                model: item.model,
-                ram: document.getElementById('old-ram').value,
-                storage: document.getElementById('old-storage').value,
-                tier: document.getElementById('old-tier').value
+                patrimonio: item.patrimonio,
+                tipo: item.type,
+                modelo: item.model || item.patrimonio,
+                marca: item.brand || 'NIT',
+                processador: item.model || 'N/A',
+                memoria: item.ram || 'N/A',
+                armazenamento: item.storage || 'N/A',
+                tier: item.tier || 'T1',
+                acessorios: item.accessories || 'PADRÃO'
             },
-            newItem: newItemData,
-            swapDate: document.getElementById('old-date').value,
-            reason: document.getElementById('old-reason').value,
-            observation: document.getElementById('old-obs').value,
-            employee: currentEmployeeData
+            newItem: {
+                patrimonio: newItem.patrimonio,
+                tipo: newItem.type,
+                modelo: newItem.model || newItem.patrimonio,
+                marca: newItem.brand || 'NIT',
+                processador: newItem.model || 'N/A',
+                memoria: newItem.ram || 'N/A',
+                armazenamento: newItem.storage || 'N/A',
+                tier: newItem.tier || 'T1',
+                acessorios: newItem.accessories || 'PADRÃO'
+            },
+            employee: currentEmployeeData,
+            reason: reason,
+            observation: latestSwap.observation,
+            swapDate: latestSwap.data_hora ? new Date(latestSwap.data_hora).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            responsavel: latestSwap.responsavel || 'Sistema',
+            codigoDocumento: `NIT-${new Date().toLocaleDateString('pt-BR').replace(/\//g, '')}-${item.patrimonio.substring(0,4).toUpperCase()}`
         };
         
+        console.log('✅ Dados da troca preparados:', swapData);
         await window.generateSwapDocument(swapData);
-    };
-
-    modal.classList.remove('hidden');
+        
+    } catch (error) {
+        console.error('❌ Erro ao gerar termo de troca automático:', error);
+        // Fallback para termo básico
+        return window.generateBasicSwapTerm(item);
+    }
 };
 
-// Gerar documento de troca
-window.generateSwapDocument = async (swapData) => {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('pt-BR').replace(/\//g, '');
-    const docCode = `TROCA-${dateStr}-${swapData.oldItem.patrimonio.substring(2,6)}`;
+// Gerar termo básico de troca (fallback)
+window.generateBasicSwapTerm = async (item) => {
+    console.log('🔄 Gerando termo básico de troca para:', item.patrimonio);
     
-    const templateData = {
-        empresa_nome: swapData.employee.employer_name || 'AR2 Serviços e Soluções Ltda',
-        empresa_cnpj: '43.529.100/0001-12',
-        empresa_endereco: 'Avenida Antônio Sales, nº 1317, sala 604, Joaquim Távora, Fortaleza/CE',
-        empresa_unidade: swapData.employee.workplace_name || 'Matriz',
-        cidade: 'Fortaleza/CE',
-        codigo_documento: docCode,
-        data_emissao: swapData.swapDate || now.toLocaleDateString('pt-BR'),
-        colaborador_nome: swapData.employee.name,
-        colaborador_cpf: swapData.employee.registrationNumber,
-        colaborador_unidade: swapData.employee.workplace_name || 'N/A',
-        colaborador_empresa: swapData.employee.employer_name || 'AR2 Serviços e Soluções Ltda',
-        
-        // Equipamento Antigo
-        old_patrimonio: swapData.oldItem.patrimonio,
-        old_tipo: swapData.oldItem.type,
-        old_modelo: swapData.oldItem.model,
-        old_memoria: swapData.oldItem.ram,
-        old_armazenamento: swapData.oldItem.storage,
-        old_tier: swapData.oldItem.tier,
-        
-        // Equipamento Novo
-        new_patrimonio: swapData.newItem.patrimonio,
-        new_tipo: swapData.newItem.type,
-        new_modelo: swapData.newItem.model,
-        
-        // Dados da Troca
-        motivo_troca: swapData.reason,
-        observacoes: swapData.observation || 'Nenhuma observação adicional.',
-        responsavel_nome: '________________________',
-        responsavel_cargo: '________________________'
+    const swapData = {
+        oldItem: {
+            patrimonio: item.patrimonio,
+            tipo: item.type,
+            modelo: item.model || item.patrimonio,
+            marca: item.brand || 'NIT',
+            processador: item.model || 'N/A',
+            memoria: item.ram || 'N/A',
+            armazenamento: item.storage || 'N/A',
+            tier: item.tier || 'T1',
+            acessorios: item.accessories || 'PADRÃO'
+        },
+        newItem: {
+            patrimonio: 'NOVO EQUIPAMENTO',
+            tipo: item.type,
+            modelo: 'A SER DEFINIDO',
+            marca: 'NIT',
+            processador: 'N/A',
+            memoria: 'N/A',
+            armazenamento: 'N/A',
+            tier: 'T1',
+            acessorios: 'PADRÃO'
+        },
+        employee: currentEmployeeData,
+        reason: 'Troca de Equipamento',
+        observation: 'Termo gerado automaticamente',
+        swapDate: new Date().toISOString().split('T')[0],
+        responsavel: 'Sistema',
+        codigoDocumento: `NIT-${new Date().toLocaleDateString('pt-BR').replace(/\//g, '')}-${item.patrimonio.substring(0,4).toUpperCase()}`
     };
     
-    // Carregar template de troca
-    const templatePath = '/templates/termo-troca.html';
-    const templateResult = await window.loadAndProcessTemplate(templatePath, templateData);
+    await window.generateSwapDocument(swapData);
+};
+
+// Gerar documento de troca (PADRÃO UNIFICADO COM LOG DE RASTREABILIDADE)
+window.generateSwapDocument = async (swapData) => {
+    console.log('🔄 Gerando termo de troca padrão com LOG DE RASTREABILIDADE');
     
-    if (templateResult) {
-        const { styles, bodyContent } = templateResult;
+    // Verificar se há padrão de troca na observação para buscar dados reais
+    let oldItemData = swapData.newItem;
+    let newItemData = swapData.oldItem;
+    
+    if (swapData.observation && swapData.observation.includes('→')) {
+        console.log('🔍 Padrão de troca encontrado, buscando dados reais dos equipamentos...');
         
-        const html = `
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-        <head>
-            <meta charset="UTF-8">
-            <title>Termo de Troca - ${swapData.employee.name}</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-            <style>
-                ${styles}
-                @media print {
-                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; background: white; }
-                    @page { margin: 0; size: A4; }
-                    .page { box-shadow: none; margin: 0; border: none; page-break-after: always; }
-                    .no-print { display: none; }
-                }
-                body { font-family: 'Segoe UI', Arial, sans-serif; background: #525659; display: flex; flex-direction: column; align-items: center; padding: 40px 0; }
-                .page { transition: all 0.3s ease; width: 210mm; min-height: 297mm; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-                @media screen {
-                    .page:hover { transform: scale(1.02); }
-                }
-            </style>
-        </head>
-        <body onload="setTimeout(() => window.print(), 800)">
-            <div class="page" style="page-break-after: always; margin-bottom: 40px;">${bodyContent}</div>
-        </body>
-        </html>
-        `;
+        // Extrair patrimônios do padrão PC0002-T3 → PC0012-T2
+        const patMatches = swapData.observation.match(/(PC\d{4}(?:-T\d)?|CELL?\d{4}|CELL-\d{4})\s*→\s*(PC\d{4}(?:-T\d)?|CELL?\d{4}|CELL-\d{4})/gi);
         
-        const win = window.open('', '_blank');
-        win.document.write(html);
-        win.document.close();
-        
-        window.closeProModal();
+        if (patMatches && patMatches.length > 0) {
+            const [oldPat, newPat] = patMatches[0].split('→').map(p => p.trim().toUpperCase().replace('CELL-', 'CELL'));
+            console.log('📋 Patrimônios identificados:', oldPat, '→', newPat);
+            
+            // Buscar dados reais do equipamento antigo
+            const oldEquipment = globalInventoryCache.find(i => i.patrimonio === oldPat) || 
+                               currentItems.find(i => i.patrimonio === oldPat);
+            
+            // Buscar dados reais do equipamento novo
+            const newEquipment = globalInventoryCache.find(i => i.patrimonio === newPat) || 
+                               currentItems.find(i => i.patrimonio === newPat);
+            
+            if (oldEquipment) {
+                console.log('✅ Dados do equipamento antigo encontrados:', oldEquipment.patrimonio);
+                oldItemData = {
+                    patrimonio: oldEquipment.patrimonio,
+                    tipo: oldEquipment.type,
+                    marca: oldEquipment.brand || 'NIT',
+                    modelo: oldEquipment.model,
+                    memoria: oldEquipment.ram,
+                    armazenamento: oldEquipment.storage,
+                    tier: oldEquipment.tier,
+                    acessorios: oldEquipment.accessories
+                };
+            } else {
+                console.log('⚠️ Equipamento antigo não encontrado no cache, usando dados básicos');
+            }
+            
+            if (newEquipment) {
+                console.log('✅ Dados do equipamento novo encontrados:', newEquipment.patrimonio);
+                newItemData = {
+                    patrimonio: newEquipment.patrimonio,
+                    tipo: newEquipment.type,
+                    marca: newEquipment.brand || 'NIT',
+                    modelo: newEquipment.model,
+                    memoria: newEquipment.ram,
+                    armazenamento: newEquipment.storage,
+                    tier: newEquipment.tier,
+                    acessorios: newEquipment.accessories
+                };
+            } else {
+                console.log('⚠️ Equipamento novo não encontrado no cache, usando dados básicos');
+            }
+        }
     }
+    
+    // CORREÇÃO: oldItem deve ser o equipamento ANTIGO (devolvido)
+    // newItem deve ser o equipamento NOVO (entregue)
+    const oldItem = {
+        id: oldItemData.patrimonio,
+        patrimonio: oldItemData.patrimonio,
+        type: oldItemData.tipo,
+        brand: oldItemData.marca || 'NIT',
+        model: oldItemData.modelo,
+        ram: oldItemData.memoria,
+        storage: oldItemData.armazenamento,
+        tier: oldItemData.tier,
+        accessories: oldItemData.acessorios
+    };
+    
+    const newItem = {
+        id: newItemData.patrimonio,
+        patrimonio: newItemData.patrimonio,
+        type: newItemData.tipo,
+        brand: newItemData.marca || 'NIT',
+        model: newItemData.modelo,
+        ram: newItemData.memoria,
+        storage: newItemData.armazenamento,
+        tier: newItemData.tier,
+        accessories: newItemData.acessorios
+    };
+    
+    const employee = {
+        name: swapData.employee.name,
+        registrationNumber: swapData.employee.cpf || swapData.employee.registrationNumber,
+        employer_name: swapData.employee.empresa || swapData.employee.employer_name,
+        workplace_name: swapData.employee.unidade || swapData.employee.workplace_name
+    };
+    
+    // Buscar histórico relevante para o LOG
+    let historyData = [];
+    try {
+        if (employee.registrationNumber) {
+            const response = await fetch(`/api/tools/employee/${swapData.employee.id}`);
+            if (response.ok) {
+                const data = await response.json();
+                historyData = data.history || [];
+            }
+        }
+    } catch (e) {
+        console.warn('⚠️ Erro ao buscar histórico para LOG:', e);
+    }
+    
+    // Usar o padrão generateSwapTermoHTML
+    const termoHTML = generateSwapTermoHTML(
+        oldItem, 
+        newItem, 
+        employee, 
+        swapData.reason, 
+        swapData.observation, 
+        'TROCA', 
+        historyData
+    );
+    
+    // Abrir em nova janela para impressão
+    const win = window.open('', '_blank');
+    win.document.write(termoHTML);
+    win.document.close();
+    
+    console.log('✅ Termo de troca padrão gerado com sucesso');
 };
 
 // --- GESTÃO GLOBAL ---
@@ -1860,8 +2679,8 @@ window.selectForAllocation = (id, name) => {
 window.toggleAllocFields = () => {
     const isChecked = document.getElementById('alloc-now').checked;
     document.getElementById('alloc-fields').classList.toggle('hidden-pro', !isChecked);
-    // Esconder seção de acessórios no preview lateral se não for alocar agora
-    document.getElementById('form-acc-section').classList.toggle('hidden-pro', !isChecked);
+    // A seção de acessórios deve permanecer visível sempre
+    // document.getElementById('form-acc-section').classList.toggle('hidden-pro', !isChecked);
 };
 
 window.searchFormEmployee = () => {
@@ -1872,8 +2691,8 @@ window.searchFormEmployee = () => {
     
     const filtered = employees.filter(e => e.type !== 'Desligado' && (
         e.name.toLowerCase().includes(search) || 
-        (e.cpf && e.cpf.includes(search)) || 
-        (e.registrationNumber && e.registrationNumber.includes(search))
+        (e.registrationNumber && e.registrationNumber.includes(search)) ||
+        (e.cpf && e.cpf.includes(search))
     ));
 
     if (filtered.length === 0) { results.classList.add('hidden-pro'); return; }
@@ -1896,36 +2715,7 @@ window.selectFormEmployee = (id, name, cpf) => {
     document.getElementById('pc-emp-search').value = name;
 };
 
-window.generatePatrimonio = () => {
-    const tier = document.getElementById('pc-tier')?.value || 'T1';
-    
-    // Unificar todas as fontes de dados para garantir que pegamos o último salvo
-    const allItems = [...(globalInventoryCache || []), ...(toolsData || [])];
-    
-    // Filtrar apenas itens que seguem o padrão PCXXXX
-    const notebookTools = allItems.filter(t => t.patrimonio && t.patrimonio.toUpperCase().startsWith('PC'));
-    
-    let maxNum = 0;
-    notebookTools.forEach(t => {
-        // Extrair apenas os números após o 'PC' e antes de qualquer '-' ou espaço
-        const match = t.patrimonio.match(/PC(\d+)/i);
-        if (match && match[1]) {
-            const n = parseInt(match[1]);
-            if (!isNaN(n) && n > maxNum) maxNum = n;
-        }
-    });
-    
-    // Se não encontrar nada, começa do 1, senão soma 1 ao maior encontrado
-    const nextNum = (maxNum + 1).toString().padStart(4, '0');
-    
-    const patInput = document.getElementById('pc-pat');
-    if (patInput) {
-        patInput.value = `PC${nextNum}-${tier}`;
-    }
-    
-    // Atualiza o card de preview para refletir o novo patrimônio
-    window.updateFormPreview();
-};
+// Função generatePatrimonio movida para linha 2056 (versão unificada)
 
 window.selectTier = (el, tier) => {
     document.querySelectorAll('.tier-card').forEach(c => c.classList.remove('active'));
@@ -1985,8 +2775,18 @@ window.initCadernoForm = async () => {
     }
 
     // 2. Adicionar listeners para atualização em tempo real do preview e contador
-    const inputs = ['pc-cpu', 'pc-storage', 'pc-ram', 'pc-unid', 'pc-pat'];
-    inputs.forEach(id => {
+    const notebookInputs = ['pc-cpu', 'pc-storage', 'pc-ram', 'pc-unid', 'pc-pat'];
+    notebookInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', window.updateFormPreview);
+            el.addEventListener('change', window.updateFormPreview);
+        }
+    });
+
+    // 2b. Adicionar listeners para campos smartphone
+    const smartphoneInputs = ['phone-brand', 'phone-model', 'phone-storage', 'phone-ram', 'phone-line', 'phone-carrier', 'phone-imei'];
+    smartphoneInputs.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('input', window.updateFormPreview);
@@ -2130,6 +2930,17 @@ window.saveGeneralForm = async () => {
     if (currentFormMode === 'notebook' && !selectedAcc.includes('CARREGADOR')) {
         return alert('ALERTA DE SEGURANÇA: Todo notebook deve ser acompanhado de um CARREGADOR.\nPor favor, marque este item.');
     }
+    if (currentFormMode === 'smartphone' && (!selectedAcc.includes('CARREGADOR') && !selectedAcc.includes('CABO HDMI'))) {
+        return alert('ALERTA DE SEGURANÇA: Todo smartphone deve ser acompanhado de um CARREGADOR ou CABO.\nPor favor, marque pelo menos um destes itens.');
+    }
+
+    // --- VALIDAÇÃO DE IMEI PARA SMARTPHONES ---
+    if (currentFormMode === 'smartphone') {
+        const imei = document.getElementById('phone-imei').value;
+        if (!imei || imei.length !== 15) {
+            return alert('ALERTA DE SEGURANÇA: O IMEI deve ter exatamente 15 dígitos.\nPor favor, preencha o campo IMEI corretamente.');
+        }
+    }
 
     // --- VALIDAÇÃO DE DUPLICIDADE ---
     try {
@@ -2160,8 +2971,7 @@ window.saveGeneralForm = async () => {
             model: `Intel Core ${document.getElementById('pc-cpu').value}`,
             serial_number: 'SN-' + patrimonio, 
             storage: document.getElementById('pc-storage').value,
-            ram: document.getElementById('pc-ram').value + 'GB',
-            slots: `${document.getElementById('pc-slots-used')?.value || '0'} (${document.getElementById('pc-ram-dist')?.value || 'N/A'})`
+            ram: document.getElementById('pc-ram').value + 'GB'
         };
     } else {
         payload = {
@@ -2192,6 +3002,13 @@ window.saveGeneralForm = async () => {
 
         if (res.ok) {
             alert(`${currentFormMode === 'notebook' ? 'Notebook' : 'Smartphone'} cadastrado com sucesso!`);
+            // Atualizar cache para manter dados atualizados
+            try {
+                const cacheRes = await fetch('/api/tools/all');
+                const newCache = await cacheRes.json();
+                globalInventoryCache = newCache;
+                toolsData = newCache;
+            } catch (e) { console.warn('Erro ao atualizar cache:', e); }
             window.setGlobalSubTab('inventory');
         } else {
             const err = await res.json();
@@ -2211,64 +3028,356 @@ window.renderGlobalInventory = async () => {
 };
 
 window.editTool = (id) => {
-    const tool = globalInventoryCache.find(t => t.id === id);
-    if (!tool) return;
-
-    // Abrir a aba de formulário
-    window.setGlobalSubTab('form');
-
-    // Mudar o modo do formulário
-    const mode = tool.type === 'Smartphone' ? 'smartphone' : 'notebook';
-    window.setFormMode(mode);
-
-    // Preencher campos comuns
-    document.getElementById('pc-pat').value = tool.patrimonio;
-    document.getElementById('pc-tier').value = tool.tier;
-    document.getElementById('pc-unid').value = tool.unit || 'FORTALEZA';
+    console.log('✏️ EditTool chamado com ID:', id);
+    console.log('🔍 globalInventoryCache:', globalInventoryCache);
+    console.log('🔍 currentItems:', currentItems);
     
-    // Atualizar visual do Tier (chips ativos)
-    document.querySelectorAll('.tier-card').forEach(c => {
-        const tVal = c.onclick.toString().match(/'(T\d)'/)[1];
-        c.classList.toggle('active', tVal === tool.tier);
-    });
+    const tool = globalInventoryCache.find(t => t.id === id) || currentItems.find(t => t.id === id);
+    console.log('🎯 Tool encontrado:', tool);
+    
+    if (!tool) {
+        console.error('❌ Tool não encontrado para ID:', id);
+        alert('Ativo não encontrado para edição.');
+        return;
+    }
 
-    if (mode === 'notebook') {
-        const cpuMatch = tool.model ? tool.model.replace('Intel Core ', '') : '-';
-        document.getElementById('pc-cpu').value = cpuMatch;
-        document.getElementById('pc-storage').value = tool.storage || '';
-        document.getElementById('pc-ram').value = tool.ram ? tool.ram.replace('GB', '') : '8';
-    } else {
-        document.getElementById('phone-brand').value = tool.brand || 'Apple';
-        document.getElementById('phone-model').value = tool.model || '';
-        document.getElementById('phone-storage').value = tool.storage || '128GB';
-        document.getElementById('phone-ram').value = tool.ram || '8GB';
-        document.getElementById('phone-imei').value = tool.serial_number || '';
+    const modal = document.getElementById('pro-modal-container');
+    const content = document.getElementById('pro-modal-content');
+    const isPhone = tool.type === 'Smartphone';
+    
+    // Extrair accessories e chip info
+    let accessories = [];
+    let phoneLine = '';
+    let phoneCarrier = '';
+    
+    if (tool.accessories) {
+        accessories = tool.accessories.split(', ').filter(a => a.trim());
         
-        // Extrair linha e operadora se estiverem nos acessórios
-        if (tool.accessories && tool.accessories.includes('CHIP:')) {
-            const chipParts = tool.accessories.split('CHIP: ')[1].split(' (');
-            document.getElementById('phone-line').value = chipParts[0];
-            document.getElementById('phone-carrier').value = chipParts[1].replace(')', '');
+        // Extrair info do chip se for smartphone
+        if (isPhone && tool.accessories.includes('CHIP:')) {
+            const chipMatch = tool.accessories.match(/CHIP:\s*([^(]+)\s*\(([^)]+)\)/);
+            if (chipMatch) {
+                phoneLine = chipMatch[1].trim();
+                phoneCarrier = chipMatch[2].trim();
+            }
         }
     }
 
-    // Preview
-    window.updateFormPreview();
+    content.innerHTML = `
+        <div class="bg-blue-600 p-8 text-white flex justify-between items-center">
+            <h3 class="text-xl font-black uppercase italic">Editar Ativo</h3>
+            <button onclick="window.closeProModal()" class="text-white/50 hover:text-white">✕</button>
+        </div>
+        
+        <form id="edit-tool-form" class="p-10 space-y-6">
+            <input type="hidden" id="edit-tool-id" value="${tool.id}">
+            
+            <!-- Campos Básicos -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="pro-label">Patrimônio</label>
+                    <input type="text" id="edit-pat" class="pro-input font-bold uppercase" value="${tool.patrimonio}" readonly>
+                </div>
+                <div>
+                    <label class="pro-label">Tipo</label>
+                    <input type="text" id="edit-type" class="pro-input" value="${tool.type}" readonly>
+                </div>
+            </div>
+
+            ${!isPhone ? `
+                <!-- Campos Notebook -->
+                <div class="space-y-4">
+                    <h4 class="text-[10px] font-black uppercase text-gray-400 border-b pb-2">Hardware Notebook</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="pro-label">Processador</label>
+                            <div class="flex">
+                                <span class="bg-gray-100 border border-gray-200 border-r-0 px-4 py-3 rounded-l-xl text-[9px] font-black text-gray-400">Intel® Core™</span>
+                                <input type="text" id="edit-cpu" class="pro-input !rounded-l-none !border-l-0" value="${tool.model ? tool.model.replace('Intel Core ', '') : ''}">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="pro-label">Armazenamento</label>
+                            <input type="text" id="edit-storage" class="pro-input uppercase" value="${tool.storage || ''}" placeholder="SSD NVMe 512GB">
+                        </div>
+                        <div>
+                            <label class="pro-label">RAM (GB)</label>
+                            <input type="number" id="edit-ram" class="pro-input" value="${tool.ram ? tool.ram.replace('GB', '') : '8'}">
+                        </div>
+                        <div>
+                            <label class="pro-label">Tier</label>
+                            <select id="edit-tier" class="pro-input">
+                                <option value="T1" ${tool.tier === 'T1' ? 'selected' : ''}>T1 - Básico / ADM</option>
+                                <option value="T2" ${tool.tier === 'T2' ? 'selected' : ''}>T2 - Multi-Sítio</option>
+                                <option value="T3" ${tool.tier === 'T3' ? 'selected' : ''}>T3 - Alto Desempenho</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            ` : `
+                <!-- Campos Smartphone -->
+                <div class="space-y-4">
+                    <h4 class="text-[10px] font-black uppercase text-gray-400 border-b pb-2">Smartphone</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="pro-label">Marca</label>
+                            <select id="edit-brand" class="pro-input">
+                                <option value="Apple" ${tool.brand === 'Apple' ? 'selected' : ''}>Apple</option>
+                                <option value="Samsung" ${tool.brand === 'Samsung' ? 'selected' : ''}>Samsung</option>
+                                <option value="Motorola" ${tool.brand === 'Motorola' ? 'selected' : ''}>Motorola</option>
+                                <option value="Xiaomi" ${tool.brand === 'Xiaomi' ? 'selected' : ''}>Xiaomi</option>
+                                <option value="Outros" ${tool.brand === 'Outros' ? 'selected' : ''}>Outros</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="pro-label">Modelo</label>
+                            <input type="text" id="edit-model" class="pro-input uppercase" value="${tool.model || ''}">
+                        </div>
+                        <div>
+                            <label class="pro-label">Armazenamento</label>
+                            <select id="edit-phone-storage" class="pro-input">
+                                <option value="64GB" ${tool.storage === '64GB' ? 'selected' : ''}>64GB</option>
+                                <option value="128GB" ${tool.storage === '128GB' ? 'selected' : ''}>128GB</option>
+                                <option value="256GB" ${tool.storage === '256GB' ? 'selected' : ''}>256GB</option>
+                                <option value="512GB" ${tool.storage === '512GB' ? 'selected' : ''}>512GB</option>
+                                <option value="1TB" ${tool.storage === '1TB' ? 'selected' : ''}>1TB</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="pro-label">RAM</label>
+                            <select id="edit-phone-ram" class="pro-input">
+                                <option value="4GB" ${tool.ram === '4GB' ? 'selected' : ''}>4GB</option>
+                                <option value="6GB" ${tool.ram === '6GB' ? 'selected' : ''}>6GB</option>
+                                <option value="8GB" ${tool.ram === '8GB' ? 'selected' : ''}>8GB</option>
+                                <option value="12GB" ${tool.ram === '12GB' ? 'selected' : ''}>12GB</option>
+                                <option value="16GB" ${tool.ram === '16GB' ? 'selected' : ''}>16GB</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="pro-label text-blue-600">IMEI (15 dígitos)</label>
+                            <input type="text" id="edit-imei" class="pro-input font-mono" value="${tool.serial_number || ''}" maxlength="15">
+                        </div>
+                        <div>
+                            <label class="pro-label text-green-600">Linha (SIM)</label>
+                            <input type="text" id="edit-line" class="pro-input" value="${phoneLine}" placeholder="(00) 00000-0000">
+                        </div>
+                        <div>
+                            <label class="pro-label text-green-600">Operadora</label>
+                            <select id="edit-carrier" class="pro-input">
+                                <option value="VIVO" ${phoneCarrier === 'VIVO' ? 'selected' : ''}>VIVO</option>
+                                <option value="TIM" ${phoneCarrier === 'TIM' ? 'selected' : ''}>TIM</option>
+                                <option value="CLARO" ${phoneCarrier === 'CLARO' ? 'selected' : ''}>CLARO</option>
+                                <option value="OI" ${phoneCarrier === 'OI' ? 'selected' : ''}>OI</option>
+                                <option value="OUTRA" ${phoneCarrier === 'OUTRA' ? 'selected' : ''}>OUTRA</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            `}
+
+            <!-- Campos Comuns -->
+            <div class="space-y-4">
+                <h4 class="text-[10px] font-black uppercase text-gray-400 border-b pb-2">Localização e Status</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="pro-label text-blue-600">Unidade</label>
+                        <select id="edit-unit" class="pro-input">
+                            <option value="FORTALEZA" ${tool.unit === 'FORTALEZA' ? 'selected' : ''}>FORTALEZA</option>
+                            <option value="EUSEBIO" ${tool.unit === 'EUSEBIO' ? 'selected' : ''}>EUSÉBIO</option>
+                            <option value="SÃO LUIS" ${tool.unit === 'SÃO LUIS' ? 'selected' : ''}>SÃO LUÍS</option>
+                            <option value="JUAZEIRO DO NORTE" ${tool.unit === 'JUAZEIRO DO NORTE' ? 'selected' : ''}>JUAZEIRO DO NORTE</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="pro-label">Status</label>
+                        <select id="edit-status" class="pro-input">
+                            <option value="Em estoque" ${(!tool.employee_id) ? 'selected' : ''}>Em estoque</option>
+                            <option value="Em uso" ${(tool.employee_id) ? 'selected' : ''}>Em uso</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acessórios -->
+            <div class="space-y-4">
+                <h4 class="text-[10px] font-black uppercase text-gray-400 border-b pb-2">Acessórios</h4>
+                <div class="flex flex-wrap gap-2">
+                    ${['CARREGADOR', 'MOUSE SEM FIO', 'MOUSE PAD', 'TELA EXTRA', 'CABO HDMI', 'MOCHILA'].map(item => `
+                        <label class="cursor-pointer group">
+                            <input type="checkbox" name="edit-acc" value="${item}" class="hidden peer" ${accessories.includes(item) ? 'checked' : ''}>
+                            <div class="px-4 py-2 border-2 border-gray-100 rounded-xl text-[9px] font-black uppercase transition-all peer-checked:bg-blue-600 peer-checked:border-blue-600 peer-checked:text-white group-hover:border-blue-200">
+                                ${item}
+                            </div>
+                        </label>
+                    `).join('')}
+                </div>
+                <div>
+                    <label class="pro-label text-gray-400">Outros (opcional)</label>
+                    <input type="text" id="edit-other-acc" class="pro-input" placeholder="Acessórios adicionais...">
+                </div>
+            </div>
+
+            <!-- Botões -->
+            <div class="flex gap-4 pt-6 border-t">
+                <button type="button" onclick="window.closeProModal()" class="flex-1 text-[10px] font-black uppercase text-gray-400">Cancelar</button>
+                <button type="submit" class="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-black transition-all">Salvar Alterações</button>
+            </div>
+        </form>
+    `;
+
+    // Adicionar evento de submit
+    document.getElementById('edit-tool-form').onsubmit = async (e) => {
+        e.preventDefault();
+        await window.saveToolEdit();
+    };
+
+    modal.classList.remove('hidden');
+};
+
+window.saveToolEdit = async () => {
+    const toolId = document.getElementById('edit-tool-id').value;
+    const toolType = document.getElementById('edit-type').value;
+    const isPhone = toolType === 'Smartphone';
     
-    // Rolar para o topo
-    document.querySelector('main').scrollTop = 0;
+    // --- VALIDAÇÕES ---
+    if (isPhone) {
+        const imei = document.getElementById('edit-imei').value.replace(/[^0-9]/g, '');
+        if (!imei || imei.length !== 15) {
+            return alert('ALERTA: O IMEI deve ter exatamente 15 dígitos numéricos.');
+        }
+        // Atualizar campo com apenas números
+        document.getElementById('edit-imei').value = imei;
+    } else {
+        // Validações para Notebook
+        const cpu = document.getElementById('edit-cpu').value.trim();
+        const storage = document.getElementById('edit-storage').value.trim();
+        const ram = document.getElementById('edit-ram').value;
+        
+        if (!cpu) {
+            return alert('ALERTA: O processador é obrigatório para notebooks.');
+        }
+        if (!storage) {
+            return alert('ALERTA: O armazenamento é obrigatório para notebooks.');
+        }
+        if (!ram || ram < 1 || ram > 128) {
+            return alert('ALERTA: A RAM deve estar entre 1GB e 128GB.');
+        }
+    }
+    
+    // --- COLETAR ACESSÓRIOS ---
+    const selectedAcc = Array.from(document.querySelectorAll('input[name="edit-acc"]:checked')).map(cb => cb.value);
+    const otherAcc = document.getElementById('edit-other-acc')?.value;
+    if (otherAcc) selectedAcc.push(otherAcc.toUpperCase());
+    
+    // Validação de acessórios obrigatórios
+    if (!selectedAcc.includes('CARREGADOR')) {
+        const deviceType = isPhone ? 'smartphone' : 'notebook';
+        return alert(`ALERTA DE SEGURANÇA: Todo ${deviceType} deve ser acompanhado de um CARREGADOR.\nPor favor, marque este item.`);
+    }
+    
+    // --- MONTAR PAYLOAD ---
+    let payload = {
+        id: toolId,
+        tier: document.getElementById('edit-tier')?.value || 'T1',
+        unit: document.getElementById('edit-unit').value,
+        status: document.getElementById('edit-status').value,
+        accessories: selectedAcc.join(', '),
+        responsible: (typeof Auth !== 'undefined') ? Auth.getUser()?.name : 'Admin'
+    };
+    
+    if (isPhone) {
+        // Smartphone
+        payload = {
+            ...payload,
+            type: 'Smartphone',
+            brand: document.getElementById('edit-brand').value,
+            model: document.getElementById('edit-model').value,
+            serial_number: document.getElementById('edit-imei').value,
+            storage: document.getElementById('edit-phone-storage').value,
+            ram: document.getElementById('edit-phone-ram').value
+        };
+        
+        // Adicionar info do chip se houver linha
+        const phoneLine = document.getElementById('edit-line').value;
+        const phoneCarrier = document.getElementById('edit-carrier').value;
+        if (phoneLine && phoneCarrier) {
+            payload.accessories += `, CHIP: ${phoneLine} (${phoneCarrier})`;
+        }
+    } else {
+        // Notebook
+        payload = {
+            ...payload,
+            type: 'Notebook',
+            brand: 'NIT',
+            model: `Intel Core ${document.getElementById('edit-cpu').value}`,
+            storage: document.getElementById('edit-storage').value,
+            ram: document.getElementById('edit-ram').value + 'GB'
+        };
+    }
+    
+    try {
+        const res = await fetch('/api/tools/update', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        
+        if (res.ok) {
+            alert('Ativo atualizado com sucesso!');
+            window.closeProModal();
+            
+            // Atualizar cache e renderizar inventário
+            try {
+                const cacheRes = await fetch('/api/tools/all');
+                const newCache = await cacheRes.json();
+                globalInventoryCache = newCache;
+                toolsData = newCache;
+            } catch (e) { console.warn('Erro ao atualizar cache:', e); }
+            
+            window.renderGlobalInventory();
+            if (typeof window.loadGlobalStats === 'function') window.loadGlobalStats();
+        } else {
+            const err = await res.json();
+            alert('Erro: ' + (err.error || 'Falha ao atualizar.'));
+        }
+    } catch (e) {
+        alert('Erro de conexão.');
+    }
 };
 
 window.deleteTool = async (id) => {
-    if (!confirm('Deseja realmente excluir este ativo do inventário? Esta ação é irreversível.')) return;
+    const tool = globalInventoryCache.find(t => t.id === id);
+    if (!tool) return;
+    
+    const confirmMessage = `⚠️ EXCLUSÃO IRREVERSÍVEL ⚠️\n\n` +
+        `Deseja realmente excluir o seguinte ativo?\n\n` +
+        `📋 PATRIMÔNIO: ${tool.patrimonio}\n` +
+        `🖥️ TIPO: ${tool.type}\n` +
+        `🏷️ MODELO: ${tool.model || 'N/A'}\n` +
+        `📍 UNIDADE: ${tool.unit || 'N/A'}\n` +
+        `${tool.employee_name ? `👤 ALOCADO PARA: ${tool.employee_name}\n` : `📦 STATUS: Em estoque\n`}` +
+        `\nEsta ação NÃO PODERÁ ser desfeita!`;
+    
+    if (!confirm(confirmMessage)) return;
     
     try {
         const res = await fetch(`/api/tools/delete/${id}`, { method: 'DELETE' });
         if (res.ok) {
-            alert('Item removido com sucesso.');
+            alert('✅ Item removido com sucesso!');
+            
+            // Atualizar cache após exclusão
+            try {
+                const cacheRes = await fetch('/api/tools/all');
+                const newCache = await cacheRes.json();
+                globalInventoryCache = newCache;
+                toolsData = newCache;
+            } catch (e) { console.warn('Erro ao atualizar cache:', e); }
+            
             window.renderGlobalInventory();
+            if (typeof window.loadGlobalStats === 'function') window.loadGlobalStats();
         } else {
-            alert('Erro ao excluir item.');
+            const err = await res.json();
+            alert('❌ Erro ao excluir item: ' + (err.error || 'Tente novamente.'));
         }
     } catch (e) { alert('Erro de conexão com o servidor.'); }
 };
@@ -2307,17 +3416,37 @@ window.loadGlobalStats = async () => {
 };
 
 window.printTermo = async (itemId, type = 'entrega') => {
-    const item = currentItems.find(i => i.id === itemId) || globalInventoryCache.find(i => i.id === itemId);
-    if (!item) return alert('Ativo não encontrado para gerar o termo.');
-    if (!currentEmployeeData && !item.employee_name) return alert('Este ativo não está alocado a um colaborador.');
+    console.log('📄 Iniciando geração de termo:', { itemId, type });
     
+    // Buscar item em ambas as fontes
+    const item = currentItems.find(i => i.id === itemId) || globalInventoryCache.find(i => i.id === itemId);
+    if (!item) {
+        console.error('❌ Item não encontrado:', itemId);
+        return alert('Ativo não encontrado para gerar o termo.');
+    }
+    
+    // Validação de dados obrigatórios
+    if (!item.patrimonio) {
+        console.error('❌ Patrimônio não encontrado no item:', item);
+        return alert('Patrimônio não encontrado para este ativo.');
+    }
+    
+    // Coletar dados do colaborador com fallbacks melhorados
     const emp = currentEmployeeData || {
-        name: item.employee_name,
-        registrationNumber: '0000',
-        sector: item.workplace_name || '-',
+        name: item.employee_name || 'NÃO IDENTIFICADO',
+        registrationNumber: item.registrationNumber || item.cpf || 'N/A',
+        sector: item.workplace_name || item.sector || 'N/A',
         employer_name: item.employer_name || 'AR2 Serviços e Soluções Ltda',
-        workplace_name: item.workplace_name || '-'
+        workplace_name: item.workplace_name || item.unit || 'N/A'
     };
+    
+    // Validação final de dados essenciais
+    if (!emp.name || emp.name === 'NÃO IDENTIFICADO') {
+        console.error('❌ Dados do colaborador insuficientes:', emp);
+        return alert('Dados do colaborador insuficientes para gerar o termo.');
+    }
+    
+    console.log('✅ Dados coletados:', { item: item.patrimonio, employee: emp.name });
 
     // Determinar qual template usar
     const isReturn = type === 'devolucao' || type === 'DEVOLUCAO';
@@ -2328,23 +3457,70 @@ window.printTermo = async (itemId, type = 'entrega') => {
     const dateStr = now.toLocaleDateString('pt-BR').replace(/\//g, '');
     const docCode = `NIT-${dateStr}-${item.id.substring(0,4).toUpperCase()}`;
     
+    // Buscar dados dinâmicos da empresa
+    const getCompanyData = async () => {
+        try {
+            // Tentar buscar dados da empresa da API
+            const response = await fetch('/api/company');
+            if (response.ok) {
+                const companyData = await response.json();
+                console.log('🏢 Dados da empresa carregados da API:', companyData);
+                return companyData;
+            }
+        } catch (e) {
+            console.warn('⚠️ Erro ao buscar dados da empresa, usando fallback:', e);
+        }
+        
+        // Fallback com dados melhorados por unidade
+        const unitData = {
+            'FORTALEZA': {
+                nome: 'AR2 Serviços e Soluções Ltda',
+                cnpj: '43.529.100/0001-12',
+                endereco: 'Avenida Antônio Sales, nº 1317, sala 604, Joaquim Távora, Fortaleza/CE',
+                cidade: 'Fortaleza/CE',
+                unidade: 'Matriz Fortaleza'
+            },
+            'SÃO LUIS': {
+                nome: 'AER2 Serviços e Soluções Ltda',
+                cnpj: '43.529.100/0001-12',
+                endereco: 'Avenida dos Portugueses, nº 1505, Centro, São Luís/MA',
+                cidade: 'São Luís/MA',
+                unidade: 'Filial São Luís'
+            },
+            'EUSEBIO': {
+                nome: 'AR2 Serviços e Soluções Ltda',
+                cnpj: '43.529.100/0001-12',
+                endereco: 'Avenida Central, nº 500, Eusébio/CE',
+                cidade: 'Eusébio/CE',
+                unidade: 'Filial Eusébio'
+            }
+        };
+        
+        const unitKey = emp.workplace_name?.toUpperCase()?.includes('SÃO LUÍS') ? 'SÃO LUIS' :
+                       emp.workplace_name?.toUpperCase()?.includes('EUSÉBIO') ? 'EUSEBIO' : 'FORTALEZA';
+        
+        return unitData[unitKey] || unitData['FORTALEZA'];
+    };
+
+    const companyData = await getCompanyData();
+    
     // Preparar dados do template
     const accessoriesList = (item.accessories || '').split(', ').filter(a => a.trim());
     const accessoriesHTML = accessoriesList.map(a => `(X) ${a}`).join(' ');
     const accessoriesEmptyHTML = accessoriesList.map(a => `( ) ${a}`).join(' ');
     
     const templateData = {
-        empresa_nome: emp.employer_name || 'AR2 Serviços e Soluções Ltda',
-        empresa_cnpj: '43.529.100/0001-12',
-        empresa_endereco: 'Avenida Antônio Sales, nº 1317, sala 604, Joaquim Távora, Fortaleza/CE',
-        empresa_unidade: emp.workplace_name || 'Matriz',
-        cidade: 'Fortaleza/CE',
+        empresa_nome: emp.employer_name || companyData.nome,
+        empresa_cnpj: companyData.cnpj,
+        empresa_endereco: companyData.endereco,
+        empresa_unidade: emp.workplace_name || companyData.unidade,
+        cidade: companyData.cidade,
         codigo_documento: docCode,
         data_emissao: now.toLocaleDateString('pt-BR'),
         colaborador_nome: emp.name,
         colaborador_cpf: emp.registrationNumber,
         colaborador_unidade: emp.sector || 'N/A',
-        colaborador_empresa: emp.employer_name || 'AR2 Serviços e Soluções Ltda',
+        colaborador_empresa: emp.employer_name || companyData.nome,
         patrimonio: item.patrimonio,
         tipo: item.type,
         tipo_equipamento: item.type,
@@ -2356,6 +3532,12 @@ window.printTermo = async (itemId, type = 'entrega') => {
         responsavel_nome: '________________________',
         responsavel_cargo: '________________________'
     };
+    
+    console.log('📋 Template data preparado:', { 
+        patrimonio: templateData.patrimonio, 
+        empresa: templateData.empresa_nome,
+        unidade: templateData.empresa_unidade 
+    });
     
     // Carregar e processar template
     const templateResult = await window.loadAndProcessTemplate(templatePath, templateData);

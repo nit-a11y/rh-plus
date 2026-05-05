@@ -3,6 +3,11 @@
  * Node.js + Express + PostgreSQL
  */
 
+// Carregar variáveis de ambiente do arquivo correto
+require('dotenv').config({
+    path: `.env.${process.env.NODE_ENV || 'development'}`
+});
+
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
@@ -89,8 +94,10 @@ const authMiddleware = require('./middleware/auth');
 
 const authRoutes = require('./routes/auth');
 
+// Rotas públicas (sem autenticação)
 app.use('/api', authRoutes);
 
+// Middleware de autenticação para rotas protegidas
 app.use('/api', authMiddleware);
 
 const employeeRoutes = require('./routes/employees');
@@ -120,8 +127,8 @@ const populationRoutes = require('./routes/population');
 const populationHistoricoRoutes = require('./routes/population-historico');
 const overtimeAnalysisRoutes = require('./routes/overtime_analysis');
 const overtimeSimpleRoutes = require('./routes/overtime_simple');
-
-app.use('/api', authRoutes);
+const roleMatrixRoutes = require('./routes/role-matrix');
+const consultaColaboradoresRoutes = require('./routes/consulta-colaboradores');
 app.use('/api/employees', employeeRoutes);
 app.use('/api/employees-pro', employeeProRoutes);
 app.use('/api/companies', companyRoutes);
@@ -148,6 +155,8 @@ app.use('/api/headcount', headcountRoutes);
 app.use('/api/population', populationRoutes);
 app.use('/api/population-historico', populationHistoricoRoutes);
 app.use('/api/overtime', overtimeSimpleRoutes);
+app.use('/api/roles-matrix', roleMatrixRoutes);
+app.use('/api', consultaColaboradoresRoutes);
 
 // Removido app.use('/api/overtime', overtimeAnalysisRoutes);
 
@@ -176,6 +185,7 @@ app.get('*', (req, res) => {
     else if (p === '/recrutamento') res.sendFile(path.join(__dirname, '../public/recrutamento.html'));
     else if (p === '/onboarding-90dias' || p === '/onboarding') res.sendFile(path.join(__dirname, '../public/onboarding-90dias.html'));
     else if (p === '/populacao') res.sendFile(path.join(__dirname, '../public/populacao.html'));
+    else if (p === '/consulta-colaboradores') res.sendFile(path.join(__dirname, '../public/consulta-colaboradores.html'));
     else res.sendFile(path.join(__dirname, '../public/dashboard.html'));
 });
 

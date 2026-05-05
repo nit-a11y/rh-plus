@@ -21,6 +21,36 @@ const dbRun = async (sql, params = []) => {
     return result;
 };
 
+// ROTA: OBTER HISTÓRICO DE CARREIRA DE UM FUNCIONÁRIO
+router.get('/:employeeId', async (req, res) => {
+    try {
+        const { employeeId } = req.params;
+        
+        const sql = `
+            SELECT 
+                id,
+                employee_id,
+                role,
+                sector,
+                salary,
+                move_type,
+                date,
+                responsible,
+                observation,
+                cbo
+            FROM career_history 
+            WHERE employee_id = $1 
+            ORDER BY date DESC
+        `;
+        
+        const result = await query(sql, [employeeId]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Erro ao buscar histórico de carreira:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ROTA: MOVIMENTAÇÃO INDIVIDUAL
 router.post('/', async (req, res) => {
     try {
@@ -134,6 +164,55 @@ router.post('/', async (req, res) => {
     }
 });
 
+// ROTA: EDITAR REGISTRO DE CARREIRA
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { role, sector, salary, move_type, date, responsible, observation, cbo } = req.body;
+
+        // Validar campos obrigatórios
+        if (!role || !move_type || !date) {
+            return res.status(400).json({ error: 'Campos obrigatórios: role, move_type, date' });
+        }
+
+        // Normalizar dados
+        const normalizedRole = role.toString().toUpperCase().trim();
+        const normalizedSector = sector ? sector.toString().toUpperCase().trim() : 'ADMINISTRATIVO';
+        const normalizedCbo = cbo ? cbo.toString().replace(/[^\d]/g, '').padStart(6, '0') : '';
+        const normalizedObservation = observation ? observation.toString().toUpperCase().trim() : '';
+        const normalizedResponsible = responsible ? responsible.toString().toUpperCase().trim() : '';
+        const normalizedMoveType = move_type.toString().toUpperCase().trim();
+
+        // Formatar data
+        const finalDate = (date && date.includes(':')) ? date : new Date(date).toLocaleString('sv-SE').replace('T', ' ');
+
+        // Atualizar registro
+        const sql = `
+            UPDATE career_history 
+            SET role = $1, sector = $2, salary = $3, move_type = $4, 
+                date = $5, responsible = $6, observation = $7, cbo = $8
+            WHERE id = $9
+        `;
+        
+        await query(sql, [
+            normalizedRole, 
+            normalizedSector, 
+            salary || '0', 
+            normalizedMoveType, 
+            finalDate, 
+            normalizedResponsible, 
+            normalizedObservation, 
+            normalizedCbo, 
+            id
+        ]);
+
+        res.json({ success: true, message: 'Registro atualizado com sucesso' });
+    } catch (err) {
+        console.error('Erro ao editar registro de carreira:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ROTA: REAJUSTE COLETIVO (BULK)
 router.post('/bulk', async (req, res) => {
     try {
@@ -145,7 +224,15 @@ router.post('/bulk', async (req, res) => {
         await query('BEGIN TRANSACTION');
         
         for (const emp of employees) {
-            let cleanSalary = (emp.currentSalary || "0").replace(/[^\d,]/g, '').replace(',', '.');
+            // Corrigir tratamento para formatação brasileira: 1.234,56 → 1234.56
+            let cleanSalary = (emp.currentSalary || "0").replace(/[R$\s]/g, '');
+            if (cleanSalary.includes(',')) {
+                // Remove pontos de milhar, mantém apenas a vírgula decimal
+                cleanSalary = cleanSalary.replace(/\./g, '').replace(',', '.');
+            } else {
+                // Se não tem vírgula, remove pontos (pode ser decimal americano)
+                cleanSalary = cleanSalary.replace(/\./g, '');
+            }
             let oldVal = parseFloat(cleanSalary) || 0;
             let newVal = oldVal * (1 + (parseFloat(percentage) / 100));
             let formattedNewSalary = newVal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });

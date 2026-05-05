@@ -1,5 +1,5 @@
 
-import { calculateAge, parseCurrency, formatCurrency, formatarDataHoraBR, formatarDataBR, calcularTempoCasa } from '../utils.js';
+import { calculateAge, parseCurrency, formatCurrency, formatCurrencyDebug, formatarDataHoraBR, formatarDataBR, calcularTempoCasa, calcularTempoCompleto } from '../utils.js';
 
 let dossierData = null;
 let currentEmployeeId = null;
@@ -79,19 +79,14 @@ function renderFullDossier() {
     const area = document.getElementById('dossier-pages-container');
     const e = dossierData.employee;
     
-    // TESTE: Verificar se área existe e se dados do colaborador estão ok
     if (!area) {
-        console.error('❌ Área do dossier não encontrada');
         return;
     }
     
     if (!e || !e.name) {
-        console.error('❌ Dados do colaborador não encontrados');
         area.innerHTML = '<div class="p-8 text-center text-red-500">Erro: Dados do colaborador não encontrados</div>';
         return;
     }
-    
-    console.log('📋 Renderizando dossier para:', e.name);
     
     const d = dossierData.documents || {};
     const ben = dossierData.benefits || [];
@@ -118,18 +113,92 @@ function renderFullDossier() {
     // Cálculos de Tempo e Desligamento
     const desligamento = career.find(c => c.move_type === 'Desligamento');
     const isDesligado = e.type === 'Desligado';
+    
+    // Calcular tempo completo (atual + acumulado por CPF)
+    calcularTempoCompleto(e.admissionDate, desligamento?.date, e.cpf).then(tempoData => {
+        // Atualizar o display com o tempo acumulado
+        const tempoCasaElement = document.querySelector('[data-tempo-casa]');
+        if (tempoCasaElement) {
+            tempoCasaElement.textContent = tempoData.tempoAcumulado;
+            
+            // Adicionar indicador visual se há múltiplos registros
+            if (tempoData.multiplosRegistros) {
+                tempoCasaElement.title = `Tempo acumulado de ${tempoData.totalRegistros} registros com o mesmo CPF\n${tempoData.tempoAcumuladoDetalhado.registros.map(r => 
+                    `${r.name}: ${r.tempoNesteRegistro} (${r.dataAdmissao} a ${r.dataDesligamento || 'atual'})`
+                ).join('\n')}`;
+                tempoCasaElement.classList.add('text-blue-600', 'font-bold');
+            }
+        }
+    }).catch(err => {
+        console.error('Erro ao calcular tempo completo:', err);
+    });
+    
+    // Manter cálculo original como fallback
     const tempoCasa = calcularTempoCasa(e.admissionDate, desligamento?.date);
 
     // Soma total de dias de atestado (Tratamento para não vir NaN)
     const totalDiasAfastado = abs.reduce((acc, curr) => acc + (parseInt(curr.days_count) || 0), 0);
 
-    // Lógica de Evolução Salarial
-    const histSalarial = [...career].reverse().filter(c => c.salary && c.salary !== '-' && c.salary !== '');
-    const salInicialStr = histSalarial.length > 0 ? histSalarial[0].salary : e.currentSalary;
-    const salAtualStr = e.currentSalary;
+    // Lógica de Evolução Salarial - CORRIGIDA
+    // Filtrar apenas movimentos salariais válidos e ordenar por data
+    const histSalarial = career
+        .filter(c => c.salary && c.salary !== '-' && c.salary !== '' && c.salary !== 'R$ 0,00' && c.salary !== 'R$0,00')
+        .sort((a, b) => new Date(a.date) - new Date(b.date)); // Ordem cronológica correta
+    
+    // Encontrar salário inicial (primeiro registro ou admissionDate)
+    let salInicialStr = e.currentSalary; // Default para salário atual
+    if (histSalarial.length > 0) {
+        salInicialStr = histSalarial[0].salary;
+    } else if (e.initialSalary) {
+        salInicialStr = e.initialSalary;
+    }
+    
+    // Agrupar movimentos por data para evitar duplicatas
+    const movimentosAgrupados = {};
+    histSalarial.forEach(mov => {
+        const dataKey = mov.date;
+        if (!movimentosAgrupados[dataKey] || mov.move_type === 'Admissão') {
+            movimentosAgrupados[dataKey] = mov;
+        }
+    });
+    
+    // Converter para array e ordenar
+    const movimentosUnicos = Object.values(movimentosAgrupados)
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    // Salário atual deve ser o último salário válido da linha do tempo
+    let salAtualStr = e.currentSalary; // Default
+    
+    // Se há histórico salarial, usar o último valor
+    if (movimentosUnicos.length > 0) {
+        const ultimoMovimento = movimentosUnicos[movimentosUnicos.length - 1];
+        if (ultimoMovimento.salary && ultimoMovimento.salary !== '-' && ultimoMovimento.salary !== '') {
+            salAtualStr = ultimoMovimento.salary;
+        }
+    }
+    
+    // Converter para números
     const valInicial = parseCurrency(salInicialStr);
     const valAtual = parseCurrency(salAtualStr);
-    const variacao = valInicial > 0 ? ((valAtual - valInicial) / valInicial) * 100 : 0;
+    const valEmployee = parseCurrency(e.currentSalary);
+    
+    // Verificação adicional: se houver diferença absurda, usar o menor valor
+    if (valAtual > 0 && valEmployee > 0) {
+        if (Math.max(valAtual, valEmployee) / Math.min(valAtual, valEmployee) > 10) {
+            salAtualStr = valAtual < valEmployee ? salAtualStr : e.currentSalary;
+        }
+    }
+    
+    // Calcular variação percentual
+    let variacao = 0;
+    if (valInicial > 0) {
+        variacao = ((valAtual - valInicial) / valInicial) * 100;
+    }
+    
+    // Limitar variação máxima para evitar erros
+    if (Math.abs(variacao) > 1000) {
+        variacao = Math.min(Math.max(variacao, -100), 1000);
+    }
 
     // Divisão Disciplinar
     const premiacoes = occ.filter(o => 
@@ -147,13 +216,6 @@ function renderFullDossier() {
 
     const html = `
         <div class="paper-dossier animate-fade-in">
-            <!-- TESTE DE RENDERIZAÇÃO -->
-            <div class="bg-green-100 border-2 border-green-300 rounded-xl p-4 m-4">
-                <h3 class="text-green-800 font-bold">📋 DOSSIER RENDERIZANDO</h3>
-                <p>Colaborador: ${e.name}</p>
-                <p>ID: ${e.id}</p>
-            </div>
-            
             <div class="paper-stamp">CONFIDENCIAL</div>
             
             <!-- CABEÇALHO -->
@@ -175,7 +237,7 @@ function renderFullDossier() {
                         <span class="paper-field-label">Status do Colaborador</span>
                     </div>
                     <div class="text-right">
-                        <p class="font-black text-xl text-gray-800">${tempoCasa}</p>
+                        <p class="font-black text-xl text-gray-800" data-tempo-casa>${tempoCasa}</p>
                         <span class="paper-field-label">Tempo de Casa Acumulado</span>
                     </div>
                 </div>
@@ -249,7 +311,7 @@ function renderFullDossier() {
                     <div class="paper-field"><span class="paper-field-label">Cargo:</span> <span class="paper-field-value uppercase">${e.role}</span></div>
                     <div class="paper-field"><span class="paper-field-label">CBO:</span> <span class="paper-field-value font-mono font-black text-amber-700">${e.cbo || '---'}</span></div>
                     <div class="paper-field"><span class="paper-field-label">Setor:</span> <span class="paper-field-value uppercase">${e.sector}</span></div>
-                    <div class="paper-field"><span class="paper-field-label">Salário Base:</span> <span class="paper-field-value text-red-700 font-black">${formatCurrency(e.currentSalary)}</span></div>
+                    <div class="paper-field"><span class="paper-field-label">Salário Base:</span> <span class="paper-field-value text-red-700 font-black">${formatCurrencyDebug(e.currentSalary, 'Salário Base')}</span></div>
                     <div class="paper-field"><span class="paper-field-label">Hierarquia:</span> <span class="paper-field-value">${e.hierarchy || '-'}</span></div>
                 </div>
                 
@@ -262,7 +324,7 @@ function renderFullDossier() {
                 <div class="paper-section-bar" style="background:#6b7280">📜 DADOS DE ENTRADA (HISTÓRICO)</div>
                 <div class="grid grid-cols-2 gap-x-12 gap-y-1">
                     <div class="paper-field"><span class="paper-field-label">Cargo Inicial (Admissão):</span> <span class="paper-field-value uppercase">${e.initialRole || e.role}</span></div>
-                    <div class="paper-field"><span class="paper-field-label">Salário Inicial:</span> <span class="paper-field-value text-blue-700 font-black">${formatCurrency(e.initialSalary || e.currentSalary)}</span></div>
+                    <div class="paper-field"><span class="paper-field-label">Salário Inicial:</span> <span class="paper-field-value text-blue-700 font-black">${formatCurrencyDebug(e.initialSalary || e.currentSalary, 'Salário Inicial')}</span></div>
                 </div>
             </div>
             <div id="section-uniforms" class="dossier-print-section">
@@ -537,9 +599,7 @@ function renderFullDossier() {
     console.log('📝 Atribuindo HTML ao dossier...');
     console.log('📏 Tamanho do HTML:', html.length, 'caracteres');
     
-    area.innerHTML = html;
-    
-    console.log('✅ HTML atribuído ao dossier');
+area.innerHTML = html;
     
     // Carregar histórico de transferências após renderizar o HTML
     setTimeout(() => loadTransferHistory(e.id), 100);
@@ -579,18 +639,32 @@ async function loadTransferHistory(employeeId) {
             return;
         }
         
-        if (!Array.isArray(history)) {
-            console.error('❌ History não é array:', history);
+        // Tratar diferentes formatos de resposta
+        let transferArray = [];
+        if (Array.isArray(history)) {
+            // Formato antigo: array direto
+            transferArray = history;
+        } else if (history && typeof history === 'object') {
+            // Formato novo: objeto com propriedades
+            transferArray = history.transfer_history || history.vinculos_history || [];
+        } else {
+            console.error('❌ History não é array nem objeto válido:', history);
             container.innerHTML = '<p class="text-xs text-red-500 italic">Erro: Formato de dados inválido</p>';
             return;
         }
         
-        if (history.length === 0) {
+        if (!Array.isArray(transferArray)) {
+            console.error('❌ TransferArray não é array:', transferArray);
+            container.innerHTML = '<p class="text-xs text-red-500 italic">Erro: Formato de dados inválido</p>';
+            return;
+        }
+        
+        if (transferArray.length === 0) {
             container.innerHTML = '<p class="text-xs text-gray-500 italic">Nenhuma transferência registrada</p>';
             return;
         }
         
-        container.innerHTML = history.map(t => `
+        container.innerHTML = transferArray.map(t => `
             <div class="bg-white rounded-lg p-3 border border-blue-100">
                 <div class="flex justify-between items-start mb-2">
                     <div>

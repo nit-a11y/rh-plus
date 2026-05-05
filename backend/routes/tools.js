@@ -57,7 +57,7 @@ router.post('/item', async (req, res) => {
         await dbRun(
             `INSERT INTO tool_history (tool_id, employee_id, action, status_item, observation, responsavel) 
              VALUES ($1, $2, 'ENTREGA', 'NOVO', $3, $4)`,
-            [id, employeeId, `Entrega de ${type} - ${brand} ${model}`, responsible || 'Sistema']
+            [id, employeeId, `Entrega de ${type} - ${brand} ${model} - ${patrimonio}`, responsible || 'Sistema']
         );
         
         res.json({ success: true, id });
@@ -79,7 +79,7 @@ router.post('/return', async (req, res) => {
         await dbRun(
             `INSERT INTO tool_history (tool_id, employee_id, action, status_item, observation, responsavel) 
              VALUES ($1, $2, 'DEVOLUCAO', 'RETORNO ESTOQUE', $3, $4)`,
-            [toolId, item.employee_id, reason, observation || 'Retorno ao estoque para disponibilidade', responsible || 'Sistema']
+            [toolId, item.employee_id, reason, `${item.patrimonio} - ${observation || 'Retorno ao estoque para disponibilidade'}`, responsible || 'Sistema']
         );
         
         res.json({ success: true });
@@ -200,7 +200,7 @@ router.post('/swap', async (req, res) => {
         await dbRun(`UPDATE tool_items SET status = 'Disponível', employee_id = NULL WHERE id = $1`, [oldToolId]);
         await dbRun(`INSERT INTO tool_history (tool_id, employee_id, action, status_item, observation, responsavel) 
                 VALUES ($1, $2, 'DEVOLUCAO', 'TROCA', $3, $4)`, 
-                [oldToolId, oldItem.employee_id, `Recolhido para troca: ${reason}${notes ? ' - ' + notes : ''}`, responsible]);
+                [oldToolId, oldItem.employee_id, `${oldItem.patrimonio} → [NOVO] - Recolhido para troca: ${reason}${notes ? ' - ' + notes : ''}`, responsible]);
 
         let newToolAssignedId;
         
@@ -212,12 +212,13 @@ router.post('/swap', async (req, res) => {
             }
             
             // Alocar a máquina disponível para o funcionário
+            const newTool = await dbGet(`SELECT * FROM tool_items WHERE id = $1`, [newToolId]);
             await dbRun(`UPDATE tool_items SET status = 'Em uso', employee_id = $1, date_given = $2 WHERE id = $3`, 
                 [oldItem.employee_id, new Date().toISOString().split('T')[0], newToolId]);
             
             await dbRun(`INSERT INTO tool_history (tool_id, employee_id, action, status_item, observation, responsavel) 
                     VALUES ($1, $2, 'ENTREGA', 'TROCA', $3, $4)`, 
-                    [newToolId, oldItem.employee_id, `Entregue via troca: ${reason}${notes ? ' - ' + notes : ''}`, responsible]);
+                    [newToolId, oldItem.employee_id, `${oldItem.patrimonio} → ${newTool.patrimonio} - Entregue via troca: ${reason}${notes ? ' - ' + notes : ''}`, responsible]);
             
             newToolAssignedId = newToolId;
         } else {
@@ -236,7 +237,7 @@ router.post('/swap', async (req, res) => {
             );
             await dbRun(`INSERT INTO tool_history (tool_id, employee_id, action, status_item, observation, responsavel) 
                     VALUES ($1, $2, 'ENTREGA', 'TROCA', $3, $4)`, 
-                    [newId, newTool.employeeId, `Entregue via troca: ${reason}${notes ? ' - ' + notes : ''}`, responsible]);
+                    [newId, newTool.employeeId, `${oldItem.patrimonio} → ${newTool.patrimonio} - Entregue via troca: ${reason}${notes ? ' - ' + notes : ''}`, responsible]);
             
             newToolAssignedId = newId;
         }
@@ -272,12 +273,15 @@ router.post('/allocate', async (req, res) => {
     try {
         const { toolId, employeeId, responsible, date_given, accessories } = req.body;
         
+        const tool = await dbGet(`SELECT * FROM tool_items WHERE id = $1`, [toolId]);
+        if (!tool) return res.status(404).json({ error: 'Equipamento não encontrado' });
+        
         await dbRun(`UPDATE tool_items SET status = 'Em uso', employee_id = $1, date_given = $2, accessories = $3 WHERE id = $4`, 
             [employeeId, date_given || new Date().toISOString().split('T')[0], accessories || '', toolId]);
         
         await dbRun(`INSERT INTO tool_history (tool_id, employee_id, action, status_item, observation, responsavel) 
                 VALUES ($1, $2, 'ENTREGA', 'ALOCACAO', $3, $4)`,
-                [toolId, employeeId, `Alocação de item em estoque. Acessórios: ${accessories || 'Padrão'}`, responsible || 'Sistema']);
+                [toolId, employeeId, `${tool.patrimonio} - Alocação de item em estoque. Acessórios: ${accessories || 'Padrão'}`, responsible || 'Sistema']);
         
         res.json({ success: true });
     } catch (err) {
@@ -321,6 +325,243 @@ router.get('/migrate-unit', async (req, res) => {
         await dbRun(sql, []);
         res.json({ success: true, message: 'Migração executada' });
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Atualizar dados de um equipamento existente
+router.put('/update', async (req, res) => {
+    try {
+        const { id, tier, unit, status, accessories, type, brand, model, serial_number, ram, storage, slots } = req.body;
+        
+        if (!id) {
+            return res.status(400).json({ error: 'ID do equipamento é obrigatório' });
+        }
+
+        // Verificar se o equipamento existe
+        const existing = await dbGet(`SELECT * FROM tool_items WHERE id = $1 AND status != 'REMOVIDO'`, [id]);
+        if (!existing) {
+            return res.status(404).json({ error: 'Equipamento não encontrado' });
+        }
+
+        // Construir SQL dinâmico apenas com campos fornecidos
+        const updates = [];
+        const values = [];
+        let paramIndex = 1;
+
+        if (tier !== undefined) {
+            updates.push(`tier = $${paramIndex++}`);
+            values.push(tier);
+        }
+        if (unit !== undefined) {
+            updates.push(`unit = $${paramIndex++}`);
+            values.push(unit);
+        }
+        if (status !== undefined) {
+            updates.push(`status = $${paramIndex++}`);
+            values.push(status);
+        }
+        if (accessories !== undefined) {
+            updates.push(`accessories = $${paramIndex++}`);
+            values.push(accessories);
+        }
+        if (type !== undefined) {
+            updates.push(`type = $${paramIndex++}`);
+            values.push(type);
+        }
+        if (brand !== undefined) {
+            updates.push(`brand = $${paramIndex++}`);
+            values.push(brand);
+        }
+        if (model !== undefined) {
+            updates.push(`model = $${paramIndex++}`);
+            values.push(model);
+        }
+        if (serial_number !== undefined) {
+            updates.push(`serial_number = $${paramIndex++}`);
+            values.push(serial_number);
+        }
+        if (ram !== undefined) {
+            updates.push(`ram = $${paramIndex++}`);
+            values.push(ram);
+        }
+        if (storage !== undefined) {
+            updates.push(`storage = $${paramIndex++}`);
+            values.push(storage);
+        }
+        if (slots !== undefined) {
+            updates.push(`slots = $${paramIndex++}`);
+            values.push(slots);
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({ error: 'Nenhum campo fornecido para atualização' });
+        }
+
+        // Adicionar ID ao final dos valores
+        values.push(id);
+
+        const sql = `UPDATE tool_items SET ${updates.join(', ')} WHERE id = $${paramIndex}`;
+        await dbRun(sql, values);
+
+        // Registrar no histórico
+        await dbRun(`INSERT INTO tool_history (tool_id, employee_id, action, status_item, observation, responsavel, data_hora) 
+                    VALUES ($1, $2, 'ATUALIZACAO', 'DADOS ATUALIZADOS', $3, $4, $5)`,
+                    [id, existing.employee_id, 'Dados do equipamento atualizados via edição', 'Sistema', new Date().toISOString()]);
+
+        res.json({ success: true, message: 'Equipamento atualizado com sucesso' });
+    } catch (err) {
+        console.error('Erro ao atualizar equipamento:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Deletar equipamento (soft delete)
+router.delete('/delete/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const existing = await dbGet(`SELECT * FROM tool_items WHERE id = $1 AND status != 'REMOVIDO'`, [id]);
+        if (!existing) {
+            return res.status(404).json({ error: 'Equipamento não encontrado' });
+        }
+
+        // Soft delete - marcar como removido
+        await dbRun(`UPDATE tool_items SET status = 'REMOVIDO', employee_id = NULL WHERE id = $1`, [id]);
+
+        // Registrar no histórico
+        await dbRun(`INSERT INTO tool_history (tool_id, employee_id, action, status_item, observation, responsavel, data_hora) 
+                    VALUES ($1, $2, 'REMOCAO', 'REMOVIDO', $3, $4, $5)`,
+                    [id, existing.employee_id, 'Equipamento removido do sistema', 'Sistema', new Date().toISOString()]);
+
+        res.json({ success: true, message: 'Equipamento removido com sucesso' });
+    } catch (err) {
+        console.error('Erro ao remover equipamento:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Salvar dados completos da troca para regeneração futura
+router.post('/save-swap-data', async (req, res) => {
+    try {
+        const { 
+            oldItem, newItem, employee, reason, observation, 
+            swapDate, responsavel, codigoDocumento 
+        } = req.body;
+        
+        if (!oldItem || !newItem || !employee) {
+            return res.status(400).json({ error: 'Dados incompletos para salvar troca' });
+        }
+        
+        // Gerar ID único para a troca
+        const swapId = `SWAP_${oldItem.patrimonio}_${newItem.patrimonio}_${swapDate || new Date().toISOString().split('T')[0]}`;
+        
+        // Salvar dados completos como JSON no campo observation de um registro especial
+        const swapData = {
+            swapId,
+            oldItem,
+            newItem,
+            employee,
+            reason,
+            observation,
+            swapDate: swapDate || new Date().toISOString().split('T')[0],
+            responsavel: responsavel || 'Sistema',
+            codigoDocumento: codigoDocumento || `TROCA-${swapDate || new Date().toISOString().split('T')[0]}-${oldItem.patrimonio.substring(0,4).toUpperCase()}`,
+            createdAt: new Date().toISOString()
+        };
+        
+        // Salvar como registro especial no tool_history
+        await dbRun(`
+            INSERT INTO tool_history (
+                tool_id, employee_id, action, status_item, observation, 
+                responsavel, data_hora
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `, [
+            oldItem.patrimonio,
+            employee.id,
+            'SWAP_DATA',
+            'SAVED_DATA',
+            JSON.stringify(swapData),
+            responsavel || 'Sistema',
+            new Date().toISOString()
+        ]);
+        
+        console.log('💾 Dados da troca salvos:', swapId);
+        res.json({ success: true, swapId, message: 'Dados da troca salvos com sucesso' });
+        
+    } catch (err) {
+        console.error('❌ Erro ao salvar dados da troca:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Buscar dados de troca salvos para regeneração
+router.get('/get-swap-data/:swapId', async (req, res) => {
+    try {
+        const { swapId } = req.params;
+        
+        // Buscar dados salvos no tool_history
+        const result = await dbGet(`
+            SELECT observation, data_hora, responsavel
+            FROM tool_history 
+            WHERE action = 'SWAP_DATA' AND observation LIKE ?
+            ORDER BY data_hora DESC 
+            LIMIT 1
+        `, [`%${swapId}%`]);
+        
+        if (!result || !result.observation) {
+            return res.status(404).json({ error: 'Dados da troca não encontrados' });
+        }
+        
+        const swapData = JSON.parse(result.observation);
+        res.json({ 
+            success: true, 
+            swapData: {
+                ...swapData,
+                savedAt: result.data_hora,
+                savedBy: result.responsavel
+            }
+        });
+        
+    } catch (err) {
+        console.error('❌ Erro ao buscar dados da troca:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Listar todas as trocas salvas
+router.get('/list-swaps', async (req, res) => {
+    try {
+        const results = await dbAll(`
+            SELECT observation, data_hora, responsavel
+            FROM tool_history 
+            WHERE action = 'SWAP_DATA'
+            ORDER BY data_hora DESC
+        `);
+        
+        const swaps = results.map(row => {
+            try {
+                const data = JSON.parse(row.observation);
+                return {
+                    swapId: data.swapId,
+                    oldPatrimonio: data.oldItem?.patrimonio,
+                    newPatrimonio: data.newItem?.patrimonio,
+                    employeeName: data.employee?.name,
+                    reason: data.reason,
+                    swapDate: data.swapDate,
+                    codigoDocumento: data.codigoDocumento,
+                    savedAt: row.data_hora,
+                    savedBy: row.responsavel
+                };
+            } catch (e) {
+                return null;
+            }
+        }).filter(Boolean);
+        
+        res.json({ success: true, swaps, count: swaps.length });
+        
+    } catch (err) {
+        console.error('❌ Erro ao listar trocas:', err);
         res.status(500).json({ error: err.message });
     }
 });

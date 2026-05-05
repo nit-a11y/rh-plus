@@ -16,7 +16,7 @@
             }
         }
     </script>
-    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="./css/global.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F4F7F9; height: 100vh; overflow: hidden; display: flex; }
@@ -108,7 +108,7 @@
                     <div id="items-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
                     <div class="history-box">
                         <h4 class="text-[9px] font-black text-gray-400 uppercase mb-4 tracking-widest italic border-b pb-2">Log de Rastreabilidade Patrimonial</h4>
-                        <table class="history-table" id="main-history-table"><thead><tr><th>Data/Hora</th><th>Ação</th><th>Ferramenta / Descrição</th><th>Observação</th><th>Responsável</th></tr></thead><tbody id="history-rows"></tbody></table>
+                        <table class="history-table" id="main-history-table"><thead><tr><th>Data/Hora</th><th>Ação</th><th>Ferramenta / Descrição</th><th>Observação</th><th>Responsável</th><th class="text-center">Ações</th></tr></thead><tbody id="history-rows"></tbody></table>
                         <p id="history-empty-msg" class="text-[10px] font-black uppercase text-gray-300 italic text-center py-6">Sem histórico de movimentação.</p>
                     </div>
                 </div>
@@ -247,14 +247,14 @@
                             </div>
 
                             <div class="flex items-center gap-4 p-4 md:p-5 bg-blue-50/30 border border-blue-100 rounded-2xl md:rounded-3xl">
-                                <input type="checkbox" id="alloc-now" checked class="w-5 h-5 md:w-6 md:h-6 accent-blue-600 rounded-lg" onchange="window.toggleAllocFields()">
+                                <input type="checkbox" id="alloc-now" class="w-5 h-5 md:w-6 md:h-6 accent-blue-600 rounded-lg" onchange="window.toggleAllocFields()">
                                 <div>
                                     <label for="alloc-now" class="text-[10px] md:text-[11px] font-black uppercase text-gray-700 block">Vincular Ativo Instantaneamente?</label>
                                     <p class="text-[8px] md:text-[9px] text-gray-400 font-bold uppercase italic">Atribuição imediata no ato do salvamento.</p>
                                 </div>
                             </div>
 
-                            <div id="alloc-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 pt-4">
+                            <div id="alloc-fields" class="hidden-pro grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 pt-4">
                                 <div class="sm:col-span-2 relative">
                                     <label for="pc-emp-search" class="pro-label">Busca Preditiva de Colaborador</label>
                                     <div class="relative">
@@ -505,6 +505,6 @@
 
     <div id="pro-modal-container" class="hidden fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"><div id="pro-modal-content" class="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-y-auto max-h-[90vh] custom-scroll animate-pop"></div></div>
     <script src="js/auth.js"></script>
-    <script type="module" src="js/pages/tools-module.js"></script>
+    <script src="js/pages/tools-module.js"></script>
 </body>
 </html>

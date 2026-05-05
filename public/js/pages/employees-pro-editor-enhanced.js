@@ -1114,8 +1114,64 @@ window.togglePrincipal = (index) => {
     window.uiAlert('Funcionalidade em desenvolvimento');
 };
 
-window.removeVinculo = (index) => {
-    window.uiAlert('Funcionalidade em desenvolvimento');
+// Função auxiliar para obter nome da empresa por ID
+function getCompanyNameById(companyId) {
+    if (!companyId || !allCompanies || allCompanies.length === 0) {
+        return 'Não encontrado';
+    }
+    
+    const company = allCompanies.find(c => c.id === companyId);
+    return company ? company.name : 'Não encontrado';
+}
+
+window.removeVinculo = async (index) => {
+    if (!currentData.vinculos || currentData.vinculos.length <= index) {
+        window.uiAlert('Vínculo não encontrado');
+        return;
+    }
+    
+    const vinculo = currentData.vinculos[index];
+    
+    // Regras de exclusão
+    if (currentData.vinculos.length === 1) {
+        window.uiAlert('Não é possível excluir o único vínculo do colaborador');
+        return;
+    }
+    
+    // Confirmar exclusão
+    const confirmed = confirm(`
+        Tem certeza que deseja excluir este vínculo?
+        
+        Empregador: ${getCompanyNameById(vinculo.employer_id) || 'Não informado'}
+        Local: ${getCompanyNameById(vinculo.workplace_id) || 'Não informado'}
+        
+        Esta ação não pode ser desfeita!
+    `);
+    
+    if (!confirmed) return;
+    
+    try {
+        // Chamar API para excluir
+        const response = await fetch(`/api/employees-pro/${currentEmpId}/vinculos/${vinculo.id}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            // Remover do array local
+            currentData.vinculos.splice(index, 1);
+            
+            // Re-renderizar os vínculos
+            populateVinculos(currentData.vinculos);
+            
+            window.uiAlert('Vínculo excluído com sucesso');
+        } else {
+            const error = await response.json();
+            throw new Error(error.error || 'Erro ao excluir vínculo');
+        }
+    } catch (error) {
+        console.error('Erro ao excluir vínculo:', error);
+        window.uiAlert(`Erro ao excluir vínculo: ${error.message}`);
+    }
 };
 
 window.removeCareerItem = (id) => {

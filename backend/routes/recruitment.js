@@ -10,6 +10,37 @@ const crypto = require('crypto');
 
 const generateId = () => crypto.randomBytes(4).toString('hex');
 
+// Criar tabela talent_pool se não existir
+(async () => {
+    try {
+        await query(`
+            CREATE TABLE IF NOT EXISTS talent_pool (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                cpf TEXT,
+                phone TEXT,
+                email TEXT,
+                birth_date TEXT,
+                city TEXT,
+                state TEXT,
+                skills TEXT,
+                experience TEXT,
+                desired_position TEXT,
+                salary_expectation TEXT,
+                notes TEXT,
+                is_available INTEGER DEFAULT 1,
+                last_stage TEXT,
+                last_outcome TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            )
+        `);
+        console.log('✅ Tabela talent_pool verificada/criada');
+    } catch (e) {
+        console.error('❌ Erro ao criar tabela talent_pool:', e.message);
+    }
+})();
+
 // === ROTAS DE PIPELINE (ETAPAS DO PROCESSO) ===
 
 // Listar todas as etapas do pipeline
@@ -588,6 +619,19 @@ router.post('/talent-pool', async (req, res) => {
         `, [id, name, cpf, phone, email, birth_date, city, state, skills, experience, desired_position, salary_expectation, notes, now, now]);
         
         res.json({ success: true, id, message: 'Talento adicionado ao banco' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Excluir talento do banco
+router.delete('/talent-pool/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        await query(`DELETE FROM talent_pool WHERE id = $1`, [id]);
+        
+        res.json({ success: true, message: 'Talento excluído do banco' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

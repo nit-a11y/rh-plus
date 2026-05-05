@@ -393,6 +393,13 @@ function renderTab() {
 }
 
 function populateVinculos(vinculos) {
+    // Substituir pelo novo sistema de cards
+    if (window.vinculosCardsManager && currentEmpId) {
+        window.vinculosCardsManager.init(currentEmpId);
+        return;
+    }
+    
+    // Fallback para o sistema antigo caso o novo não esteja disponível
     const container = document.getElementById('vinculos-container');
     if (!container) return;
 
@@ -941,28 +948,101 @@ function getVinculosData() {
     const container = document.getElementById('vinculos-container');
     if (!container) return [];
 
-    const raw = Array.from(container.querySelectorAll('.vinculo-item')).map(item => {
+    // Coletar dados do formulário
+    const formVinculos = Array.from(container.querySelectorAll('.vinculo-item')).map(item => {
         const employer = (item.querySelector('.vinculo-employer').value || '').trim();
         const workplace = (item.querySelector('.vinculo-workplace').value || '').trim();
         const principal = item.querySelector('.vinculo-principal').checked;
-        return { employer_id: employer, workplace_id: workplace, principal };
+        const index = parseInt(item.dataset.index);
+        
+        return { 
+            employer_id: employer, 
+            workplace_id: workplace, 
+            principal,
+            index,
+            isFromForm: true
+        };
     }).filter(v => v.employer_id || v.workplace_id);
 
-    // Se não houver vínculo válido, preserva o anterior (para evitar deleção acidental)
-    if (raw.length === 0 && Array.isArray(currentData.vinculos) && currentData.vinculos.length > 0) {
-        return currentData.vinculos.map(v => ({
+    // Obter vínculos atuais do sistema
+    const currentVinculos = Array.isArray(currentData.vinculos) ? currentData.vinculos : [];
+    
+    // Se não houver vínculos no formulário, manter os atuais (evitar deleção acidental)
+    if (formVinculos.length === 0) {
+        return currentVinculos.map(v => ({
             employer_id: v.employer_id || '',
             workplace_id: v.workplace_id || '',
-            principal: !!v.principal
+            principal: !!v.principal,
+            id: v.id,
+            data_inicio: v.data_inicio,
+            status: v.status
         }));
     }
 
-    // Garantir apenas um principal
-    const firstPrincipalIdx = raw.findIndex(v => v.principal);
-    if (firstPrincipalIdx === -1 && raw.length > 0) raw[0].principal = true;
-    if (firstPrincipalIdx > -1) {
-        raw.forEach((v, idx) => { v.principal = (idx === firstPrincipalIdx); });
+    // Mapear vínculos atuais por chave única
+    const currentMap = new Map();
+    currentVinculos.forEach(v => {
+        const key = `${v.employer_id}_${v.workplace_id}`;
+        currentMap.set(key, {
+            ...v,
+            principal: !!v.principal,
+            id: v.id,
+            data_inicio: v.data_inicio,
+            status: v.status
+        });
+    });
+
+    // Processar vínculos do formulário
+    const processedVinculos = formVinculos.map(formVinculo => {
+        const key = `${formVinculo.employer_id}_${formVinculo.workplace_id}`;
+        const currentVinculo = currentMap.get(key);
+        
+        return {
+            employer_id: formVinculo.employer_id,
+            workplace_id: formVinculo.workplace_id,
+            principal: formVinculo.principal,
+            id: currentVinculo?.id,
+            data_inicio: currentVinculo?.data_inicio,
+            status: currentVinculo?.status || 'ATIVO',
+            isFromForm: true
+        };
+    });
+
+    // Garantir apenas um vínculo principal
+    const principalCount = processedVinculos.filter(v => v.principal).length;
+    
+    if (principalCount === 0 && processedVinculos.length > 0) {
+        // Se não houver principal, definir o primeiro
+        processedVinculos[0].principal = true;
+    } else if (principalCount > 1) {
+        // Se houver múltiplos principais, manter apenas o primeiro
+        let foundFirst = false;
+        processedVinculos.forEach(v => {
+            if (v.principal && !foundFirst) {
+                foundFirst = true;
+            } else {
+                v.principal = false;
+            }
+        });
     }
 
-    return raw;
+    // Identificar vínculos removidos (para encerramento no backend)
+    const removedVinculos = currentVinculos.filter(currentVinculo => {
+        const key = `${currentVinculo.employer_id}_${currentVinculo.workplace_id}`;
+        return !processedVinculos.some(formVinculo => 
+            `${formVinculo.employer_id}_${formVinculo.workplace_id}` === key
+        );
+    });
+
+    // Adicionar vínculos removidos com flag para encerramento
+    removedVinculos.forEach(removed => {
+        processedVinculos.push({
+            ...removed,
+            principal: false,
+            status: 'ENCERRAR',
+            isRemoved: true
+        });
+    });
+
+    return processedVinculos;
 }

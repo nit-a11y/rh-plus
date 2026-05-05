@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trajetória de Carreira | Nordeste RH+</title>
+    <meta name="description" content="Sistema de gestão de carreira">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -17,38 +18,191 @@
             }
         }
     </script>
-    <link rel="stylesheet" href="css/global.css">
-    <link rel="stylesheet" href="css/carreira.css">
-    <link rel="stylesheet" href="css/tutorial.css">
+<link rel="stylesheet" href="css/global.css">
+    <style>
+        .emp-item { padding: 0.75rem 1rem; border-bottom: 1px solid #F1F5F9; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.75rem; border-radius: 0.5rem; margin: 0.25rem; }
+        .emp-item:hover { background: #F8FAFC; }
+        .emp-item.active { background: #FFF1F2; border-left: 4px solid #D32F2F; }
+        .emp-item[role="option"] { cursor: pointer; }
+        .emp-item:focus { outline: 2px solid #D32F2F; outline-offset: 2px; }
+        
+        .pro-input { width: 100%; padding: 0.75rem 1rem; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 500; outline: none; transition: border-color 0.2s; }
+        .pro-input:focus { border-color: #D32F2F; }
+        .pro-label { font-size: 0.75rem; font-weight: 500; color: #64748B; text-transform: uppercase; margin-bottom: 0.5rem; display: block; }
+        
+        .timeline-dot { position: absolute; left: -1.375rem; top: 1.5rem; width: 1rem; height: 1rem; border-radius: 50%; border: 3px solid; }
+        .timeline-dot.border-admissao { border-color: #3B82F6; }
+        .timeline-dot.border-promocao { border-color: #8B5CF6; }
+        .timeline-dot.border-reajuste { border-color: #10B981; }
+        .timeline-dot.border-desligamento { border-color: #EF4444; }
+        .career-item { position: relative; padding-left: 1rem; }
+        
+        .move-badge { font-size: 0.75rem; font-weight: 500; padding: 0.25rem 0.5rem; border-radius: 0.375rem; }
+        .bg-admissao { background: #DBEAFE; color: #1D4ED8; }
+        .bg-promocao { background: #EDE9FE; color: #7C3AED; }
+        .bg-reajuste { background: #D1FAE5; color: #059669; }
+        .bg-desligamento { background: #FEE2E2; color: #DC2626; }
+        
+        .career-card { position: relative; }
+        .career-card::before { content: ''; position: absolute; left: -1.625rem; top: 1.5rem; width: 0.625rem; height: 0.125rem; background: #E5E7EB; }
+        
+        #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200; display: flex; flex-direction: column; gap: 0.75rem; }
+        .toast { padding: 1rem 1.5rem; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); animation: toast-in 0.3s ease; display: flex; align-items: center; gap: 0.75rem; }
+        .toast.success { background: #10B981; color: white; }
+        .toast.error { background: #EF4444; color: white; }
+        .toast.info { background: #3B82F6; color: white; }
+        @keyframes toast-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        
+        .tab-btn { padding: 0.75rem 0.5rem; border-radius: 0.75rem; font-size: 0.75rem; font-weight: 500; transition: all 0.2s; text-align: center; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
+        .tab-btn.active { background: #D32F2F; color: white; box-shadow: 0 2px 4px rgba(211,47,47,0.3); }
+        .tab-btn.inactive { background: transparent; color: #64748B; }
+        .tab-btn.inactive:hover { background: #E2E8F0; color: #334155; }
+        
+        .tab-btn .badge-count { background: rgba(255,255,255,0.25); padding: 0.125rem 0.375rem; border-radius: 9999px; font-size: 0.625rem; }
+        .tab-btn.inactive .badge-count { background: #94A3B8; color: white; }
+        
+        .timeline-filter-btn { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+        .timeline-filter-btn.active { background: #D32F2F; color: white; }
+        
+        .main-container { padding: 2rem; }
+        
+        @media (max-width: 768px) {
+            aside { position: fixed; left: -100%; transition: left 0.3s; z-index: 100; height: 100vh; width: 85%; }
+            aside.open { left: 0; }
+            .mobile-menu-btn { display: flex; }
+        }
+    </style>
 </head>
 <body class="bg-nordeste-gray h-screen flex overflow-hidden">
-    <aside class="sidebar-nav">
+    
+    <button id="mobile-menu-btn" class="mobile-menu-btn fixed top-4 left-4 z-[90] p-2 bg-nordeste-red text-white rounded-lg shadow-lg md:hidden" onclick="toggleSidebar()" aria-label="Abrir menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-nordeste-red">Pular para conteúdo principal</a>
+    
+    <aside id="sidebar" class="flex-shrink-0 w-80 flex flex-col" role="navigation" aria-label="Menu principal">
         <div class="p-6 border-b bg-white">
-            <div class="flex items-center gap-3 mb-6"><a href="/" class="p-2 bg-nordeste-black text-white rounded-lg">🏠</a><h1 class="text-xs font-black uppercase italic text-gray-800 leading-none">Gestão de <span class="text-nordeste-red">Carreira</span></h1></div>
-            <div class="bg-gray-100 p-1 rounded-2xl flex mb-6"><div id="tab-active" onclick="window.setFilterStatus('active')" class="tab-btn active">Ativos</div><div id="tab-inactive" onclick="window.setFilterStatus('inactive')" class="tab-btn inactive">Desligados</div></div>
-            <div class="relative"><input type="text" id="emp-search" oninput="filterList()" placeholder="Buscar nome ou matrícula..." class="w-full pl-10 pr-4 py-3 bg-gray-100 border-none rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-nordeste-red transition-all"><svg class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>
+            <div class="flex items-center gap-3 mb-6">
+                <a href="/" class="p-2 bg-nordeste-black text-white rounded-lg" aria-label="Página inicial">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                </a>
+                <h1 class="text-sm font-bold uppercase text-gray-800 leading-none">Gestão de <span class="text-nordeste-red">Carreira</span></h1>
+            </div>
+            <div class="bg-gray-100 p-1 rounded-2xl flex mb-6" role="tablist" aria-label="Filtro de статус">
+                <button id="tab-active" onclick="window.setFilterStatus('active')" class="tab-btn active flex-1 rounded-xl" role="tab" aria-selected="true">
+                    <span class="flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        Ativos
+                    </span>
+                </button>
+                <button id="tab-inactive" onclick="window.setFilterStatus('inactive')" class="tab-btn inactive flex-1 rounded-xl" role="tab" aria-selected="false">
+                    <span class="flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                        Desligados
+                    </span>
+                </button>
+            </div>
+            <div class="relative">
+                <label for="emp-search" class="sr-only">Buscar colaborador</label>
+                <input type="text" id="emp-search" oninput="filterList()" placeholder="Buscar nome ou matrícula..." class="w-full pl-10 pr-4 py-3 bg-gray-100 border-none rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-nordeste-red transition-all">
+                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
         </div>
-        <div id="employees-list" class="flex-1 overflow-y-auto custom-scroll bg-white"></div>
-        <div class="p-6 border-t bg-gray-50"><button onclick="window.openBulkAdjustment()" class="w-full bg-green-600 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-green-700 transition-all">💲 Reajuste Coletivo</button></div>
+        <div id="employees-list" class="flex-1 overflow-y-auto custom-scroll bg-white" role="listbox" aria-label="Lista de colaboradores"></div>
+        <div class="p-6 border-t bg-gray-50">
+            <button onclick="window.openBulkAdjustment()" class="w-full bg-green-600 text-white py-4 rounded-xl font-semibold shadow-md hover:bg-green-700 transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Reajuste Coletivo
+            </button>
+        </div>
     </aside>
-    <main class="main-container flex-1 overflow-y-auto custom-scroll">
-        <div id="welcome-msg" class="h-full flex flex-col items-center justify-center text-gray-300"><div class="w-24 h-24 bg-gray-200 rounded-[2.5rem] flex items-center justify-center mb-6 opacity-40"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg></div><p class="font-black uppercase text-xs tracking-widest italic">Selecione um colaborador para gerenciar a trajetória</p></div>
+    
+    <main id="main-content" class="main-container flex-1 overflow-y-auto custom-scroll" role="main">
+        <div id="welcome-msg" class="h-full flex flex-col items-center justify-center text-gray-300 p-8">
+            <div class="w-24 h-24 bg-gray-200 rounded-2xl flex items-center justify-center mb-6">
+                <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            </div>
+            <p class="font-bold uppercase text-sm tracking-widest text-gray-400">Selecione um colaborador para gerenciar a trajetória</p>
+        </div>
+        
         <div id="selection-view" class="hidden animate-fade max-w-6xl mx-auto w-full">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 <div class="space-y-6">
-                    <div class="bg-white rounded-[2.5rem] p-8 border-2 border-nordeste-red shadow-xl flex flex-col items-center"><img id="view-photo" src="" class="w-32 h-32 rounded-[2rem] object-cover border-4 border-white shadow-2xl mb-6"><h2 id="view-name" class="text-lg font-black text-gray-800 uppercase italic text-center leading-tight">...</h2><span id="view-reg" class="bg-gray-100 px-3 py-1 rounded-lg text-[9px] font-mono font-bold text-gray-400 mt-2">#0000</span><div class="w-full mt-8 pt-8 border-t border-gray-50 space-y-4"><div><p class="text-[8px] font-black text-gray-400 uppercase">Posição Atual</p><p id="view-role" class="text-xs font-black text-nordeste-red uppercase italic leading-tight">...</p></div><div><p class="text-[8px] font-black text-gray-400 uppercase">Salário Atual</p><p id="view-salary" class="text-lg font-black text-gray-800 tabular-nums">R$ 0,00</p></div></div></div>
-                    <div class="bg-nordeste-black rounded-[2rem] p-8 text-white shadow-2xl relative overflow-hidden"><div class="absolute top-[-10px] right-[-10px] text-6xl opacity-10 rotate-12">📈</div><p class="text-[9px] font-black text-nordeste-red uppercase tracking-widest mb-1">Evolução na Nordeste</p><h3 id="view-variation" class="text-4xl font-black italic">+0.0%</h3><p class="text-[8px] text-gray-400 font-bold uppercase mt-2">Aumento acumulado total</p></div>
+                    <div class="bg-white rounded-2xl p-6 border-2 border-nordeste-red shadow-xl flex flex-col items-center">
+                        <img id="view-photo" src="" class="w-28 h-28 rounded-2xl object-cover border-4 border-white shadow-lg mb-4" alt="Foto do colaborador">
+                        <h2 id="view-name" class="text-lg font-bold text-gray-800 uppercase text-center leading-tight">...</h2>
+                        <span id="view-reg" class="bg-gray-100 px-3 py-1 rounded-lg text-xs font-mono text-gray-500 mt-2">#0000</span>
+                        <div class="w-full mt-6 pt-6 border-t border-gray-100 space-y-4">
+                            <div><p class="text-xs font-medium text-gray-500 uppercase">Posição Atual</p><p id="view-role" class="text-sm font-medium text-nordeste-red uppercase leading-tight">...</p></div>
+                            <div><p class="text-xs font-medium text-gray-500 uppercase">Salário Atual</p><p id="view-salary" class="text-xl font-bold text-gray-800 tabular-nums">R$ 0,00</p></div>
+                        </div>
+                    </div>
+                    <div class="bg-nordeste-black rounded-2xl p-6 text-white relative overflow-hidden">
+                        <div class="absolute top-[-10px] right-[-10px] text-6xl opacity-10">
+                            <svg class="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                        </div>
+                        <p class="text-xs font-medium text-nordeste-red uppercase tracking-widest mb-1">Evolução na Nordeste</p>
+                        <h3 id="view-variation" class="text-4xl font-bold">+0.0%</h3>
+                        <p class="text-xs text-gray-400 font-medium mt-2">Aumento acumulado total</p>
+                    </div>
                 </div>
-                <div class="lg:col-span-2 space-y-8">
-                    <div class="flex flex-wrap gap-3"><button onclick="window.openPromotionModal()" class="flex-1 bg-nordeste-black text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-2"><span>💼</span> Promoção / Cargo</button><button onclick="window.openBonusModal()" class="flex-1 bg-amber-500 text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-2"><span>🏆</span> Bonificação</button><button onclick="window.openOccurrenceModal()" class="flex-1 bg-nordeste-red text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-2"><span>⚠️</span> Ocorrência</button></div>
-                    <div id="career-timeline" class="space-y-8 relative pl-10 border-l-2 border-gray-200 ml-5"></div>
+                
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="flex flex-wrap gap-3" role="group" aria-label="Ações">
+                        <button onclick="window.openPromotionModal()" class="flex-1 bg-nordeste-black text-white px-6 py-4 rounded-xl font-semibold shadow-md hover:scale-[1.02] transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-nordeste-black focus:ring-offset-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                            Promoção / Cargo
+                        </button>
+                        <button onclick="window.openBonusModal()" class="flex-1 bg-amber-500 text-white px-6 py-4 rounded-xl font-semibold shadow-md hover:scale-[1.02] transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Bonificação
+                        </button>
+                        <button onclick="window.openOccurrenceModal()" class="flex-1 bg-nordeste-red text-white px-6 py-4 rounded-xl font-semibold shadow-md hover:scale-[1.02] transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-nordeste-red focus:ring-offset-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            Ocorrência
+                        </button>
+                    </div>
+                    <div id="career-timeline" class="space-y-6 relative pl-10 border-l-2 border-gray-200 ml-5 overflow-y-auto max-h-[60vh]"></div>
                 </div>
             </div>
         </div>
     </main>
-    <div id="pro-modal-container" class="hidden fixed inset-0 z-[200] bg-nordeste-black/90 backdrop-blur-sm flex items-center justify-center p-4"><div id="pro-modal-content" class="bg-white rounded-[2.5rem] w-full max-w-xl shadow-2xl overflow-y-auto max-h-[90vh] animate-pop border border-white/20"></div></div>
+    
+    <div id="pro-modal-container" class="hidden fixed inset-0 z-[200] bg-nordeste-black/90 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true">
+        <div id="pro-modal-content" class="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-y-auto max-h-[90vh] animate-pop border border-white/20"></div>
+    </div>
+    
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+    
     <script src="js/auth.js"></script>
-    <script type="module" src="js/tutorial/engine.js"></script>
     <script type="module" src="js/pages/carreira-module.js"></script>
+    <script>
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.setAttribute('role', 'alert');
+            const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+            toast.innerHTML = `<span>${icon}</span> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'toast-in 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        };
+        
+        window.toggleSidebar = function() {
+            document.getElementById('sidebar').classList.toggle('open');
+        };
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('pro-modal-container').classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 </html>

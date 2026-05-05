@@ -50,6 +50,74 @@ export function calcularTempoCasa(dataAdm, dataDem = null) {
     return `${anos} anos e ${meses} meses`;
 }
 
+// Função para calcular tempo acumulado por CPF (busca todos os registros)
+export async function calcularTempoAcumuladoPorCPF(cpf) {
+    try {
+        // Limpar CPF para busca
+        const cpfLimpo = cpf.replace(/\D/g, '');
+        
+        const response = await fetch(`/api/employees-pro/tempo-acumulado-cpf/${cpfLimpo}`);
+        
+        if (!response.ok) {
+            throw new Error('Erro ao buscar tempo acumulado');
+        }
+        
+        const data = await response.json();
+        
+        return {
+            tempoAcumulado: data.tempoAcumulado,
+            totalDias: data.totalDias,
+            registros: data.registros,
+            totalRegistros: data.totalRegistros,
+            cpf: data.cpf
+        };
+        
+    } catch (error) {
+        console.error('Erro ao calcular tempo acumulado por CPF:', error);
+        return {
+            tempoAcumulado: 'Erro',
+            totalDias: 0,
+            registros: [],
+            totalRegistros: 0,
+            cpf: cpf,
+            erro: error.message
+        };
+    }
+}
+
+// Função combinada que calcula tempo atual + acumulado por CPF
+export async function calcularTempoCompleto(dataAdmissaoAtual, dataDemissaoAtual = null, cpf = null) {
+    // Tempo do registro atual
+    const tempoAtual = calcularTempoCasa(dataAdmissaoAtual, dataDemissaoAtual);
+    
+    // Se não tem CPF, retorna apenas o tempo atual
+    if (!cpf) {
+        return {
+            tempoAtual,
+            tempoAcumulado: tempoAtual,
+            diferenca: null,
+            multiplosRegistros: false,
+            totalRegistros: 1
+        };
+    }
+    
+    // Buscar tempo acumulado por CPF
+    const acumuladoData = await calcularTempoAcumuladoPorCPF(cpf);
+    
+    // Verificar se há diferença
+    const multiplosRegistros = acumuladoData.totalRegistros > 1;
+    const diferenca = multiplosRegistros ? acumuladoData.tempoAcumulado : null;
+    
+    return {
+        tempoAtual,
+        tempoAcumulado: acumuladoData.tempoAcumulado,
+        tempoAcumuladoDetalhado: acumuladoData,
+        diferenca,
+        multiplosRegistros,
+        totalRegistros: acumuladoData.totalRegistros
+    };
+}
+
 export function calculateAge(dateString) {
     if (!dateString || dateString === '-') return '-';
     const birthDate = new Date(dateString + 'T00:00:00');
@@ -63,12 +131,46 @@ export function calculateAge(dateString) {
 export function parseCurrency(value) {
     if (!value || value === '-') return 0;
     if (typeof value === 'number') return value;
-    let clean = value.toString().replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
-    return parseFloat(clean) || 0;
+    
+    const strValue = value.toString().replace(/[R$\s]/g, '');
+    
+    // Se já tem vírgula decimal (formato brasileiro 1.234,56 ou americano 1,234.56)
+    //Converter diretamente
+    if (strValue.includes(',') && strValue.includes('.')) {
+        // Formato brasileiro: 1.234,56 → 1234.56
+        const clean = strValue.replace(/\./g, '').replace(',', '.');
+        return parseFloat(clean) || 0;
+    }
+    
+    // Se só tem vírgula (formato brasileiro sem miles) ex: "1234,56"
+    if (strValue.includes(',')) {
+        const clean = strValue.replace(',', '.');
+        return parseFloat(clean) || 0;
+    }
+    
+    // Se não tem vírgula nem ponto - pode ser:
+    // 1. Número puro do banco (pode estar em centavos)
+    // 2. Número americano sem decimal
+    const numValue = parseFloat(strValue) || 0;
+    
+    // Detectar se está em centavos: valores > 100000 são quase certamente centavos
+    if (numValue > 100000) {
+        return numValue / 100;
+    }
+    
+    return numValue;
 }
 
 export function formatCurrency(value) {
     const number = typeof value === 'string' ? parseCurrency(value) : value;
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency', currency: 'BRL'
+    }).format(number || 0);
+}
+
+export function formatCurrencyDebug(value, fieldName = '') {
+    const number = typeof value === 'string' ? parseCurrency(value) : value;
+    
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency', currency: 'BRL'
     }).format(number || 0);

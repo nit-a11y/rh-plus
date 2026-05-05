@@ -74,17 +74,17 @@ router.put('/:id', async (req, res) => {
         const values = [];
         
         if (type !== undefined) {
-            updates.push(`type = ?`);
+            updates.push(`type = $${values.length + 1}`);
             values.push(type);
         }
         
         if (status !== undefined) {
-            updates.push(`status = ?`);
+            updates.push(`status = $${values.length + 1}`);
             values.push(status);
         }
         
         if (observation !== undefined) {
-            updates.push(`observation = ?`);
+            updates.push(`observation = $${values.length + 1}`);
             values.push(observation);
         }
         
@@ -95,7 +95,7 @@ router.put('/:id', async (req, res) => {
         // Adicionar ID como último parâmetro
         values.push(id);
         
-        const sql = `UPDATE employees SET ${updates.join(', ')} WHERE id = ?`;
+        const sql = `UPDATE employees SET ${updates.join(', ')} WHERE id = $${values.length + 1}`;
         await dbRun(sql, values);
         
         res.json({ success: true, message: 'Colaborador atualizado com sucesso' });

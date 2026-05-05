@@ -11,11 +11,13 @@
 .env
 .env.local
 .env.production
+.env.development
+.env.test
 
 # PERMITIR arquivos de exemplo para análise do Cascade
 !.env.example
-!.env.test
 !.env.development.example
+!.env.production.example
 
 # Backup de bancos de dados (proteger apenas backups reais)
 *.sql

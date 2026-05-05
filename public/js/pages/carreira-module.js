@@ -6,7 +6,13 @@ function formatSalaryValue(salary) {
     if (salary.includes('R$')) return salary;
     const num = parseFloat(salary);
     if (isNaN(num)) return salary;
-    return formatCurrency(salary);
+    // Se já tem casas decimais, formatar diretamente
+    if (salary.includes('.')) {
+        return formatCurrency(num);
+    }
+    // Tratar os dois últimos dígitos como centavos (ex: 190634 → 1906.34)
+    const salaryAsNumber = num / 100;
+    return formatCurrency(salaryAsNumber);
 }
 
 let employees = [];
@@ -34,10 +40,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function loadAllEmployees() {
+    showLoadingState(true);
     try {
         const res = await fetch('/api/employees');
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        
         employees = await res.json();
         renderSidebar();
+        showSuccessMessage(`${employees.length} colaboradores carregados`);
         
         // Só atualiza a view se employees foi carregado com sucesso
         if (selectedId && employees.length > 0) {
@@ -47,14 +57,69 @@ async function loadAllEmployees() {
                 updateEmployeeView(emp);
             }
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error(e);
+        showErrorMessage('Falha ao carregar colaboradores: ' + e.message);
+    } finally {
+        showLoadingState(false);
+    }
 }
 
 function updateEmployeeView(emp) {
-    const salaryEl = document.getElementById('view-salary');
-    const roleEl = document.getElementById('view-role');
-    if (salaryEl) salaryEl.innerText = formatCurrency(emp.currentSalary);
-    if (roleEl) roleEl.innerText = `${emp.role} (CBO: ${emp.cbo || '---'})`;
+    const selectionView = document.getElementById('selection-view');
+    if (!selectionView) return;
+    
+    selectionView.innerHTML = `
+        <div class="max-w-6xl mx-auto w-full">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl p-6 border-2 border-nordeste-red shadow-xl flex flex-col items-center">
+                        <img id="view-photo" src="${emp.photoUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(emp.name)}" 
+                             class="w-28 h-28 rounded-2xl object-cover border-4 border-white shadow-lg mb-4"
+                             alt="Foto do colaborador"
+                             onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}'">
+                        <h2 id="view-name" class="text-lg font-bold text-gray-800 uppercase text-center leading-tight">${emp.name}</h2>
+                        <span id="view-reg" class="bg-gray-100 px-3 py-1 rounded-lg text-xs font-mono text-gray-500 mt-2">#${emp.registrationNumber || '0000'}</span>
+                        <div class="w-full mt-6 pt-6 border-t border-gray-100 space-y-4">
+                            <div>
+                                <p class="text-xs font-medium text-gray-500 uppercase">Posição Atual</p>
+                                <p id="view-role" class="text-sm font-medium text-nordeste-red uppercase leading-tight">${emp.role} (CBO: ${emp.cbo || '---'})</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-medium text-gray-500 uppercase">Salário Atual</p>
+                                <p id="view-salary" class="text-xl font-bold text-gray-800 tabular-nums">${formatSalaryValue(emp.currentSalary)}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-nordeste-black rounded-2xl p-6 text-white relative overflow-hidden">
+                        <div class="absolute top-[-10px] right-[-10px] text-6xl opacity-10">
+                            <svg class="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                        </div>
+                        <p class="text-xs font-medium text-nordeste-red uppercase tracking-widest mb-1">Evolução na Nordeste</p>
+                        <h3 id="view-variation" class="text-4xl font-bold">+0.0%</h3>
+                        <p class="text-xs text-gray-400 font-medium mt-2">Aumento acumulado total</p>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="flex flex-wrap gap-3" role="group" aria-label="Ações">
+                        <button onclick="window.openPromotionModal()" class="flex-1 bg-nordeste-black text-white px-6 py-4 rounded-xl font-semibold shadow-md hover:scale-[1.02] transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-nordeste-black focus:ring-offset-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                            Promoção / Cargo
+                        </button>
+                        <button onclick="window.openBonusModal()" class="flex-1 bg-amber-500 text-white px-6 py-4 rounded-xl font-semibold shadow-md hover:scale-[1.02] transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Bonificação
+                        </button>
+                        <button onclick="window.openOccurrenceModal()" class="flex-1 bg-nordeste-red text-white px-6 py-4 rounded-xl font-semibold shadow-md hover:scale-[1.02] transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-nordeste-red focus:ring-offset-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            Ocorrência
+                        </button>
+                    </div>
+                    <div id="career-timeline" class="space-y-6 relative pl-10 border-l-2 border-gray-200 ml-5 timeline-scroll overflow-y-auto max-h-[60vh]"></div>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 async function refreshCurrentEmployee() {
@@ -99,19 +164,323 @@ function renderSidebar() {
         return matchesSearch && matchesStatus;
     });
 
-    container.innerHTML = filtered.map(e => `
-        <div class="emp-item ${selectedId === e.id ? 'active' : ''}" onclick="window.selectEmployee('${e.id}')">
-            <img src="${e.photoUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(e.name)}" class="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-sm">
-            <div class="min-w-0 flex-1">
-                <p class="text-[10px] font-black text-gray-800 uppercase truncate">${e.name}</p>
-                <p class="text-[8px] text-gray-400 font-bold uppercase tracking-widest leading-none">${e.role}</p>
+    // Atualizar contadores nos tabs
+    updateFilterCounters();
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state p-8 text-center">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+                <p class="text-sm font-medium text-gray-600">Nenhum colaborador encontrado</p>
+                <p class="text-xs text-gray-400 mt-1">
+                    ${search ? 'Tente outra busca' : 'Nenhum colaborador neste status'}
+                </p>
             </div>
-            ${e.type === 'Desligado' ? '<span class="text-[7px] bg-red-100 text-red-600 font-black px-2 py-0.5 rounded-full uppercase">Sair</span>' : ''}
-        </div>
-    `).join('') || `<p class="p-8 text-center text-gray-300 text-[9px] font-black uppercase italic">Vazio</p>`;
+        `;
+        return;
+    }
+
+container.innerHTML = filtered.map(e => {
+        const highlightedName = highlightSearch(e.name, search);
+        const highlightedReg = highlightSearch(e.registrationNumber, search);
+        
+        return `
+            <div class="emp-item ${selectedId === e.id ? 'active' : ''} animate-slide p-4" 
+                 onclick="window.selectEmployee('${e.id}')"
+                 role="option"
+                 aria-selected="${selectedId === e.id}"
+                 data-tooltip="${e.type === 'Desligado' ? 'Desligado em ' + (e.terminationDate || 'N/A') : 'Clique para detalhes'}">
+                <img src="${e.photoUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(e.name)}" 
+                     class="w-10 h-10 rounded-lg object-cover border-2 border-white shadow-sm" 
+                     alt=""
+                     onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(e.name)}'">
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-gray-800 uppercase truncate">${highlightedName}</p>
+                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider leading-none">${e.role}</p>
+                    <p class="text-xs text-gray-400 font-mono">${highlightedReg}</p>
+                </div>
+                ${e.type === 'Desligado' ? '<span class="text-xs bg-red-100 text-red-600 font-medium px-2 py-1 rounded-full uppercase">Sair</span>' : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+// Funções de feedback visual
+function showLoadingState(show) {
+    const container = document.getElementById('employees-list');
+    if (!container) return;
+    
+    if (show) {
+        container.innerHTML = `
+            <div class="p-4">
+                <div class="skeleton h-12 rounded-lg mb-3"></div>
+                <div class="skeleton h-12 rounded-lg mb-3"></div>
+                <div class="skeleton h-12 rounded-lg mb-3"></div>
+                <div class="skeleton h-12 rounded-lg"></div>
+            </div>
+        `;
+    }
+}
+
+function showSuccessMessage(message) {
+    showToast(message, 'success');
+}
+
+function showErrorMessage(message) {
+    showToast(message, 'error');
+}
+
+function showToast(message, type = 'info') {
+    if (window.showToast) {
+        window.showToast(message, type);
+        return;
+    }
+    
+    const container = document.getElementById('toast-container') || document.createElement('div');
+    if (!container.id) {
+        container.id = 'toast-container';
+        container.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:200;display:flex;flex-direction:column;gap:0.75rem';
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement('div');
+    const colors = { success: '#10B981', error: '#EF4444', info: '#3B82F6' };
+    toast.style.cssText = `padding:1rem 1.5rem;border-radius:0.75rem;font-size:0.875rem;font-weight:600;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);animation:toast-in 0.3s ease;display:flex;align-items:center;gap:0.75rem;background:${colors[type]};color:white`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `<span>${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span> ${message}`;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'toast-in 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+function highlightSearch(text, search) {
+    if (!search) return text;
+    const regex = new RegExp(`(${search})`, 'gi');
+    return text.replace(regex, '<span class="search-highlight">$1</span>');
+}
+
+function updateFilterCounters() {
+    const activeCount = employees?.filter(e => e.type !== 'Desligado').length || 0;
+    const inactiveCount = employees?.filter(e => e.type === 'Desligado').length || 0;
+    
+    const activeTab = document.getElementById('tab-active');
+    const inactiveTab = document.getElementById('tab-inactive');
+    
+    if (activeTab) {
+        activeTab.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>Ativos<span class="badge-count">${activeCount}</span>`;
+    }
+    if (inactiveTab) {
+        inactiveTab.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>Desligados<span class="badge-count">${inactiveCount}</span>`;
+    }
 }
 
 window.filterList = () => renderSidebar();
+
+// Função para editar item da carreira
+window.editCareerItem = (id) => {
+    const item = fullHistory.find(h => h.id === id);
+    if (!item) {
+        showErrorMessage('Registro não encontrado');
+        return;
+    }
+
+    const modal = document.getElementById('pro-modal-container');
+    const content = document.getElementById('pro-modal-content');
+
+    // Formatar data para datetime-local
+    const dateValue = item.date ? new Date(item.date).toISOString().slice(0, 16) : '';
+
+content.innerHTML = `
+        <div class="bg-nordeste-black p-6 text-white rounded-t-2xl">
+            <h3 class="text-lg font-bold uppercase">Editar Registro de Carreira</h3>
+        </div>
+        <form id="edit-career-form" class="p-6 space-y-5">
+            <input type="hidden" id="edit-id" value="${id}">
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="pro-label">Tipo de Movimentação *</label>
+                    <select id="edit-move-type" class="pro-input uppercase" required>
+                        <option value="PROMOÇÃO" ${item.move_type === 'PROMOÇÃO' ? 'selected' : ''}>PROMOÇÃO</option>
+                        <option value="REAJUSTE SALARIAL" ${item.move_type === 'REAJUSTE SALARIAL' ? 'selected' : ''}>REAJUSTE SALARIAL</option>
+                        <option value="ADMISSÃO" ${item.move_type === 'ADMISSÃO' ? 'selected' : ''}>ADMISSÃO</option>
+                        <option value="DESLIGAMENTO" ${item.move_type === 'DESLIGAMENTO' ? 'selected' : ''}>DESLIGAMENTO</option>
+                        <option value="BONIFICAÇÃO" ${item.move_type === 'BONIFICAÇÃO' ? 'selected' : ''}>BONIFICAÇÃO</option>
+                        <option value="OCORRÊNCIA" ${item.move_type === 'OCORRÊNCIA' ? 'selected' : ''}>OCORRÊNCIA</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="pro-label">Data</label>
+                    <input type="datetime-local" id="edit-date" class="pro-input" value="${dateValue}">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="pro-label">Cargo/Função</label>
+                    <input type="text" id="edit-role" class="pro-input" value="${item.role || ''}">
+                </div>
+                <div>
+                    <label class="pro-label">Setor</label>
+                    <input type="text" id="edit-sector" class="pro-input" value="${item.salary || ''}">
+                </div>
+            </div>
+            
+            <div>
+                <label class="pro-label">Valor</label>
+                <input type="text" id="edit-salary" class="pro-input font-bold text-nordeste-red" value="${item.salary || ''}">
+            </div>
+            
+            <div>
+                <label class="pro-label">Responsável</label>
+                <input type="text" id="edit-responsible" class="pro-input" value="${item.responsible || ''}">
+            </div>
+            
+            <div>
+                <label class="pro-label">Observação</label>
+                <textarea id="edit-observation" class="pro-input h-24">${item.observation || ''}</textarea>
+            </div>
+            
+            <div class="flex gap-3">
+                <button type="button" onclick="window.deleteCareerItem('${id}')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-xl font-medium text-sm uppercase border border-red-200 hover:bg-red-100">Excluir</button>
+                <button type="button" onclick="window.closeProModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-medium text-sm uppercase hover:bg-gray-200">Cancelar</button>
+                <button type="submit" class="flex-1 py-3 bg-nordeste-red text-white rounded-xl font-medium text-sm uppercase shadow-md hover:bg-red-700">Salvar</button>
+            </div>
+        </form>
+    `;
+
+    // Event listener do formulário
+    document.getElementById('edit-career-form').onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+            role: document.getElementById('edit-role').value,
+            sector: document.getElementById('edit-sector').value,
+            salary: document.getElementById('edit-salary').value,
+            move_type: document.getElementById('edit-move-type').value,
+            date: document.getElementById('edit-date').value,
+            responsible: document.getElementById('edit-responsible').value,
+            observation: document.getElementById('edit-observation').value,
+            cbo: document.getElementById('edit-cbo').value
+        };
+
+        try {
+            const res = await fetch(`/api/career/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (res.ok) {
+                showSuccessMessage('Registro atualizado com sucesso!');
+                window.closeProModal();
+                refreshCurrentEmployee();
+            } else {
+                const error = await res.json();
+                showErrorMessage(error.error || 'Erro ao atualizar registro');
+            }
+        } catch (e) {
+            console.error('Erro ao editar registro:', e);
+            showErrorMessage('Falha de comunicação com o servidor');
+        }
+    };
+
+    modal.classList.remove('hidden');
+};
+
+window.filterTimeline = (filterType) => {
+    const allBtn = document.querySelector('[data-filter="all"]');
+    const careerBtn = document.querySelector('[data-filter="career"]');
+    const bonusBtn = document.querySelector('[data-filter="bonus"]');
+    
+    // Resetar estilos
+    [allBtn, careerBtn, bonusBtn].forEach(btn => {
+        btn.classList.remove('bg-nordeste-red', 'text-white', 'border-nordeste-red');
+        btn.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
+    });
+    
+    // Ativar botão selecionado
+    const activeBtn = document.querySelector(`[data-filter="${filterType}"]`);
+    activeBtn.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
+    activeBtn.classList.add('bg-nordeste-red', 'text-white', 'border-nordeste-red');
+    
+    // Filtrar e renderizar
+    let filteredHistory = fullHistory;
+    if (filterType === 'career') {
+        filteredHistory = fullHistory.filter(h => h.type_group === 'CARREIRA');
+    } else if (filterType === 'bonus') {
+        filteredHistory = fullHistory.filter(h => h.type_group === 'BONUS');
+    }
+    
+    renderTimelineItems(filteredHistory);
+};
+
+function renderTimelineItems(history) {
+    const container = document.getElementById('career-timeline');
+    const itemsContainer = container.querySelector('.timeline-items') || document.createElement('div');
+    itemsContainer.className = 'timeline-items space-y-6';
+    
+    if (!container.querySelector('.timeline-items')) {
+        container.appendChild(itemsContainer);
+    }
+    
+    itemsContainer.innerHTML = history.map((item, index) => {
+        const date = formatarDataBR(item.date);
+        const moveType = item.move_type || '';
+        const isPromotion = moveType.toLowerCase().includes('promoção') || moveType.toLowerCase().includes('promocao');
+        const isBonus = item.type_group === 'BONUS';
+        const isTermination = moveType.toLowerCase().includes('desligamento');
+        
+        let badgeClass = 'bg-admissao';
+        if (isPromotion) badgeClass = 'bg-promocao';
+        else if (isBonus) badgeClass = 'bg-reajuste';
+        else if (isTermination) badgeClass = 'bg-desligamento';
+        else if (moveType.toLowerCase().includes('reajuste')) badgeClass = 'bg-reajuste';
+        
+        return `
+            <div class="career-item animate-fade" style="animation-delay: ${index * 0.1}s">
+                <div class="timeline-dot ${badgeClass.replace('bg-', 'border-')}"></div>
+                <div class="career-card bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="window.editCareerItem('${item.id}')">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="move-badge ${badgeClass} px-3 py-1 rounded-full text-xs font-medium uppercase">${moveType}</span>
+                            <span class="text-xs text-gray-400">${date}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="event.stopPropagation(); window.editCareerItem('${item.id}')" class="text-blue-500 hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-all" aria-label="Editar">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </button>
+                            <button onclick="event.stopPropagation(); window.deleteCareerItem('${item.id}')" class="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-all" aria-label="Excluir">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        ${item.role ? `<p class="text-sm font-medium text-gray-800">${item.role}</p>` : ''}
+                        ${item.sector ? `<p class="text-xs text-gray-500">${item.sector}</p>` : ''}
+                        ${item.salary && item.salary !== '-' ? `
+                            <div class="flex items-center gap-2">
+                                <p class="text-base font-bold text-nordeste-red">${formatSalaryValue(item.salary)}</p>
+                                ${isPromotion ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">↑ Aumento</span>' : ''}
+                            </div>
+                        ` : ''}
+                        ${item.observation ? `<p class="text-xs text-gray-600 italic">${item.observation}</p>` : ''}
+                        ${item.responsible ? `<p class="text-xs text-gray-400">Responsável: ${item.responsible}</p>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
 
 window.openEmployeeById = async (id) => {
     const exists = employees.find(e => e.id === id);
@@ -126,128 +495,218 @@ window.openEmployeeById = async (id) => {
 };
 
 window.selectEmployee = async (id) => {
+    // Feedback visual de seleção
+    const allItems = document.querySelectorAll('.emp-item');
+    allItems.forEach(item => item.classList.remove('active'));
+    
     selectedId = id;
-    renderSidebar();
-
     const emp = employees.find(e => e.id === id);
-    if (!emp) return;
-    currentEmployeeData = emp;
-
-    document.getElementById('welcome-msg').classList.add('hidden');
-    document.getElementById('selection-view').classList.remove('hidden');
-
-    document.getElementById('view-photo').src = emp.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}`;
-    document.getElementById('view-name').innerText = emp.name;
-    document.getElementById('view-reg').innerText = `#${emp.registrationNumber}`;
-    document.getElementById('view-role').innerText = `${emp.role} (CBO: ${emp.cbo || '---'})`;
-    document.getElementById('view-salary').innerText = formatCurrency(emp.currentSalary);
-
-    await loadCareerTimeline(id);
+    if (emp) {
+        currentEmployeeData = emp;
+        
+        // Mostrar loading na área principal
+        const selectionView = document.getElementById('selection-view');
+        const welcomeMsg = document.getElementById('welcome-msg');
+        
+        welcomeMsg.classList.add('hidden');
+        selectionView.classList.remove('hidden');
+        
+// Loading state na view do funcionário - restaurar HTML original
+        selectionView.innerHTML = `
+            <div class="max-w-6xl mx-auto w-full">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-2xl p-6 border-2 border-nordeste-red shadow-xl flex flex-col items-center">
+                            <div class="w-28 h-28 rounded-2xl bg-gray-200 animate-pulse mb-4"></div>
+                            <div class="h-6 w-32 rounded bg-gray-200 animate-pulse mb-2"></div>
+                            <div class="h-4 w-20 rounded bg-gray-200 animate-pulse"></div>
+                            <div class="w-full mt-6 pt-6 border-t border-gray-100 space-y-4">
+                                <div class="h-4 w-24 rounded bg-gray-200 animate-pulse"></div>
+                                <div class="h-6 w-28 rounded bg-gray-200 animate-pulse"></div>
+                            </div>
+                        </div>
+                        <div class="bg-nordeste-black rounded-2xl p-6 text-white relative overflow-hidden">
+                            <div class="h-8 w-20 rounded bg-gray-600 animate-pulse mb-2"></div>
+                            <div class="h-12 w-16 rounded bg-gray-600 animate-pulse"></div>
+                            <div class="h-4 w-32 rounded bg-gray-600 animate-pulse mt-2"></div>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="flex flex-wrap gap-3">
+                            <div class="h-12 w-32 rounded-xl bg-gray-200 animate-pulse"></div>
+                            <div class="h-12 w-24 rounded-xl bg-gray-200 animate-pulse"></div>
+                            <div class="h-12 w-28 rounded-xl bg-gray-200 animate-pulse"></div>
+                        </div>
+                        <div class="space-y-6">
+                            <div class="h-20 rounded-xl bg-gray-200 animate-pulse"></div>
+                            <div class="h-20 rounded-xl bg-gray-200 animate-pulse"></div>
+                            <div class="h-20 rounded-xl bg-gray-200 animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        updateEmployeeView(emp);
+        await loadCareerTimeline(id);
+        
+        showSuccessMessage(`${emp.name} selecionado`);
+    }
+    renderSidebar();
 };
 
 async function loadCareerTimeline(id) {
     try {
-        const res = await fetch(`/api/employees-pro/${id}/dossier`);
-        const data = await res.json();
+        // Mostrar loading na timeline
+        showTimelineLoadingState(true);
+        
+        const res = await fetch(`/api/career/${id}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        
+        const careerData = await res.json();
 
-        fullHistory = [
-            ...(data.career || []).map(c => {
-                // Classificação inteligente do tipo de registro
-                const isBonus = c.move_type.toLowerCase().includes('bonificação') ||
-                    c.move_type.toLowerCase().includes('mérito') ||
-                    c.move_type.toLowerCase().includes('bônus') ||
-                    c.move_type.toLowerCase().includes('bonus');
-                return {
-                    ...c,
-                    type_group: isBonus ? 'BONUS' : 'CARREIRA',
-                    source_table: 'career'
-                };
-            }),
-            ...(data.occurrences || []).map(o => ({
-                id: o.id, date: o.date, move_type: o.type, role: 'OCORRÊNCIA', sector: o.reason,
-                salary: o.type.includes('Premiação') ? 'MÉRITO' : 'CONDUTA',
-                observation: o.observation, type_group: 'CONDUTA', cbo: '', responsible: o.responsible,
-                source_table: 'occurrences'
-            }))
-        ].sort((a, b) => new Date(b.date) - new Date(a.date));
+        fullHistory = careerData.map(c => {
+            // Classificação inteligente do tipo de registro
+            const isBonus = c.move_type.toLowerCase().includes('bonificação') ||
+                c.move_type.toLowerCase().includes('mérito') ||
+                c.move_type.toLowerCase().includes('bônus') ||
+                c.move_type.toLowerCase().includes('bonus');
+            return {
+                ...c,
+                type_group: isBonus ? 'BONUS' : 'CARREIRA',
+                source_table: 'career'
+            };
+        }).sort((a, b) => new Date(b.date) - new Date(a.date));
 
         renderTimeline(fullHistory);
-    } catch (e) { console.error(e); }
+        
+        if (careerData.length > 0) {
+            showSuccessMessage(`${careerData.length} registros de carreira carregados`);
+        }
+        
+    } catch (e) { 
+        console.error('Erro ao carregar timeline de carreira:', e);
+        showErrorMessage('Falha ao carregar histórico: ' + e.message);
+        fullHistory = [];
+        renderTimeline([]);
+    } finally {
+        showTimelineLoadingState(false);
+    }
+}
+
+function showTimelineLoadingState(show) {
+    const container = document.getElementById('career-timeline');
+    if (!container) return;
+    
+    if (show) {
+        container.innerHTML = `
+            <div class="space-y-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="text-[9px] font-black text-gray-400 uppercase tracking-widest italic">Timeline do Colaborador</h4>
+                </div>
+                <div class="space-y-6">
+                    <div class="skeleton h-20 rounded-xl"></div>
+                    <div class="skeleton h-20 rounded-xl"></div>
+                    <div class="skeleton h-20 rounded-xl"></div>
+                </div>
+            </div>
+        `;
+    }
 }
 
 function renderTimeline(history) {
     const container = document.getElementById('career-timeline');
     if (!container) return;
 
+    const careerCount = history.filter(h => h.type_group === 'CARREIRA').length;
+    const bonusCount = history.filter(h => h.type_group === 'BONUS').length;
+
     container.innerHTML = `
-        <div class="flex justify-between items-center mb-4">
-            <h4 class="text-[9px] font-black text-gray-400 uppercase tracking-widest italic">Timeline do Colaborador</h4>
-            <button onclick="window.viewFullHistory()" class="text-[8px] font-black text-nordeste-red uppercase bg-red-50 px-3 py-1 rounded-lg border border-red-100 hover:bg-red-100 transition-all">📄 Log de Auditoria</button>
+        <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+            <div class="flex items-center gap-4">
+                <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Timeline do Colaborador</h4>
+                <div class="flex gap-2">
+                    <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
+                        ${careerCount} Carreira
+                    </span>
+                    <span class="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-medium">
+                        ${bonusCount} Bônus
+                    </span>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="window.filterTimeline('all')" class="timeline-filter-btn text-xs px-3 py-2 rounded-lg border border-gray-200 transition-all hover:border-nordeste-red hover:text-nordeste-red" data-filter="all">
+                    Todos
+                </button>
+                <button onclick="window.filterTimeline('career')" class="timeline-filter-btn text-xs px-3 py-2 rounded-lg border border-gray-200 transition-all hover:border-nordeste-red hover:text-nordeste-red" data-filter="career">
+                    Carreira
+                </button>
+                <button onclick="window.filterTimeline('bonus')" class="timeline-filter-btn text-xs px-3 py-2 rounded-lg border border-gray-200 transition-all hover:border-nordeste-red hover:text-nordeste-red" data-filter="bonus">
+                    Bônus
+                </button>
+                <button onclick="window.viewFullHistory()" class="text-xs font-medium text-nordeste-red uppercase bg-red-50 px-3 py-2 rounded-lg border border-red-100 hover:bg-red-100 transition-all flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Auditoria
+                </button>
+            </div>
         </div>
     `;
 
     if (history.length === 0) {
-        container.innerHTML += '<p class="text-gray-400 text-xs italic">Sem registros no banco.</p>';
+        container.innerHTML += `
+            <div class="empty-state bg-gray-50 rounded-xl p-8 text-center">
+                <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <p class="text-sm font-medium text-gray-600">Sem registros de carreira</p>
+                <p class="text-xs text-gray-400 mt-1">Este colaborador ainda não possui histórico de movimentações</p>
+            </div>
+        `;
         return;
     }
 
+    // Remover duplicados baseados em data e tipo
+    const uniqueHistory = history.filter((item, index, self) => 
+        index === self.findIndex((t) => 
+            t.date === item.date && 
+            t.move_type === item.move_type && 
+            t.salary === item.salary
+        )
+    );
+
     // Cálculo de Variação (Exclui Bônus e Ocorrências)
-    const salaryEvents = history.filter(h => h.type_group === 'CARREIRA' && h.salary && h.salary !== '-').reverse();
+    const salaryEvents = uniqueHistory
+        .filter(h => h.type_group === 'CARREIRA' && h.salary && h.salary !== '-')
+        .sort((a, b) => new Date(a.date) - new Date(b.date)); // Ordenar do mais antigo para o mais novo
 
     if (salaryEvents.length > 0) {
-        const firstSal = parseCurrency(salaryEvents[0].salary); // Primeiro salário histórico
-        const lastSal = parseCurrency(currentEmployeeData.currentSalary); // Salário Atual do cadastro
+        const firstSal = parseCurrency(salaryEvents[0].salary); // Primeiro salário histórico (mais antigo)
+        const lastHistoricalSal = parseCurrency(salaryEvents[salaryEvents.length - 1].salary); // Último salário histórico
 
         let variation = 0;
-        if (firstSal > 0) {
-            variation = ((lastSal - firstSal) / firstSal * 100).toFixed(1);
+        if (firstSal > 0 && lastHistoricalSal > 0) {
+            // Usar apenas o último salário do histórico para cálculo consistente
+            variation = ((lastHistoricalSal - firstSal) / firstSal * 100).toFixed(1);
+            
+            // Limitar variação a valores razoáveis (máximo 1000%)
+            if (variation > 1000) variation = 999.9;
         }
-        document.getElementById('view-variation').innerText = `${variation > 0 ? '+' : ''}${variation}%`;
+        
+        const variationEl = document.getElementById('view-variation');
+        if (variationEl) {
+            variationEl.innerText = `${variation > 0 ? '+' : ''}${variation}%`;
+        }
     } else {
-        document.getElementById('view-variation').innerText = `0.0%`;
+        const variationEl = document.getElementById('view-variation');
+        if (variationEl) {
+            variationEl.innerText = `0.0%`;
+        }
     }
 
-    container.innerHTML += history.map((c, i) => {
-        let dotColor = "border-nordeste-red";
-        let cardBg = "bg-white";
-        let amountColor = "text-nordeste-red";
-
-        if (c.type_group === 'CONDUTA') {
-            dotColor = c.salary === 'MÉRITO' ? "border-amber-400" : "border-gray-800";
-            amountColor = c.salary === 'MÉRITO' ? 'text-amber-500' : 'text-gray-400';
-        } else if (c.type_group === 'BONUS') {
-            dotColor = "border-emerald-500";
-            cardBg = "bg-emerald-50/30";
-            amountColor = "text-emerald-600";
-        }
-
-        return `
-            <div class="career-item animate-fade" style="animation-delay: ${i * 0.05}s">
-                <div class="timeline-dot" style="border-color: ${dotColor.replace('border-', '')}"></div>
-                <div class="career-card ${cardBg} group">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <span class="move-badge ${c.type_group === 'CONDUTA' ? 'bg-gray-100 text-gray-500' : c.type_group === 'BONUS' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-50 text-red-600'}">${c.move_type}</span>
-                            <h4 class="font-black text-gray-800 text-sm uppercase italic mt-2 leading-none">
-                                ${c.role} ${c.cbo ? `<span class="text-[8px] font-mono text-amber-600 ml-1">(CBO: ${c.cbo})</span>` : ''}
-                            </h4>
-                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">${c.sector}</p>
-                        </div>
-                        <div class="text-right">
-                            <div class="flex justify-end gap-2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="window.editCareerItem('${c.id}', '${c.source_table}')" class="p-1.5 bg-gray-50 text-gray-400 hover:text-nordeste-red rounded-lg transition-colors border border-gray-100" title="Editar">✏️</button>
-                                <button onclick="window.deleteHistoryItem('${c.id}', '${c.source_table}')" class="p-1.5 bg-gray-50 text-gray-400 hover:text-red-700 rounded-lg transition-colors border border-gray-100" title="Excluir">🗑️</button>
-                            </div>
-                            <p class="text-lg font-black ${amountColor} tabular-nums">${formatSalaryValue(c.salary)}</p>
-                            ${c.type_group === 'BONUS' ? '<p class="text-[7px] font-black text-emerald-600 uppercase mt-1">PAGAMENTO ÚNICO</p>' : ''}
-                            <p class="text-[8px] font-mono text-gray-400 font-bold mt-1">${formatarDataHoraBR(c.date)}</p>
-                        </div>
-                    </div>
-                    ${c.observation ? `<div class="mt-3 pt-3 border-t border-gray-100 text-[10px] text-gray-500 italic">"${c.observation}"</div>` : ''}
-                </div>
-            </div>
-        `;
-    }).join('');
+    // Renderizar timeline com dados únicos e ordenados
+    renderTimelineItems(uniqueHistory);
 }
 
 window.deleteHistoryItem = async (id, table) => {

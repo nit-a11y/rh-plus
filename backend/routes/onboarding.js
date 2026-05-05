@@ -6,136 +6,126 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../config/database');
+const { 
+    DEFAULT_STEPS, 
+    SERVICOS_DIVERSOS_STEPS, 
+    isServicosDiversos, 
+    calculateDateFromDay 
+} = require('../config/onboarding-templates');
 
-// Cronograma GERAL (8 etapas)
-const DEFAULT_STEPS = [
-    {
-        momento: 'Dia 1',
-        nome_encontro: 'Onboarding\nBoas-Vindas Oficial',
-        responsavel: 'Gente & Gestão (1 pessoa)',
-        pauta_sugerida: 'Tour pela empresa\nApresentação da equipe e espaços\nEntrega de materiais\nCultura e valores da empresa',
-        como_fazer: 'Presencial — integração formal\nDuração: 1h (max)',
-        status: 'Pendente'
-    },
-    {
-        momento: 'Dia 2',
-        nome_encontro: 'Café com Gente & Gestão\nPrimeiras Impressões',
-        responsavel: 'Gente & Gestão',
-        pauta_sugerida: 'Como foi o primeiro dia?\nAlguma surpresa boa ou ruim?\nJá conheceu o time?',
-        como_fazer: 'Copa — sem sala formal\nDuração: 10min',
-        status: 'Pendente'
-    },
-    {
-        momento: 'Dia 10',
-        nome_encontro: 'Check-point 15 Dias\nConversa com o Colaborador',
-        responsavel: 'Gente & Gestão (2 pessoas)',
-        pauta_sugerida: 'Já se sente parte do time?\nA rotina está sendo como esperava?\nComo é sua relação com o gestor?\nAlgo que te incomoda ou preocupa?',
-        como_fazer: 'Sala de reunião',
-        status: 'Pendente'
-    },
-    {
-        momento: 'Dia 10',
-        nome_encontro: 'Check-point 15 Dias\nConversa com o Gestor',
-        responsavel: 'Gestor G&G + Gestor',
-        pauta_sugerida: 'Como o colaborador está se saindo?\nJá entendeu suas responsabilidades?\nAlgum ponto de atenção?\nPrecisa de apoio técnico ou de integração?',
-        como_fazer: 'Não necessita de um momento formal',
-        status: 'Pendente'
-    },
-    {
-        momento: 'Dia 15',
-        nome_encontro: 'Alinhamento',
-        responsavel: 'Gestor + Colaborador',
-        pauta_sugerida: 'Alinhamento do primeiro período.\nIdentificação de ajustes na rotina ou atividades (se necessário)\nFortalecimento do vínculo entre gestor e colaborador.',
-        como_fazer: 'Não requer um momento formal, porém deve ser realizado individualmente.',
-        status: 'Pendente'
-    },
-    {
-        momento: 'Dia 45',
-        nome_encontro: 'Avaliação de 45 Dias',
-        responsavel: 'Gente & Gestão + Gestor (1 pessoa)',
-        pauta_sugerida: 'Formulário de avaliação\nFeedback do gestor ao colaborador\nFeedback do colaborador',
-        como_fazer: 'Sala de reunião\nUsar formulário padrão\nDuração: 15 - 30 min',
-        status: 'Pendente'
-    },
-    {
-        momento: 'Dia 60',
-        nome_encontro: 'Check-point 60 Dias\nConversa de Meio Caminho',
-        responsavel: 'Gente & Gestão (2 pessoas)',
-        pauta_sugerida: 'Relacionamento com o time\nCrescimento\nExpectativas x Realidade\nAtividades',
-        como_fazer: 'Sala de reunião',
-        status: 'Pendente'
-    },
-    {
-        momento: 'Dia 90',
-        nome_encontro: 'Avaliação de 90 Dias',
-        responsavel: 'Gente & Gestão + Gestor (1 pessoa)',
-        pauta_sugerida: 'Avaliação completa\nFeedback final\nEfetivação\nAdesão de benefícios',
-        como_fazer: 'Sala de reunião',
-        status: 'Pendente'
-    }
-];
+// Cache para performance
+const cache = {
+    employees: { data: null, timestamp: 0, ttl: 300000 }, // 5 minutos
+    onboardingSteps: new Map(), // employeeId -> { data, timestamp }
+    cargoConfigs: { data: null, timestamp: 0, ttl: 600000 } // 10 minutos
+};
 
-// Cronograma SERVIÇOS DIVERSOS (6 etapas) - para cargos do setor de serviços diversos
-const SERVICOS_DIVERSOS_STEPS = [
-    {
-        momento: 'Dia 1',
-        nome_encontro: 'Onboarding\nBoas-Vindas Oficial',
-        responsavel: 'Gente & Gestão (1 pessoa)',
-        pauta_sugerida: 'Tour pela empresa\nApresentação da equipe e espaços\nEntrega de materiais\nCultura e valores da empresa',
-        como_fazer: 'Presencial — integração formal\nDuração: 1h (max)',
-        status: 'Pendente'
-    },
-    {
-        momento: 'Dia 2',
-        nome_encontro: 'Café com Gente & Gestão\nPrimeiras Impressões',
-        responsavel: 'Gente & Gestão',
-        pauta_sugerida: 'Como foi o primeiro dia?\nAlguma surpresa boa ou ruim?\nJá conheceu o time?',
-        como_fazer: 'Copa — sem sala formal\nDuração: 10min',
-        status: 'Pendente'
-    },
-    {
-        momento: 'Dia 10',
-        nome_encontro: 'Check-point 15 Dias\nConversa com o Colaborador',
-        responsavel: 'Gente & Gestão (2 pessoas)',
-        pauta_sugerida: 'Já se sente parte do time?\nA rotina está sendo como esperava?\nComo é sua relação com o gestor?\nAlgo que te incomoda ou preocupa?',
-        como_fazer: 'Sala de reunião',
-        status: 'Pendente'
-    },
-    {
-        momento: 'Dia 14',
-        nome_encontro: 'Avaliação de 45 Dias',
-        responsavel: 'Gente & Gestão + Gestor (1 pessoa)',
-        pauta_sugerida: 'Formulário de avaliação\nFeedback do gestor ao colaborador\nFeedback do colaborador',
-        como_fazer: 'Sala de reunião\nUsar formulário padrão\nDuração: 15 - 30 min',
-        status: 'Pendente'
-    },
-    {
-        momento: 'Dia 30',
-        nome_encontro: 'Check-point 60 Dias\nConversa de Meio Caminho',
-        responsavel: 'Gente & Gestão (2 pessoas)',
-        pauta_sugerida: 'Relacionamento com o time\nCrescimento\nExpectativas x Realidade\nAtividades',
-        como_fazer: 'Sala de reunião',
-        status: 'Pendente'
-    },
-    {
-        momento: 'Dia 60',
-        nome_encontro: 'Avaliação de 90 Dias',
-        responsavel: 'Gente & Gestão + Gestor (1 pessoa)',
-        pauta_sugerida: 'Avaliação completa\nFeedback final\nEfetivação\nAdesão de benefícios',
-        como_fazer: 'Sala de reunião',
-        status: 'Pendente'
-    }
-];
-
-// Helper para detectar se é Serviços Diversos
-function isServicosDiversos(employee) {
-    if (!employee) return false;
-    const role = (employee.role || '').toLowerCase();
-    const sector = (employee.sector || '').toLowerCase();
-    return role.includes('serviço') || role.includes('servicos') || 
-           sector.includes('serviço') || sector.includes('servicos') ||
-           role.includes('diversos') || sector.includes('diversos');
+// Helper para verificar cache
+function isCacheValid(cacheEntry) {
+    return cacheEntry.data && (Date.now() - cacheEntry.timestamp) < cacheEntry.ttl;
 }
+
+// Helper para limpar cache específico
+function clearCache(type, key = null) {
+    if (type === 'employees') {
+        cache.employees.data = null;
+        cache.employees.timestamp = 0;
+    } else if (type === 'onboarding' && key) {
+        cache.onboardingSteps.delete(key);
+    } else if (type === 'cargoConfigs') {
+        cache.cargoConfigs.data = null;
+        cache.cargoConfigs.timestamp = 0;
+    }
+}
+
+
+// API otimizada para colaboradores em período de onboarding (até 93 dias)
+router.get('/employees-onboarding', async (req, res) => {
+    try {
+        const { includeAll = 'false' } = req.query;
+        
+        // Calcular data de corte (93 dias atrás)
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 93);
+        const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+        
+        console.log(`🔍 Buscando colaboradores ${includeAll === 'true' ? 'TODOS' : 'até 93 dias'} (desde ${cutoffDateStr})`);
+        
+        let queryStr, params;
+        
+        if (includeAll === 'true') {
+            // Modo completo: todos os colaboradores ativos
+            queryStr = `
+                SELECT e.id, e.name, e."admissionDate", e.role, e.sector, e.type, e."photoUrl", e."registrationNumber"
+                FROM employees e 
+                WHERE e.type != 'Desligado'
+                AND e."admissionDate" IS NOT NULL
+                ORDER BY e."admissionDate" DESC
+            `;
+            params = [];
+        } else {
+            // Modo otimizado: apenas colaboradores até 93 dias
+            queryStr = `
+                SELECT e.id, e.name, e."admissionDate", e.role, e.sector, e.type, e."photoUrl", e."registrationNumber"
+                FROM employees e 
+                WHERE e.type != 'Desligado'
+                AND e."admissionDate" IS NOT NULL
+                AND e."admissionDate" >= $1
+                ORDER BY e."admissionDate" DESC
+            `;
+            params = [cutoffDateStr];
+        }
+        
+        const result = await query(queryStr, params);
+        
+        // Adicionar metadata para frontend
+        const response = {
+            employees: result.rows,
+            metadata: {
+                total: result.rows.length,
+                filter: includeAll === 'true' ? 'all' : 'onboarding',
+                cutoffDate: cutoffDateStr,
+                maxDays: includeAll === 'true' ? null : 93,
+                queryTime: Date.now()
+            }
+        };
+        
+        console.log(`✅ Encontrados ${result.rows.length} colaboradores`);
+        res.json(response);
+        
+    } catch (err) {
+        console.error('Erro ao buscar colaboradores onboarding:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API para fornecer templates ao frontend
+router.get('/templates', (req, res) => {
+    try {
+        console.log('🔍 Backend: Templates API chamada');
+        console.log('🔍 Backend: DEFAULT_STEPS disponível:', !!DEFAULT_STEPS, typeof DEFAULT_STEPS);
+        console.log('🔍 Backend: SERVICOS_DIVERSOS_STEPS disponível:', !!SERVICOS_DIVERSOS_STEPS, typeof SERVICOS_DIVERSOS_STEPS);
+        
+        const responseData = {
+            DEFAULT_STEPS,
+            SERVICOS_DIVERSOS_STEPS
+        };
+        
+        console.log('� Backend: Estrutura de resposta:', {
+            keys: Object.keys(responseData),
+            hasDefault: !!responseData.DEFAULT_STEPS,
+            hasServicos: !!responseData.SERVICOS_DIVERSOS_STEPS,
+            defaultLength: Array.isArray(responseData.DEFAULT_STEPS) ? responseData.DEFAULT_STEPS.length : 'N/A',
+            servicosLength: Array.isArray(responseData.SERVICOS_DIVERSOS_STEPS) ? responseData.SERVICOS_DIVERSOS_STEPS.length : 'N/A'
+        });
+        
+        res.json(responseData);
+        console.log('📋 Templates API enviada com sucesso');
+    } catch (err) {
+        console.error('Erro ao buscar templates:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // ----------------------------------------------------------
 // ROTAS ESPECÍFICAS (DEVEM VIR ANTES DAS ROTAS COM PARÂMETRO)
@@ -287,10 +277,19 @@ router.post('/generate-notifications', async (req, res) => {
     }
 });
 
-// Obter etapas do onboarding de um colaborador
+// Obter etapas do onboarding de um colaborador - COM CACHE
 router.get('/onboarding/:employeeId', async (req, res) => {
     try {
         const { employeeId } = req.params;
+        
+        // Verificar cache primeiro
+        const cached = cache.onboardingSteps.get(employeeId);
+        if (cached && isCacheValid(cached)) {
+            console.log(`📋 Cache HIT para onboarding: ${employeeId}`);
+            return res.json(cached.data);
+        }
+        
+        console.log(`📋 Cache MISS para onboarding: ${employeeId}`);
         
         // Buscar etapas salvas no banco
         const result = await query(
@@ -298,47 +297,49 @@ router.get('/onboarding/:employeeId', async (req, res) => {
             [employeeId]
         );
         
+        let responseData;
+        
         if (result.rows.length > 0) {
-            return res.json({ steps: result.rows });
+            responseData = { steps: result.rows };
+        } else {
+            // Se não tem etapas salvas, retorna as padrão
+            // Buscar dados do colaborador
+            const empResult = await query(
+                `SELECT "admissionDate", role, sector FROM employees WHERE id = $1`,
+                [employeeId]
+            );
+            
+            const emp = empResult.rows[0];
+            const admissionDate = emp?.admissionDate;
+            
+            // Escolher cronograma correto
+            const isServDiv = isServicosDiversos(emp);
+            const stepsTemplate = isServDiv ? SERVICOS_DIVERSOS_STEPS : DEFAULT_STEPS;
+            console.log(`📋 Backend: Usando cronograma ${isServDiv ? 'SERVIÇOS DIVERSOS' : 'GERAL'} para ${employeeId}`);
+            
+            const steps = stepsTemplate.map((step, index) => {
+                let dataPrevista = calculateDateFromDay(step.momento, admissionDate);
+                
+                return {
+                    ...step,
+                    employee_id: employeeId,
+                    data_prevista: dataPrevista,
+                    data_realizada: null,
+                    anotacao: '',
+                    ordem: index
+                };
+            });
+            
+            responseData = { steps };
         }
         
-        // Se não tem etapas salvas, retorna as padrão
-        // Buscar dados do colaborador
-        const empResult = await query(
-            `SELECT "admissionDate", role, sector FROM employees WHERE id = $1`,
-            [employeeId]
-        );
-        
-        const emp = empResult.rows[0];
-        const admissionDate = emp?.admissionDate;
-        
-        // Escolher cronograma correto
-        const isServDiv = isServicosDiversos(emp);
-        const stepsTemplate = isServDiv ? SERVICOS_DIVERSOS_STEPS : DEFAULT_STEPS;
-        console.log(`📋 Backend: Usando cronograma ${isServDiv ? 'SERVIÇOS DIVERSOS' : 'GERAL'} para ${employeeId}`);
-        
-        const steps = stepsTemplate.map((step, index) => {
-            const dayMatch = step.momento.match(/Dia (\d+)/);
-            const days = dayMatch ? parseInt(dayMatch[1]) - 1 : 0;
-            
-            let dataPrevista = null;
-            if (admissionDate) {
-                const date = new Date(admissionDate);
-                date.setDate(date.getDate() + days);
-                dataPrevista = date.toISOString().split('T')[0];
-            }
-            
-            return {
-                ...step,
-                employee_id: employeeId,
-                data_prevista: dataPrevista,
-                data_realizada: null,
-                anotacao: '',
-                ordem: index
-            };
+        // Salvar no cache
+        cache.onboardingSteps.set(employeeId, {
+            data: responseData,
+            timestamp: Date.now()
         });
         
-        res.json({ steps });
+        res.json(responseData);
     } catch (err) {
         console.error('Erro ao buscar onboarding:', err);
         res.status(500).json({ error: err.message });
@@ -351,11 +352,35 @@ router.put('/onboarding/:employeeId', async (req, res) => {
         const { employeeId } = req.params;
         const { steps } = req.body;
         
+        // Validação robusta
         if (!Array.isArray(steps)) {
             return res.status(400).json({ error: 'Dados inválidos: steps deve ser um array' });
         }
         
-        // Deletar etapas existentes
+        if (steps.length === 0) {
+            return res.status(400).json({ error: 'Dados inválidos: steps não pode estar vazio' });
+        }
+        
+        // Validar estrutura de cada step
+        for (let i = 0; i < steps.length; i++) {
+            const step = steps[i];
+            if (!step.momento || !step.nome_encontro || !step.responsavel) {
+                return res.status(400).json({ 
+                    error: `Step inválido no índice ${i}: momento, nome_encontro e responsavel são obrigatórios` 
+                });
+            }
+            
+            // Validar status
+            const validStatus = ['Pendente', 'Agendado', 'Realizado'];
+            if (step.status && !validStatus.includes(step.status)) {
+                return res.status(400).json({ 
+                    error: `Status inválido no índice ${i}: deve ser Pendente, Agendado ou Realizado` 
+                });
+            }
+        }
+        
+        // Usar abordagem mais simples: DELETE + INSERT em sequência
+        // PostgreSQL é rápido para operações simples e não precisa de transação manual
         await query(`DELETE FROM onboarding_steps WHERE employee_id = $1`, [employeeId]);
         
         // Inserir novas etapas
@@ -372,8 +397,8 @@ router.put('/onboarding/:employeeId', async (req, res) => {
                     step.momento,
                     step.nome_encontro,
                     step.responsavel,
-                    step.pauta_sugerida,
-                    step.como_fazer,
+                    step.pauta_sugerida || '',
+                    step.como_fazer || '',
                     step.status || 'Pendente',
                     step.data_prevista || null,
                     step.data_realizada || null,
@@ -383,10 +408,33 @@ router.put('/onboarding/:employeeId', async (req, res) => {
             );
         }
         
-        res.json({ success: true, message: 'Onboarding salvo com sucesso' });
+        // Limpar cache do colaborador específico
+        clearCache('onboarding', employeeId);
+        
+        console.log(`✅ Onboarding salvo: ${steps.length} etapas para colaborador ${employeeId}`);
+        res.json({ success: true, message: 'Onboarding salvo com sucesso', stepsCount: steps.length });
+        
     } catch (err) {
-        console.error('Erro ao salvar onboarding:', err);
-        res.status(500).json({ error: err.message });
+        console.error('❌ Erro ao salvar onboarding:', err);
+        
+        // Log estruturado para debugging
+        const errorInfo = {
+            timestamp: new Date().toISOString(),
+            employeeId: req.params.employeeId,
+            stepsCount: req.body?.steps?.length || 0,
+            error: err.message,
+            stack: err.stack
+        };
+        
+        if (process.env.NODE_ENV === 'development') {
+            console.error('🔍 Debug info:', JSON.stringify(errorInfo, null, 2));
+        }
+        
+        res.status(500).json({ 
+            error: 'Erro ao salvar onboarding: ' + err.message,
+            details: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+            timestamp: errorInfo.timestamp
+        });
     }
 });
 

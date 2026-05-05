@@ -1,163 +1,153 @@
-
 const express = require('express');
 const router = express.Router();
-const db = require('../database');
+const { query, transaction } = require('../config/database');
 const crypto = require('crypto');
 
 const generateId = () => crypto.randomBytes(4).toString('hex');
 
-const dbRun = (sql, params = []) => new Promise((resolve, reject) => {
-    db.run(sql, params, function runCb(err) {
-        if (err) return reject(err);
-        resolve(this);
-    });
+router.get('/', async (req, res) => {
+    try {
+        const sql = `
+            SELECT k.*, r.name as role_name 
+            FROM kits_master k
+            JOIN roles_master r ON k.role_id = r.id
+            ORDER BY r.name ASC
+        `;
+        const result = await query(sql);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-const dbAll = (sql, params = []) => new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-        if (err) return reject(err);
-        resolve(rows || []);
-    });
-});
-
-router.get('/', (req, res) => {
-    const sql = `
-        SELECT k.*, r.name as role_name 
-        FROM kits_master k
-        JOIN roles_master r ON k.role_id = r.id
-        ORDER BY r.name ASC
-    `;
-    db.all(sql, [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
-
-router.get('/:id', (req, res) => {
-    db.get(`SELECT * FROM kits_master WHERE id = ?`, [req.params.id], (err, kit) => {
-        if (err || !kit) return res.status(404).json({ error: 'Kit não encontrado' });
-        db.all(`SELECT * FROM kit_items WHERE kit_id = ?`, [kit.id], (err, items) => {
-            res.json({ ...kit, items: items || [] });
-        });
-    });
+router.get('/:id', async (req, res) => {
+    try {
+        const kitResult = await query(`SELECT * FROM kits_master WHERE id = $1`, [req.params.id]);
+        if (!kitResult.rows[0]) return res.status(404).json({ error: 'Kit não encontrado' });
+        
+        const itemsResult = await query(`SELECT * FROM kit_items WHERE kit_id = $1`, [kitResult.rows[0].id]);
+        res.json({ ...kitResult.rows[0], items: itemsResult.rows || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // POST - Criar Kit(s) e Atualizar Fardamento dos Colaboradores
-// Agora aceita role_ids (Array) ou role_id (String legado)
 router.post('/', async (req, res) => {
     const { role_ids, role_id, kit_name, items } = req.body;
     
     // Normaliza para array
     const targetRoles = role_ids || [role_id];
     
-    if (!targetRoles || targetRoles.length === 0) return res.status(400).json({ error: "Nenhum cargo selecionado." });
+    try {
+        let totalUpdated = 0;
 
-    const today = new Date().toISOString().split('T')[0];
-    let totalEmployeesUpdated = 0;
-
-    // Função auxiliar para processar um único cargo (Promisified)
-    const processRole = (rId) => {
-        return new Promise((resolve, reject) => {
-            const kitId = generateId();
-            
-            // 1. Criar Kit Master
-            db.run(`INSERT INTO kits_master (id, role_id, kit_name) VALUES (?, ?, ?)`, [kitId, rId, kit_name], (err) => {
-                if (err) return reject(err);
+        for (const rId of targetRoles) {
+            await transaction(async (client) => {
+                const kitId = generateId();
+                
+                // 1. Criar Kit Master
+                await client.query(`INSERT INTO kits_master (id, role_id, kit_name) VALUES ($1, $2, $3)`, [kitId, rId, kit_name]);
 
                 // 2. Criar Itens do Kit
-                const itemPromises = items.map(item => {
-                    return new Promise((resItem, rejItem) => {
-                        db.run(`INSERT INTO kit_items (id, kit_id, item_category, item_type, color, quantity) VALUES (?, ?, ?, ?, ?, ?)`,
-                            [generateId(), kitId, item.category, item.type, item.color, item.quantity], (err) => {
-                                if (err) rejItem(err); else resItem();
-                            });
-                    });
-                });
+                for (const item of items) {
+                    await client.query(`INSERT INTO kit_items (id, kit_id, item_category, item_type, color, quantity) VALUES ($1, $2, $3, $4, $5, $6)`,
+                        [generateId(), kitId, item.category, item.type, item.color, item.quantity]);
+                }
 
-                Promise.all(itemPromises).then(() => {
-                    // 3. Buscar Dados do Cargo para aplicar aos colaboradores
-                    db.get(`SELECT name, category FROM roles_master WHERE id = ?`, [rId], (err, roleData) => {
-                        if (err || !roleData) return resolve(0); // Cargo não existe, segue o baile
+                // 3. Buscar Dados do Cargo para aplicar aos colaboradores
+                const roleResult = await client.query(`SELECT name, category FROM roles_master WHERE id = $1`, [rId]);
+                if (!roleResult.rows[0]) return 0; // Cargo não existe, segue o baile
 
-                        // 4. Buscar Colaboradores Ativos
-                        db.all(`SELECT * FROM employees WHERE role = ? AND type != 'Desligado'`, [roleData.name], (err, employees) => {
-                            if (err) return reject(err);
-                            
-                            if (employees.length === 0) return resolve(0);
+                // 4. Buscar Colaboradores Ativos
+                const employeesResult = await client.query(`SELECT * FROM employees WHERE role = $1 AND type != 'Desligado'`, [roleResult.rows[0].name]);
+                
+                if (employeesResult.rows.length === 0) return 0;
 
-                            // 5. Atualizar Colaboradores
-                            const empPromises = employees.map(emp => {
-                                return new Promise((resEmp) => {
-                                    // A. Baixar itens antigos
-                                    db.run(`UPDATE uniform_items SET status = 'Substituído (Novo Kit)', nextExchangeDate = ? WHERE employee_id = ? AND status != 'Devolvido'`, 
-                                        [today, emp.id], () => {
-                                            
-                                        // B. Inserir Novos Itens
-                                        const newItemPromises = items.map(ki => {
-                                            return new Promise((resKi) => {
-                                                // Lógica de Tamanho
-                                                let itemSize = 'M';
-                                                const typeLower = ki.type.toLowerCase();
-                                                if (typeLower.includes('camisa') || typeLower.includes('polo')) itemSize = emp.shirtSize || 'M';
-                                                else if (typeLower.includes('calça') || typeLower.includes('jeans')) itemSize = emp.pantsSize || '40';
-                                                else if (typeLower.includes('bota') || typeLower.includes('sapato')) itemSize = emp.shoeSize || '40';
+                const today = new Date().toISOString().split('T')[0];
+                const roleCategory = roleResult.rows[0].category;
 
-                                                // Validade
-                                                const cycleType = roleData.category || emp.type || 'OP';
-                                                const cycleDays = (cycleType === 'ADM') ? 365 : 180;
-                                                const nextDate = new Date();
-                                                nextDate.setDate(nextDate.getDate() + cycleDays);
-                                                
-                                                const newItemId = generateId();
+                // 5. Para cada colaborador, atualizar fardamento
+                for (const emp of employeesResult.rows) {
+                    // A. Baixar itens antigos
+                    await client.query(`UPDATE uniform_items SET status = 'Substituído (Novo Kit)', nextExchangeDate = $1 WHERE employee_id = $2 AND status != 'Devolvido'`, 
+                        [today, emp.id]);
 
-                                                db.run(`INSERT INTO uniform_items (id, employee_id, type, color, size, dateGiven, nextExchangeDate, status) 
-                                                        VALUES (?, ?, ?, ?, ?, ?, ?, 'Em dia')`,
-                                                        [newItemId, emp.id, ki.type, ki.color, itemSize, today, nextDate.toISOString().split('T')[0]], () => {
-                                                            
-                                                    db.run(`INSERT INTO uniform_history (item_id, employee_id, type, color, tipo_movimentacao, status_peca, observacao, responsavel) 
-                                                            VALUES (?, ?, ?, ?, 'TROCA AUTOMÁTICA', 'NOVO', ?, 'Sistema (Novo Kit)')`,
-                                                            [newItemId, emp.id, ki.type, ki.color, `Atualização de Kit do Cargo: ${kit_name}`], () => resKi());
-                                                });
-                                            });
-                                        });
-                                        
-                                        Promise.all(newItemPromises).then(() => resEmp());
-                                    });
-                                });
-                            });
+                    // B. Inserir Novos Itens
+                    for (const ki of items) {
+                        const cycleDays = roleCategory === 'ADM' ? 365 : 180;
+                        const nextDate = new Date(today);
+                        nextDate.setDate(nextDate.getDate() + cycleDays);
 
-                            Promise.all(empPromises).then(() => resolve(employees.length));
-                        });
-                    });
-                }).catch(reject);
+                        // Determinar tamanho (lógica simplificada)
+                        const typeLower = String(ki.type || '').toLowerCase();
+                        let itemSize = 'M';
+                        if (typeLower.includes('camisa') || typeLower.includes('polo')) itemSize = 'M';
+                        else if (typeLower.includes('calca') || typeLower.includes('calça') || typeLower.includes('jeans')) itemSize = '40';
+                        else if (typeLower.includes('bota') || typeLower.includes('sapato') || typeLower.includes('tenis') || typeLower.includes('tênis')) itemSize = '40';
+
+                        const newItemId = generateId();
+
+                        await client.query(`INSERT INTO uniform_items (id, employee_id, type, color, size, dateGiven, nextExchangeDate, status) 
+                                VALUES ($1, $2, $3, $4, $5, $6, $7, 'Em dia')`,
+                                [newItemId, emp.id, ki.type, ki.color, itemSize, today, nextDate.toISOString().split('T')[0]]);
+
+                        await client.query(`INSERT INTO uniform_history (item_id, employee_id, type, color, tipo_movimentacao, status_peca, observacao, responsavel) 
+                                VALUES ($1, $2, $3, $4, 'TROCA AUTOMÁTICA', 'NOVO', $5, 'Sistema (Novo Kit)')`,
+                                [newItemId, emp.id, ki.type, ki.color, `Atualização de Kit do Cargo: ${kit_name}`]);
+                    }
+                }
+
+                return employeesResult.rows.length;
             });
-        });
-    };
+        }
 
-    // Executa em série ou paralelo (Paralelo é ok aqui)
-    try {
-        const results = await Promise.all(targetRoles.map(rId => processRole(rId)));
-        totalEmployeesUpdated = results.reduce((a, b) => a + b, 0);
-        
-        res.json({ 
-            success: true, 
-            message: `Processo concluído! Kits criados para ${targetRoles.length} cargos. Inventário atualizado para ${totalEmployeesUpdated} colaboradores.` 
-        });
-    } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: "Erro ao processar lote de kits: " + e.message });
+        res.json({ success: true, message: `Kit criado e fardamento atualizado para ${totalUpdated} colaboradores.` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-router.delete('/:id', async (req, res) => {
+// PUT - Atualizar Kit
+router.put('/:id', async (req, res) => {
+    const { id } = req.params;
+    const { kit_name, items } = req.body;
+    
     try {
-        await dbRun("BEGIN TRANSACTION");
-        await dbRun(`DELETE FROM kit_items WHERE kit_id = $1`, [req.params.id]);
-        await dbRun(`DELETE FROM kits_master WHERE id = $1`, [req.params.id]);
-        await dbRun("COMMIT");
-        res.json({ success: true });
+        await transaction(async (client) => {
+            // Atualizar nome do kit
+            await client.query(`UPDATE kits_master SET kit_name = $1 WHERE id = $2`, [kit_name, id]);
+            
+            // Remover itens antigos
+            await client.query(`DELETE FROM kit_items WHERE kit_id = $1`, [id]);
+            
+            // Inserir novos itens
+            for (const item of items) {
+                await client.query(`INSERT INTO kit_items (id, kit_id, item_category, item_type, color, quantity) VALUES ($1, $2, $3, $4, $5, $6)`,
+                    [generateId(), id, item.category, item.type, item.color, item.quantity]);
+            }
+        });
+        
+        res.json({ success: true, message: 'Kit atualizado com sucesso' });
     } catch (err) {
-        await dbRun("ROLLBACK").catch(() => {});
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE - Excluir Kit
+router.delete('/:id', async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        await transaction(async (client) => {
+            // Remover itens primeiro (foreign key)
+            await client.query(`DELETE FROM kit_items WHERE kit_id = $1`, [id]);
+            // Remover kit master
+            await client.query(`DELETE FROM kits_master WHERE id = $1`, [id]);
+        });
+        
+        res.json({ success: true, message: 'Kit excluído com sucesso' });
+    } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });

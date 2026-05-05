@@ -260,14 +260,17 @@ function renderTimeline() {
             return `
                 <div class="relative">
                     <div class="timeline-dot ${statusClass}"></div>
-                    <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="editAso('${item.id}')">
+                    <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="editAso('${item.id}')">
                         <div class="flex justify-between items-start mb-2">
-                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase bg-nordeste-red/10 text-nordeste-red">🩺 ASO</span>
-                            <span class="text-[9px] font-bold text-gray-400 uppercase">${item.exam_type || 'ASO'}</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-medium uppercase bg-nordeste-red/10 text-nordeste-red flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                ASO
+                            </span>
+                            <span class="text-xs font-medium text-gray-500 uppercase">${item.exam_type || 'ASO'}</span>
                         </div>
-                        <p class="text-xs font-black text-gray-800 uppercase">Data: ${DateFixer.formatarDataParaExibicao(item.exam_date)}</p>
-                        <p class="text-[9px] text-gray-500 mt-1">Validade: ${item.expiry_date ? DateFixer.formatarDataParaExibicao(item.expiry_date) : 'Não definida'}</p>
-                        <p class="text-[9px] font-bold text-nordeste-red mt-1">${item.result || 'Apto'}</p>
+                        <p class="text-sm font-medium text-gray-800">Data: ${DateFixer.formatarDataParaExibicao(item.exam_date)}</p>
+                        <p class="text-xs text-gray-500 mt-1">Validade: ${item.expiry_date ? DateFixer.formatarDataParaExibicao(item.expiry_date) : 'Não definida'}</p>
+                        <p class="text-xs font-medium text-nordeste-red mt-1">${item.result || 'Apto'}</p>
                     </div>
                 </div>
             `;
@@ -279,13 +282,16 @@ function renderTimeline() {
             return `
                 <div class="relative">
                     <div class="timeline-dot bg-blue-500"></div>
-                    <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="editCertificate('${item.id}')">
+                    <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="editCertificate('${item.id}')">
                         <div class="flex justify-between items-start mb-2">
-                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase bg-blue-100 text-blue-700">📋 Atestado</span>
-                            <span class="text-[9px] font-bold text-gray-400 uppercase">${days} dias</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-medium uppercase bg-blue-100 text-blue-700 flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                Atestado
+                            </span>
+                            <span class="text-xs font-medium text-gray-500 uppercase">${days} dias</span>
                         </div>
-                        <p class="text-xs font-black text-gray-800 uppercase">Período: ${DateFixer.formatarDataParaExibicao(startDate)} - ${DateFixer.formatarDataParaExibicao(endDate)}</p>
-                        <p class="text-[9px] text-gray-500 mt-1">CID: ${item.cid || 'Não informado'}</p>
+                        <p class="text-sm font-medium text-gray-800">Período: ${DateFixer.formatarDataParaExibicao(startDate)} - ${DateFixer.formatarDataParaExibicao(endDate)}</p>
+                        <p class="text-xs text-gray-500 mt-1">CID: ${item.cid || 'Não informado'}</p>
                     </div>
                 </div>
             `;

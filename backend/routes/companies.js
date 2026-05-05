@@ -6,20 +6,11 @@ const crypto = require('crypto');
 
 const generateId = () => crypto.randomBytes(4).toString('hex');
 
-const dbAll = async (sql, params = []) => {
-    const result = await query(sql, params);
-    return result.rows || [];
-};
-
-const dbRun = async (sql, params = []) => {
-    const result = await query(sql, params);
-    return result;
-};
 
 router.get('/', async (req, res) => {
     try {
-        const rows = await dbAll(`SELECT * FROM companies ORDER BY name ASC`, []);
-        res.json(rows);
+        const result = await query(`SELECT * FROM companies ORDER BY name ASC`);
+        res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -35,7 +26,7 @@ router.post('/', async (req, res) => {
         const normalizedAddress = address ? address.toString().toUpperCase().trim() : '';
         const normalizedType = type ? type.toString().trim() : 'Ambos';
         
-        await dbRun(`INSERT INTO companies (id, name, cnpj, address, type) VALUES ($1, $2, $3, $4, $5)`,
+        await query(`INSERT INTO companies (id, name, cnpj, address, type) VALUES ($1, $2, $3, $4, $5)`,
             [id, normalizedName, normalizedCnpj, normalizedAddress, normalizedType]);
         res.json({ success: true, id });
     } catch (err) {
@@ -45,7 +36,7 @@ router.post('/', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
     try {
-        await dbRun(`DELETE FROM companies WHERE id = $1`, [req.params.id]);
+        await query(`DELETE FROM companies WHERE id = $1`, [req.params.id]);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -62,7 +53,7 @@ router.put('/:id', async (req, res) => {
         const normalizedAddress = address ? address.toString().toUpperCase().trim() : '';
         const normalizedType = type ? type.toString().trim() : 'Ambos';
         
-        const result = await dbRun(`UPDATE companies SET name = $1, cnpj = $2, address = $3, type = $4 WHERE id = $5`,
+        const result = await query(`UPDATE companies SET name = $1, cnpj = $2, address = $3, type = $4 WHERE id = $5`,
             [normalizedName, normalizedCnpj, normalizedAddress, normalizedType, id]);
         if (result.rowCount === 0) return res.status(404).json({ error: 'Empresa não encontrada' });
         res.json({ success: true });

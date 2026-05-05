@@ -25,6 +25,71 @@
         .emp-item.active { background: #FFF1F2; border-left: 4px solid #D32F2F; }
         .main-container { padding: 2rem; }
         
+        /* Loading States */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .skeleton-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #F1F5F9;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .skeleton-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+        }
+        
+        .skeleton-text {
+            flex: 1;
+            height: 12px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+        }
+        
+        .skeleton-text.small {
+            width: 60%;
+            height: 8px;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #D32F2F;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
         /* Timeline vertical */
         .timeline-container { position: relative; padding-left: 2rem; }
         .timeline-line { position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 2px; background: #E5E7EB; }
@@ -76,11 +141,28 @@
             border-radius: 0.5rem;
             padding: 0.25rem 0.5rem;
             transition: all 0.2s;
+            cursor: pointer;
         }
         .edit-field:hover, .edit-field:focus {
             border-color: #D32F2F;
             background: #FFF1F2;
             outline: none;
+        }
+        .edit-field::before {
+            content: '✎';
+            display: none;
+        }
+        .edit-field:hover::before, .edit-field:focus::before {
+            display: inline;
+            position: absolute;
+            font-size: 0.6rem;
+            margin-left: -1.2rem;
+            color: #9CA3AF;
+        }
+        .edit-field-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
         }
         
         .pro-label { font-size: 0.625rem; font-weight: 900; text-transform: uppercase; color: #9CA3AF; margin-bottom: 0.25rem; display: block; }
@@ -123,10 +205,56 @@
             border-radius: 4px;
             transition: width 0.5s;
         }
+
+        /* Loading state */
+        .btn-loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .btn-loading::after {
+            content: '';
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-left: 8px;
+            border: 2px solid #ffffff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+            z-index: 9999;
+            transform: translateY(150%);
+            transition: transform 0.3s ease;
+        }
+        .toast.show { transform: translateY(0); }
+        .toast.success { background: #10B981; color: white; }
+        .toast.error { background: #EF4444; color: white; }
     </style>
 </head>
 
 <body class="bg-gray-100 h-screen flex overflow-hidden">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-gray-600 font-semibold">Carregando módulo...</p>
+            <p class="text-gray-400 text-sm mt-2">Preparando acompanhamento de 90 dias</p>
+        </div>
+    </div>
     
     <!-- SIDEBAR -->
     <aside class="sidebar-nav flex-shrink-0 w-72 flex flex-col z-50">
@@ -139,9 +267,30 @@
                 <div id="tab-active" onclick="window.setFilterStatus('active')" class="tab-btn active">Ativos</div>
                 <div id="tab-inactive" onclick="window.setFilterStatus('inactive')" class="tab-btn inactive">Desligados</div>
             </div>
+            
+            <!-- Toggle de Filtro Inteligente -->
+            <div class="flex items-center justify-between mb-4">
+                <div class="text-[10px] font-black text-gray-400 uppercase">
+                    <span id="filter-info">🎯 Foco: Onboarding (≤93 dias)</span>
+                </div>
+                <button id="toggle-employees-btn" onclick="window.toggleEmployeeFilter()" 
+                        class="text-[9px] bg-green-100 text-green-600 px-2 py-1 rounded-lg font-black hover:opacity-80 transition-opacity"
+                        title="Mostrar todos os colaboradores">
+                    👥 Todos
+                </button>
+            </div>
             <div class="relative">
-                <input type="text" id="onboarding-search" oninput="window.renderSidebar()" placeholder="Buscar colaborador..." class="w-full pl-10 pr-4 py-3 bg-gray-100 border-none rounded-2xl text-xs font-bold outline-none">
-                <svg class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <label for="onboarding-search" class="sr-only">Buscar colaborador</label>
+                <input 
+                    type="text" 
+                    id="onboarding-search" 
+                    name="onboarding-search"
+                    oninput="window.renderSidebar()" 
+                    placeholder="Buscar colaborador..." 
+                    class="w-full pl-10 pr-4 py-3 bg-gray-100 border-none rounded-2xl text-xs font-bold outline-none"
+                    autocomplete="off"
+                    aria-label="Buscar colaborador por nome ou matrícula">
+                <svg class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
         </div>
         
@@ -160,10 +309,10 @@
         </div>
 
         <!-- SELECTION VIEW -->
-        <div id="onboarding-view" class="hidden animate-fade max-w-5xl mx-auto w-full h-full overflow-y-auto">
+        <div id="onboarding-view" class="hidden animate-fade max-w-5xl mx-auto w-full h-full flex flex-col">
             
-            <!-- Header -->
-            <div class="bg-white rounded-[2rem] p-6 mb-6 border shadow-sm">
+            <!-- Header FIXO -->
+            <div class="bg-white rounded-[2rem] p-6 mb-4 border shadow-sm flex-shrink-0">
                 <div class="flex items-center gap-4 mb-4">
                     <img id="view-photo" src="" class="w-16 h-16 rounded-2xl object-cover border-4 border-white shadow-lg">
                     <div>
@@ -181,8 +330,8 @@
                 </div>
             </div>
 
-            <!-- Timeline -->
-            <div class="bg-white rounded-[2rem] p-6 border shadow-sm">
+            <!-- Timeline com SCROLL -->
+            <div class="bg-white rounded-[2rem] p-6 border shadow-sm flex-1 overflow-y-auto">
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h3 class="text-sm font-black text-gray-800 uppercase italic">📋 Cronograma de Acompanhamento</h3>
@@ -194,8 +343,8 @@
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="window.generatePDF()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-xl font-black text-xs uppercase shadow transition-all">📄 Gerar PDF</button>
-                        <button onclick="window.saveCronogramaType()" class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-3 rounded-xl font-black text-xs uppercase shadow transition-all" title="Salvar este tipo para o cargo">💾 Cargo</button>
+                        <button onclick="window.generatePDF()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-xl font-black text-xs uppercase shadow transition-all" aria-label="Gerar PDF do cronograma">📄 Gerar PDF</button>
+                        <button onclick="window.saveCronogramaType()" class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-3 rounded-xl font-black text-xs uppercase shadow transition-all" aria-label="Salvar tipo de cronograma para o cargo">💾 Cargo</button>
                         <button onclick="window.saveOnboardingData()" class="btn-save">💾 Salvar</button>
                     </div>
                 </div>
@@ -222,6 +371,32 @@
             </div>
         </div>
     </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
+
+    <script>
+        // Utils globais
+        window.showToast = function(message, type = 'success', duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => toast.classList.remove('show'), duration);
+        };
+
+        window.setButtonLoading = function(btn, loading = true) {
+            if (loading) {
+                btn.classList.add('btn-loading');
+                btn.dataset.originalText = btn.textContent;
+                btn.textContent = btn.textContent.replace('...', '').trim() + '...';
+                btn.disabled = true;
+            } else {
+                btn.classList.remove('btn-loading');
+                btn.textContent = btn.dataset.originalText || btn.textContent.replace('...', '').trim();
+                btn.disabled = false;
+            }
+        };
+    </script>
 
     <script src="js/auth.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

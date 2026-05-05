@@ -355,7 +355,7 @@ router.post('/event-documents/upload', async (req, res) => {
         const raw = String(data_base64).replace(/^data:[^;]+;base64,/, '');
         
         // Refatoração Senior: I/O Assíncrono para liberar Event Loop do NodeJS durante upload
-        fs.writeFile(filePath, Buffer.from(raw, 'base64'), (fsErr) => {
+        fs.writeFile(filePath, Buffer.from(raw, 'base64'), async (fsErr) => {
             if (fsErr) {
                 console.error("Erro ao gravar arquivo SST:", fsErr);
                 return res.status(500).json({ error: 'Falha ao salvar arquivo em disco' });
@@ -364,15 +364,15 @@ router.post('/event-documents/upload', async (req, res) => {
             const publicUrl = `/uploads/sst/${diskName}`;
             const id = generateId();
             
-            db.run(
-                `INSERT INTO sst_event_documents (id, source_table, source_id, employee_id, file_name, file_url, mime_type)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [id, source_table, source_id, employee_id, safeName, publicUrl, mime_type],
-                (err) => {
-                    if (err) return res.status(500).json({ error: err.message });
-                    res.json({ success: true, id, file_url: publicUrl });
-                }
-            );
+            try {
+                await query(
+                    `INSERT INTO sst_event_documents (id, source_table, source_id, employee_id, file_name, file_url, mime_type)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                    [id, source_table, source_id, employee_id, safeName, publicUrl, mime_type]);
+                res.json({ success: true, id, file_url: publicUrl });
+            } catch (err) {
+                res.status(500).json({ error: err.message });
+            }
         });
 
     } catch (e) {
@@ -380,16 +380,15 @@ router.post('/event-documents/upload', async (req, res) => {
     }
 });
 
-router.delete('/event-documents/:id', (req, res) => {
+router.delete('/event-documents/:id', async (req, res) => {
     const { id } = req.params;
-    db.get(`SELECT file_url FROM sst_event_documents WHERE id = ?`, [id], (findErr, row) => {
-        if (findErr) return res.status(500).json({ error: findErr.message });
-        if (!row) return res.status(404).json({ error: 'Documento nao encontrado' });
+    try {
+        const result = await query(`SELECT file_url FROM sst_event_documents WHERE id = $1`, [id]);
+        if (!result.rows[0]) return res.status(404).json({ error: 'Documento nao encontrado' });
 
-        db.run(`DELETE FROM sst_event_documents WHERE id = ?`, [id], (delErr) => {
-            if (delErr) return res.status(500).json({ error: delErr.message });
-            const normalized = String(row.file_url || '').replace(/^\//, '');
-            const localPath = path.join(__dirname, '../../public', normalized);
+        await query(`DELETE FROM sst_event_documents WHERE id = $1`, [id]);
+        const normalized = String(result.rows[0].file_url || '').replace(/^\//, '');
+        const localPath = path.join(__dirname, '../../public', normalized);
             
             // Refatoração Senior: Deleção física não-bloqueante
             fs.access(localPath, fs.constants.F_OK, (accErr) => {
@@ -401,8 +400,9 @@ router.delete('/event-documents/:id', (req, res) => {
             });
             
             res.json({ success: true });
-        });
-    });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
 });
 
 module.exports = router;

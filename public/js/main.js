@@ -44,20 +44,23 @@ function renderSidebar(user) {
         { id: 'uniforms', label: 'Fardamento', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2 13 3h-2L7 2 2.62 3.46a2 2 0 0 0-1.09 1.19l-1.2 6A2 2 0 0 0 3.61 12.91l.82 4.16A2 2 0 0 0 6.42 19l1.09 5.55A2 2 0 0 0 9.5 26h5a2 2 0 0 0 1.99-1.45l1.09-5.55a2 2 0 0 0 1.99-1.93l.82-4.16a2 2 0 0 0 3.28-2.26l-1.2-6a2 2 0 0 0-1.09-1.19z"/></svg>', url: '/uniforms-module.html' },
         { id: 'career', label: 'Plano de Carreira', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>', url: '/carreira.html' },
         { id: 'overtime', label: 'Hora Extra', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>', url: '/hora-extra.html' },
-        { id: 'recruitment', label: 'Recrutamento', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>', url: '/recrutamento.html' },
-        { id: 'talent-pool', label: 'Banco de Talentos', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>', url: '/talent-pool.html' },
+        { id: 'recruitment', label: 'Recrutamento', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>', url: '/recrutamento.html', hidden: true },
+        { id: 'talent-pool', label: 'Banco de Talentos', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>', url: '/talent-pool.html', hidden: true },
         { id: 'vacation', label: 'Férias & Ausências', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>', url: '/vacation-unified.html' },
         { id: 'aso', label: 'Saúde (ASO/SST)', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>', url: '/aso.html' },
         { id: 'onboarding', label: 'Onboarding 90 Dias', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>', url: '/onboarding-90dias.html' },
         { id: 'tools', label: 'Gestão de Ativos', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>', url: '/tools-module.html' },
-        { id: 'acessos', label: 'Gestão de Acessos', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>', url: '/acessos.html', restricted: ['DEV', 'GESTOR'] }
+        { id: 'acessos', label: 'Gestão de Acessos', icon: '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>', url: '/acessos.html', restricted: ['DEV', 'GESTOR'], hidden: true }
     ];
 
     nav.innerHTML = items.map(item => {
         let visible = false;
 
         // Lógica de Permissão
-        if (user.role === 'DEV') visible = true;
+        if (item.hidden) {
+            // Verifica se o item foi desbloqueado via senha
+            visible = localStorage.getItem('unlocked-hidden-modules') === 'true';
+        } else if (user.role === 'DEV') visible = true;
         else if (item.public) visible = true;
         else if (item.restricted) visible = item.restricted.includes(user.role);
         else if (user.role === 'GESTOR') visible = true;
@@ -358,4 +361,141 @@ function createConfetti() {
             }, 4000);
         }, i * 50);
     }
+}
+
+// Funcionalidade de acesso oculto via 3 cliques na logo + senha
+let logoClickCount = 0;
+let logoClickTimer = null;
+
+function setupHiddenModuleAccess() {
+    const logo = document.getElementById('logo-text');
+    if (!logo) {
+        console.log('Logo não encontrada, tentando novamente em 500ms...');
+        setTimeout(setupHiddenModuleAccess, 500);
+        return;
+    }
+
+    console.log('Logo encontrada, configurando evento de clique...');
+    logo.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Clique na logo detectado, contador:', logoClickCount + 1);
+        
+        // Limpa o timer anterior
+        if (logoClickTimer) {
+            clearTimeout(logoClickTimer);
+        }
+        
+        logoClickCount++;
+        
+        if (logoClickCount === 3) {
+            console.log('3 cliques detectados, mostrando modal de senha...');
+            showPasswordModal();
+            logoClickCount = 0;
+        } else {
+            // Reseta o contador após 2 segundos
+            logoClickTimer = setTimeout(() => {
+                logoClickCount = 0;
+                console.log('Timer resetado, contador de cliques zerado');
+            }, 2000);
+        }
+    });
+}
+
+function showPasswordModal() {
+    // Remove modal anterior se existir
+    const existingModal = document.getElementById('hidden-access-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    const modal = document.createElement('div');
+    modal.id = 'hidden-access-modal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 class="text-lg font-bold mb-4">Acesso Restrito</h3>
+            <p class="text-gray-600 mb-4">Digite a senha para acessar os módulos ocultos:</p>
+            <input type="password" id="hidden-password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Senha">
+            <div class="flex gap-3 mt-4">
+                <button onclick="validateHiddenPassword()" class="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Acessar</button>
+                <button onclick="closePasswordModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">Cancelar</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Foco no campo de senha
+    document.getElementById('hidden-password').focus();
+    
+    // Enter para submeter
+    document.getElementById('hidden-password').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            validateHiddenPassword();
+        }
+    });
+}
+
+function validateHiddenPassword() {
+    const password = document.getElementById('hidden-password').value;
+    
+    if (password === '12Nordeste34+') {
+        localStorage.setItem('unlocked-hidden-modules', 'true');
+        closePasswordModal();
+        // Recarrega a navegação para mostrar os módulos
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user) {
+            renderSidebar(user);
+        }
+        // Mostra mensagem de sucesso
+        showSuccessMessage('Módulos desbloqueados com sucesso!');
+    } else {
+        // Senha incorreta
+        const input = document.getElementById('hidden-password');
+        input.classList.add('border-red-500');
+        input.value = '';
+        input.placeholder = 'Senha incorreta';
+        setTimeout(() => {
+            input.classList.remove('border-red-500');
+            input.placeholder = 'Senha';
+        }, 2000);
+    }
+}
+
+function closePasswordModal() {
+    const modal = document.getElementById('hidden-access-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Exportar funções para escopo global para uso nos onclicks
+window.validateHiddenPassword = validateHiddenPassword;
+window.closePasswordModal = closePasswordModal;
+
+function showSuccessMessage(message) {
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Inicializa a funcionalidade quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado, inicializando acesso oculto...');
+    setupHiddenModuleAccess();
+});
+
+// Também tenta inicializar imediatamente caso o DOM já esteja carregado
+if (document.readyState === 'loading') {
+    // DOM ainda está carregando, espera o evento
+    console.log('DOM ainda está carregando...');
+} else {
+    // DOM já está carregado, inicializa imediatamente
+    console.log('DOM já está carregado, inicializando acesso oculto imediatamente...');
+    setupHiddenModuleAccess();
 }

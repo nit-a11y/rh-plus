@@ -22,6 +22,10 @@
     "db:sync-sqlite": "node scripts/migrate-sqlite-to-postgres.js",
     "db:inject-f6b42ec3": "node scripts/inject-employee-f6b42ec3.js",
     "deploy:check": "node scripts/deploy-check.js",
+    "env:switch": "node scripts/switch-env.js",
+    "env:dev": "node scripts/switch-env.js development",
+    "env:test": "node scripts/switch-env.js test",
+    "env:prod": "node scripts/switch-env.js production",
     "lint": "eslint backend/",
     "logs": "node -e \"require('child_process').spawn('tail', ['-f', 'logs/app.log'], {stdio: 'inherit'})\""
   },
@@ -36,6 +40,7 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.20.0",
     "sqlite3": "^6.0.1",
     "string-similarity": "^4.0.4",
