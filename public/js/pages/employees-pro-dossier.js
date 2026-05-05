@@ -21,6 +21,144 @@ window.openModuleWithEmployee = (module, empId) => {
     }
 };
 
+window.openTerminationModal = () => {
+    // Tentar obter do editor primeiro, depois do dossier
+    let emp = null;
+    
+    // Verificar se estamos no editor (employees-pro)
+    if (typeof currentData !== 'undefined' && currentData.employee) {
+        emp = currentData.employee;
+    }
+    // Verificar se estamos no dossier
+    else if (dossierData?.employee) {
+        emp = dossierData.employee;
+    }
+    
+    if (!emp) {
+        alert('Nenhum colaborador selecionado.');
+        return;
+    }
+    
+    const modal = document.getElementById('pro-modal-container');
+    const content = document.getElementById('pro-modal-content');
+    
+    content.innerHTML = `
+        <div class="bg-red-600 p-8 text-white">
+            <h3 class="text-xl font-black uppercase italic">Processar Desligamento</h3>
+        </div>
+        <form id="termination-form" class="p-10 space-y-6">
+            <div>
+                <label class="pro-label">Data do Desligamento</label>
+                <input type="date" id="termination-date" class="pro-input" required>
+            </div>
+            <div>
+                <label class="pro-label">Motivo do Desligamento</label>
+                <select id="termination-reason" class="pro-input" required>
+                    <option value="">Selecione...</option>
+                    <option value="Pedido de Demissão">Pedido de Demissão</option>
+                    <option value="Justa Causa">Justa Causa</option>
+                    <option value="Término de Contrato">Término de Contrato</option>
+                    <option value="Aposentadoria">Aposentadoria</option>
+                    <option value="Falecimento">Falecimento</option>
+                    <option value="Acordo Coletivo">Acordo Coletivo</option>
+                    <option value="Redução de Quadro">Redução de Quadro</option>
+                </select>
+            </div>
+            <div>
+                <label class="pro-label">Observações</label>
+                <textarea id="termination-obs" class="pro-input h-24" placeholder="Detalhes adicionais sobre o desligamento..."></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="pro-label">Valor GRRF (R$)</label>
+                    <input type="text" id="termination-grrf" class="pro-input" placeholder="0,00" oninput="window.formatCurrencyInput(event)">
+                </div>
+                <div>
+                    <label class="pro-label">Valor Rescisão (R$)</label>
+                    <input type="text" id="termination-rescisao" class="pro-input" placeholder="0,00" oninput="window.formatCurrencyInput(event)">
+                </div>
+            </div>
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-sm text-red-700 font-medium">
+                    <strong>Atenção:</strong> Esta ação irá desligar o colaborador e alterar seu status para "Desligado". 
+                    Esta operação não pode ser desfeita.
+                </p>
+            </div>
+            <button type="submit" class="w-full bg-red-600 text-white py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-red-700 transition-colors">
+                Confirmar Desligamento
+            </button>
+            <button type="button" onclick="window.closeProModal()" class="w-full text-gray-400 font-black text-[10px] mt-2 uppercase">
+                Cancelar
+            </button>
+        </form>
+    `;
+    
+    // Definir data atual como padrão
+    document.getElementById('termination-date').valueAsDate = new Date();
+    
+    // Configurar submit do formulário
+    document.getElementById('termination-form').onsubmit = async (e) => {
+        e.preventDefault();
+        
+        if (!confirm('Tem certeza que deseja processar o desligamento deste colaborador?')) {
+            return;
+        }
+        
+        const payload = {
+            employeeId: emp.id,
+            move_type: 'Desligamento',
+            role: emp.role || '',
+            sector: emp.sector || 'ADMINISTRATIVO',
+            salary: emp.currentSalary || 'R$ 0,00',
+            date: document.getElementById('termination-date').value + ' 12:00:00',
+            responsible: (window.Auth?.getUser?.()?.name) || 'Sistema RH+',
+            observation: document.getElementById('termination-obs').value,
+            cbo: emp.cbo || '',
+            termination_reason: document.getElementById('termination-reason').value,
+            grrf_value: parseCurrency(document.getElementById('termination-grrf').value) || 0,
+            rescisao_value: parseCurrency(document.getElementById('termination-rescisao').value) || 0
+        };
+        
+        try {
+            const res = await fetch('/api/career', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (res.ok) {
+                // Atualizar status do colaborador para Desligado
+                await fetch(`/api/employees-pro/${emp.id}/metadata`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        emp: { type: 'Desligado', terminationDate: payload.date }
+                    })
+                });
+                
+                window.closeProModal();
+                alert('Desligamento processado com sucesso!');
+                
+                // Recarregar dados dependendo do módulo atual
+                if (typeof refreshDossier === 'function') {
+                    refreshDossier();
+                } else if (typeof loadEmployeeData === 'function') {
+                    // Se estiver no editor, recarregar dados do colaborador
+                    loadEmployeeData(currentEmpId || emp.id);
+                }
+            } else {
+                const error = await res.json();
+                alert('Erro ao processar desligamento: ' + (error.error || 'Erro desconhecido'));
+            }
+        } catch (error) {
+            console.error('Erro no desligamento:', error);
+            alert('Erro ao processar desligamento. Tente novamente.');
+        }
+    };
+    
+    modal.classList.remove('hidden');
+};
+
 function escapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')

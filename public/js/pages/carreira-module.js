@@ -294,50 +294,68 @@ window.editCareerItem = (id) => {
 
     const modal = document.getElementById('pro-modal-container');
     const content = document.getElementById('pro-modal-content');
+    const isOccurrence = item.source_table === 'occurrences';
+    
+    const dateValue = item.date ? item.date.substring(0, 10) : '';
 
-    // Formatar data para datetime-local
-    const dateValue = item.date ? new Date(item.date).toISOString().slice(0, 16) : '';
+    const typeInput = isOccurrence ? `
+        <input type="text" id="edit-move-type" class="pro-input uppercase" value="${item.move_type || ''}" readonly>
+    ` : `
+        <select id="edit-move-type" class="pro-input uppercase" required>
+            <option value="PROMOÇÃO" ${item.move_type === 'PROMOÇÃO' ? 'selected' : ''}>PROMOÇÃO</option>
+            <option value="REAJUSTE SALARIAL" ${item.move_type === 'REAJUSTE SALARIAL' ? 'selected' : ''}>REAJUSTE SALARIAL</option>
+            <option value="ADMISSÃO" ${item.move_type === 'ADMISSÃO' ? 'selected' : ''}>ADMISSÃO</option>
+            <option value="DESLIGAMENTO" ${item.move_type === 'DESLIGAMENTO' ? 'selected' : ''}>DESLIGAMENTO</option>
+            <option value="BONIFICAÇÃO" ${item.move_type === 'BONIFICAÇÃO' ? 'selected' : ''}>BONIFICAÇÃO</option>
+            <option value="OCORRÊNCIA" ${item.move_type === 'OCORRÊNCIA' ? 'selected' : ''}>OCORRÊNCIA</option>
+        </select>
+    `;
 
-content.innerHTML = `
+    const extraFields = isOccurrence ? `
+        <div>
+            <label class="pro-label">Motivo Principal</label>
+            <input type="text" id="edit-sector" class="pro-input" value="${item.sector || ''}">
+        </div>
+    ` : `
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="pro-label">Cargo/Função</label>
+                <input type="text" id="edit-role" class="pro-input" value="${item.role || ''}">
+            </div>
+            <div>
+                <label class="pro-label">Setor</label>
+                <input type="text" id="edit-sector" class="pro-input" value="${item.sector || ''}">
+            </div>
+        </div>
+    `;
+
+    content.innerHTML = `
         <div class="bg-nordeste-black p-6 text-white rounded-t-2xl">
-            <h3 class="text-lg font-bold uppercase">Editar Registro de Carreira</h3>
+            <h3 class="text-lg font-bold uppercase">${isOccurrence ? 'Editar Ocorrência' : 'Editar Registro de Carreira'}</h3>
         </div>
         <form id="edit-career-form" class="p-6 space-y-5">
             <input type="hidden" id="edit-id" value="${id}">
+            <input type="hidden" id="edit-table" value="${item.source_table || 'career'}">
             
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="pro-label">Tipo de Movimentação *</label>
-                    <select id="edit-move-type" class="pro-input uppercase" required>
-                        <option value="PROMOÇÃO" ${item.move_type === 'PROMOÇÃO' ? 'selected' : ''}>PROMOÇÃO</option>
-                        <option value="REAJUSTE SALARIAL" ${item.move_type === 'REAJUSTE SALARIAL' ? 'selected' : ''}>REAJUSTE SALARIAL</option>
-                        <option value="ADMISSÃO" ${item.move_type === 'ADMISSÃO' ? 'selected' : ''}>ADMISSÃO</option>
-                        <option value="DESLIGAMENTO" ${item.move_type === 'DESLIGAMENTO' ? 'selected' : ''}>DESLIGAMENTO</option>
-                        <option value="BONIFICAÇÃO" ${item.move_type === 'BONIFICAÇÃO' ? 'selected' : ''}>BONIFICAÇÃO</option>
-                        <option value="OCORRÊNCIA" ${item.move_type === 'OCORRÊNCIA' ? 'selected' : ''}>OCORRÊNCIA</option>
-                    </select>
+                    <label class="pro-label">${isOccurrence ? 'Tipo de Ocorrência' : 'Tipo de Movimentação *'}</label>
+                    ${typeInput}
                 </div>
                 <div>
                     <label class="pro-label">Data</label>
-                    <input type="datetime-local" id="edit-date" class="pro-input" value="${dateValue}">
+                    <input type="date" id="edit-date" class="pro-input" value="${dateValue}">
                 </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="pro-label">Cargo/Função</label>
-                    <input type="text" id="edit-role" class="pro-input" value="${item.role || ''}">
-                </div>
-                <div>
-                    <label class="pro-label">Setor</label>
-                    <input type="text" id="edit-sector" class="pro-input" value="${item.salary || ''}">
-                </div>
-            </div>
+            ${extraFields}
             
+            ${!isOccurrence ? `
             <div>
                 <label class="pro-label">Valor</label>
                 <input type="text" id="edit-salary" class="pro-input font-bold text-nordeste-red" value="${item.salary || ''}">
             </div>
+            ` : ''}
             
             <div>
                 <label class="pro-label">Responsável</label>
@@ -345,12 +363,12 @@ content.innerHTML = `
             </div>
             
             <div>
-                <label class="pro-label">Observação</label>
+                <label class="pro-label">${isOccurrence ? 'Detalhamento' : 'Observação'}</label>
                 <textarea id="edit-observation" class="pro-input h-24">${item.observation || ''}</textarea>
             </div>
             
             <div class="flex gap-3">
-                <button type="button" onclick="window.deleteCareerItem('${id}')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-xl font-medium text-sm uppercase border border-red-200 hover:bg-red-100">Excluir</button>
+                <button type="button" onclick="window.deleteHistoryItem('${id}', '${item.source_table}')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-xl font-medium text-sm uppercase border border-red-200 hover:bg-red-100">Excluir</button>
                 <button type="button" onclick="window.closeProModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-medium text-sm uppercase hover:bg-gray-200">Cancelar</button>
                 <button type="submit" class="flex-1 py-3 bg-nordeste-red text-white rounded-xl font-medium text-sm uppercase shadow-md hover:bg-red-700">Salvar</button>
             </div>
@@ -361,7 +379,16 @@ content.innerHTML = `
     document.getElementById('edit-career-form').onsubmit = async (e) => {
         e.preventDefault();
         
-        const formData = {
+        const table = document.getElementById('edit-table').value || 'career';
+        const endpoint = table === 'occurrences' ? `/api/occurrences/${id}` : `/api/career/${id}`;
+        
+        const formData = table === 'occurrences' ? {
+            type: document.getElementById('edit-move-type').value,
+            date: document.getElementById('edit-date').value,
+            reason: document.getElementById('edit-sector').value,
+            responsible: document.getElementById('edit-responsible').value,
+            observation: document.getElementById('edit-observation').value
+        } : {
             role: document.getElementById('edit-role').value,
             sector: document.getElementById('edit-sector').value,
             salary: document.getElementById('edit-salary').value,
@@ -373,7 +400,7 @@ content.innerHTML = `
         };
 
         try {
-            const res = await fetch(`/api/career/${id}`, {
+            const res = await fetch(endpoint, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -400,17 +427,22 @@ window.filterTimeline = (filterType) => {
     const allBtn = document.querySelector('[data-filter="all"]');
     const careerBtn = document.querySelector('[data-filter="career"]');
     const bonusBtn = document.querySelector('[data-filter="bonus"]');
+    const terminationBtn = document.querySelector('[data-filter="termination"]');
     
     // Resetar estilos
-    [allBtn, careerBtn, bonusBtn].forEach(btn => {
-        btn.classList.remove('bg-nordeste-red', 'text-white', 'border-nordeste-red');
-        btn.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
+    [allBtn, careerBtn, bonusBtn, terminationBtn].forEach(btn => {
+        if (btn) {
+            btn.classList.remove('bg-nordeste-red', 'text-white', 'border-nordeste-red');
+            btn.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
+        }
     });
     
     // Ativar botão selecionado
     const activeBtn = document.querySelector(`[data-filter="${filterType}"]`);
-    activeBtn.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
-    activeBtn.classList.add('bg-nordeste-red', 'text-white', 'border-nordeste-red');
+    if (activeBtn) {
+        activeBtn.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
+        activeBtn.classList.add('bg-nordeste-red', 'text-white', 'border-nordeste-red');
+    }
     
     // Filtrar e renderizar
     let filteredHistory = fullHistory;
@@ -418,6 +450,14 @@ window.filterTimeline = (filterType) => {
         filteredHistory = fullHistory.filter(h => h.type_group === 'CARREIRA');
     } else if (filterType === 'bonus') {
         filteredHistory = fullHistory.filter(h => h.type_group === 'BONUS');
+    } else if (filterType === 'termination') {
+        filteredHistory = fullHistory.filter(h => 
+            h.move_type && h.move_type.toLowerCase().includes('desligamento')
+        );
+    }
+    
+    if (filteredHistory.length === 0 && filterType !== 'all') {
+        showToast(`Nenhum registro encontrado para o filtro "${filterType}"`, 'info');
     }
     
     renderTimelineItems(filteredHistory);
@@ -438,6 +478,7 @@ function renderTimelineItems(history) {
         const isPromotion = moveType.toLowerCase().includes('promoção') || moveType.toLowerCase().includes('promocao');
         const isBonus = item.type_group === 'BONUS';
         const isTermination = moveType.toLowerCase().includes('desligamento');
+        const isOccurrence = item.source_table === 'occurrences';
         
         let badgeClass = 'bg-admissao';
         if (isPromotion) badgeClass = 'bg-promocao';
@@ -445,20 +486,25 @@ function renderTimelineItems(history) {
         else if (isTermination) badgeClass = 'bg-desligamento';
         else if (moveType.toLowerCase().includes('reajuste')) badgeClass = 'bg-reajuste';
         
+        const sourceLabel = isOccurrence ? 
+            '<span class="text-[9px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">OCORRÊNCIA</span>' : 
+            '<span class="text-[9px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">CARREIRA</span>';
+        
         return `
             <div class="career-item animate-fade" style="animation-delay: ${index * 0.1}s">
                 <div class="timeline-dot ${badgeClass.replace('bg-', 'border-')}"></div>
-                <div class="career-card bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="window.editCareerItem('${item.id}')">
+                <div class="career-card bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer" onclick="window.editCareerItem('${item.id}', '${item.source_table}')">
                     <div class="flex justify-between items-start mb-3">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
                             <span class="move-badge ${badgeClass} px-3 py-1 rounded-full text-xs font-medium uppercase">${moveType}</span>
                             <span class="text-xs text-gray-400">${date}</span>
+                            ${sourceLabel}
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="event.stopPropagation(); window.editCareerItem('${item.id}')" class="text-blue-500 hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-all" aria-label="Editar">
+                            <button onclick="event.stopPropagation(); window.editCareerItem('${item.id}', '${item.source_table}')" class="text-blue-500 hover:text-blue-700 p-2 hover:bg-blue-50 rounded-lg transition-all" aria-label="Editar">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             </button>
-                            <button onclick="event.stopPropagation(); window.deleteCareerItem('${item.id}')" class="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-all" aria-label="Excluir">
+                            <button onclick="event.stopPropagation(); window.deleteHistoryItem('${item.id}', '${item.source_table}')" class="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-all" aria-label="Excluir">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
                         </div>
@@ -557,16 +603,31 @@ window.selectEmployee = async (id) => {
 
 async function loadCareerTimeline(id) {
     try {
-        // Mostrar loading na timeline
         showTimelineLoadingState(true);
         
-        const res = await fetch(`/api/career/${id}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const [careerRes, occRes] = await Promise.all([
+            fetch(`/api/career/${id}`),
+            fetch(`/api/occurrences?employeeId=${id}`)
+        ]);
         
-        const careerData = await res.json();
+        const careerData = careerRes.ok ? await careerRes.json() : [];
+        const occurrenceData = occRes.ok ? await occRes.json() : [];
 
-        fullHistory = careerData.map(c => {
-            // Classificação inteligente do tipo de registro
+        const formattedOccurrences = occurrenceData.map(o => ({
+            id: o.id,
+            employee_id: o.employee_id,
+            role: null,
+            sector: o.reason,
+            salary: null,
+            move_type: o.type,
+            date: o.date,
+            responsible: o.responsible,
+            observation: o.observation,
+            cbo: null,
+            source_table: 'occurrences'
+        }));
+
+        fullHistory = [...careerData, ...formattedOccurrences].map(c => {
             const isBonus = c.move_type.toLowerCase().includes('bonificação') ||
                 c.move_type.toLowerCase().includes('mérito') ||
                 c.move_type.toLowerCase().includes('bônus') ||
@@ -574,18 +635,14 @@ async function loadCareerTimeline(id) {
             return {
                 ...c,
                 type_group: isBonus ? 'BONUS' : 'CARREIRA',
-                source_table: 'career'
+                source_table: c.source_table || 'career'
             };
         }).sort((a, b) => new Date(b.date) - new Date(a.date));
 
         renderTimeline(fullHistory);
         
-        if (careerData.length > 0) {
-            showSuccessMessage(`${careerData.length} registros de carreira carregados`);
-        }
-        
     } catch (e) { 
-        console.error('Erro ao carregar timeline de carreira:', e);
+        console.error('Erro ao carregar timeline:', e);
         showErrorMessage('Falha ao carregar histórico: ' + e.message);
         fullHistory = [];
         renderTimeline([]);
@@ -643,6 +700,9 @@ function renderTimeline(history) {
                 </button>
                 <button onclick="window.filterTimeline('bonus')" class="timeline-filter-btn text-xs px-3 py-2 rounded-lg border border-gray-200 transition-all hover:border-nordeste-red hover:text-nordeste-red" data-filter="bonus">
                     Bônus
+                </button>
+                <button onclick="window.filterTimeline('termination')" class="timeline-filter-btn text-xs px-3 py-2 rounded-lg border border-gray-200 transition-all hover:border-nordeste-red hover:text-nordeste-red" data-filter="termination">
+                    Desligados
                 </button>
                 <button onclick="window.viewFullHistory()" class="text-xs font-medium text-nordeste-red uppercase bg-red-50 px-3 py-2 rounded-lg border border-red-100 hover:bg-red-100 transition-all flex items-center gap-1">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -733,14 +793,14 @@ window.editCareerItem = (id, table) => {
     const content = document.getElementById('pro-modal-content');
 
     const isOccurrence = table === 'occurrences';
-    const dateValue = item.date.replace(' ', 'T').substring(0, 19);
+    const dateValue = item.date ? item.date.substring(0, 10) : '';
 
     content.innerHTML = `
         <div class="bg-nordeste-black p-8 text-white"><h3 class="text-xl font-black uppercase italic">Corrigir Histórico de Carreira</h3></div>
         <form id="edit-history-form" class="p-10 space-y-6">
             <div class="grid grid-cols-2 gap-4">
                 <div><label class="pro-label">Tipo de Evento</label><input id="e-type" class="pro-input uppercase" value="${item.move_type}" ${isOccurrence ? 'readonly' : ''}></div>
-                <div><label class="pro-label">Data e Hora (Manual)</label><input type="datetime-local" id="e-date" class="pro-input font-bold" value="${dateValue}"></div>
+                <div><label class="pro-label">Data</label><input type="date" id="e-date" class="pro-input font-bold" value="${dateValue}"></div>
             </div>
             
             <div class="grid grid-cols-2 gap-4">
@@ -767,13 +827,13 @@ window.editCareerItem = (id, table) => {
 
         const payload = isOccurrence ? {
             type: item.move_type,
-            date: document.getElementById('e-date').value.replace('T', ' '),
+            date: document.getElementById('e-date').value,
             reason: item.sector,
             responsible: item.responsible,
             observation: document.getElementById('e-obs').value
         } : {
             move_type: document.getElementById('e-type').value,
-            date: document.getElementById('e-date').value.replace('T', ' '),
+            date: document.getElementById('e-date').value,
             role: document.getElementById('e-role').value,
             sector: document.getElementById('e-sector').value,
             salary: document.getElementById('e-salary').value,
@@ -921,7 +981,8 @@ window.openPromotionModal = () => {
     content.innerHTML = `
         <div class="bg-nordeste-black p-8 text-white"><h3 class="text-xl font-black uppercase italic">Nova Movimentação Profissional</h3></div>
         <form id="promo-form" class="p-10 space-y-6">
-            <div><label class="pro-label">Tipo de Evento</label><select id="m-type" class="pro-input font-bold"><option>Promoção</option><option>Reajuste Salarial</option><option>Acordo Individual</option><option>Desligamento</option></select></div>
+            <div><label class="pro-label">Tipo de Evento</label><select id="m-type" class="pro-input font-bold" onchange="handleEventTypeChange()"><option>Promoção</option><option>Reajuste Salarial</option><option>Acordo Individual</option><option>Desligamento</option></select></div>
+            <div><label class="pro-label">Data do Evento</label><input type="date" id="m-date" class="pro-input" value="${new Date().toISOString().split('T')[0]}"></div>
             <div><label class="pro-label">Novo Cargo</label><select id="m-role-select" class="pro-input font-bold"><option value="">-- MANTER ATUAL --</option>${rolesMatrix.map(r => `<option value="${r.id}">${r.name}</option>`).join('')}</select></div>
             <div class="grid grid-cols-2 gap-4">
                 <div><label class="pro-label">Setor</label><input id="m-sector" class="pro-input bg-gray-50" readonly value="${currentEmployeeData.sector}"></div>
@@ -937,10 +998,39 @@ window.openPromotionModal = () => {
         const r = rolesMatrix.find(x => x.id === e.target.value);
         if (r) { document.getElementById('m-sector').value = r.sector; document.getElementById('m-cbo').value = r.cbo; }
     });
+    
+    // Função para ajustar campos baseado no tipo de evento
+    window.handleEventTypeChange = () => {
+        const eventType = document.getElementById('m-type').value;
+        const roleSelect = document.getElementById('m-role-select');
+        const salaryInput = document.getElementById('m-salary');
+        
+        if (eventType === 'Desligamento') {
+            // Para desligamento, desabilitar cargo e salário
+            roleSelect.disabled = true;
+            roleSelect.value = '';
+            salaryInput.disabled = true;
+            salaryInput.value = currentEmployeeData.currentSalary;
+            roleSelect.classList.add('bg-gray-100');
+            salaryInput.classList.add('bg-gray-100');
+        } else {
+            // Para outros eventos, habilitar campos
+            roleSelect.disabled = false;
+            salaryInput.disabled = false;
+            roleSelect.classList.remove('bg-gray-100');
+            salaryInput.classList.remove('bg-gray-100');
+        }
+    };
+    
+    // Chamar a função ao carregar o formulário
+    handleEventTypeChange();
     document.getElementById('promo-form').onsubmit = async (e) => {
         e.preventDefault();
-        const now = new Date();
-        const preciseDate = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');
+        
+        // Usar apenas data informada pelo usuário (sem hora)
+        const selectedDate = document.getElementById('m-date').value;
+        const preciseDate = selectedDate; // Apenas data: yyyy-MM-dd
+        
         const roleData = rolesMatrix.find(r => r.id === document.getElementById('m-role-select').value);
         const payload = {
             employeeId: selectedId, move_type: document.getElementById('m-type').value,
@@ -978,7 +1068,7 @@ window.openBonusModal = () => {
     document.getElementById('bonus-form').onsubmit = async (e) => {
         e.preventDefault();
         const now = new Date();
-        const preciseDate = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');
+        const preciseDate = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0'); // Apenas data: yyyy-MM-dd
 
         // Mantemos os dados atuais de cargo/setor para consistência do registro
         const payload = {
@@ -1001,9 +1091,11 @@ window.openOccurrenceModal = () => {
     }
     const modal = document.getElementById('pro-modal-container');
     const content = document.getElementById('pro-modal-content');
+    const today = new Date().toISOString().substring(0, 10);
     content.innerHTML = `
         <div class="bg-nordeste-red p-8 text-white"><h3 class="text-xl font-black uppercase italic">Registrar Ocorrência Disciplinar</h3></div>
         <form id="occ-form" class="p-10 space-y-6">
+            <div><label class="pro-label">Data da Ocorrência</label><input type="date" id="o-date" class="pro-input font-bold" value="${today}"></div>
             <div><label class="pro-label">Tipo de Medida</label><select id="o-type" class="pro-input font-bold"><option>Advertência Verbal</option><option>Advertência Escrita</option><option>Suspensão</option><option>Justa Causa (Desligamento)</option></select></div>
             <div><label class="pro-label">Motivo Principal</label><input id="o-reason" class="pro-input" placeholder="Ex: Atraso recorrente, Indisciplina..."></div>
             <div><label class="pro-label">Detalhamento</label><textarea id="o-obs" class="pro-input h-20"></textarea></div>
@@ -1013,11 +1105,9 @@ window.openOccurrenceModal = () => {
     `;
     document.getElementById('occ-form').onsubmit = async (e) => {
         e.preventDefault();
-        const now = new Date();
-        const preciseDate = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');
         const payload = {
             employeeId: selectedId, type: document.getElementById('o-type').value,
-            date: preciseDate, reason: document.getElementById('o-reason').value,
+            date: document.getElementById('o-date').value, reason: document.getElementById('o-reason').value,
             observation: document.getElementById('o-obs').value, responsible: Auth.getUser()?.name || 'Sistema'
         };
         const res = await fetch('/api/occurrences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });

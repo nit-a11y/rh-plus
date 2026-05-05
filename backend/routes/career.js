@@ -170,46 +170,70 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         const { role, sector, salary, move_type, date, responsible, observation, cbo } = req.body;
 
-        // Validar campos obrigatórios
-        if (!role || !move_type || !date) {
-            return res.status(400).json({ error: 'Campos obrigatórios: role, move_type, date' });
+        const fields = [];
+        const values = [];
+
+        if (role !== undefined && role) {
+            fields.push('role = $' + (fields.length + 1));
+            values.push(role.toString().toUpperCase().trim());
+        }
+        if (sector !== undefined && sector) {
+            fields.push('sector = $' + (fields.length + 1));
+            values.push(sector.toString().toUpperCase().trim());
+        }
+        if (salary !== undefined && salary) {
+            fields.push('salary = $' + (fields.length + 1));
+            values.push(salary);
+        }
+        if (move_type !== undefined && move_type) {
+            fields.push('move_type = $' + (fields.length + 1));
+            values.push(move_type.toString().toUpperCase().trim());
+        }
+        if (date !== undefined && date) {
+            fields.push('date = $' + (fields.length + 1));
+            values.push(date);
+        }
+        if (responsible !== undefined && responsible) {
+            fields.push('responsible = $' + (fields.length + 1));
+            values.push(responsible.toString().toUpperCase().trim());
+        }
+        if (observation !== undefined && observation) {
+            fields.push('observation = $' + (fields.length + 1));
+            values.push(observation.toString().toUpperCase().trim());
+        }
+        if (cbo !== undefined && cbo) {
+            fields.push('cbo = $' + (fields.length + 1));
+            values.push(cbo.toString().replace(/[^\d]/g, '').padStart(6, '0'));
         }
 
-        // Normalizar dados
-        const normalizedRole = role.toString().toUpperCase().trim();
-        const normalizedSector = sector ? sector.toString().toUpperCase().trim() : 'ADMINISTRATIVO';
-        const normalizedCbo = cbo ? cbo.toString().replace(/[^\d]/g, '').padStart(6, '0') : '';
-        const normalizedObservation = observation ? observation.toString().toUpperCase().trim() : '';
-        const normalizedResponsible = responsible ? responsible.toString().toUpperCase().trim() : '';
-        const normalizedMoveType = move_type.toString().toUpperCase().trim();
+        if (fields.length === 0) {
+            return res.status(400).json({ error: 'Nenhum campo para atualizar' });
+        }
 
-        // Formatar data
-        const finalDate = (date && date.includes(':')) ? date : new Date(date).toLocaleString('sv-SE').replace('T', ' ');
+        fields.push('id = $' + (fields.length + 1));
+        values.push(id);
 
-        // Atualizar registro
-        const sql = `
-            UPDATE career_history 
-            SET role = $1, sector = $2, salary = $3, move_type = $4, 
-                date = $5, responsible = $6, observation = $7, cbo = $8
-            WHERE id = $9
-        `;
+        const sql = `UPDATE career_history SET ${fields.join(', ')} WHERE id = $${fields.length}`;
         
-        await query(sql, [
-            normalizedRole, 
-            normalizedSector, 
-            salary || '0', 
-            normalizedMoveType, 
-            finalDate, 
-            normalizedResponsible, 
-            normalizedObservation, 
-            normalizedCbo, 
-            id
-        ]);
-
+        await query(sql, values);
+        
+        // Se for desligamento, atualizar employee
+        if (move_type && move_type.toUpperCase().includes('DESLIGAMENTO')) {
+            const careerRecord = await query('SELECT employee_id FROM career_history WHERE id = $1', [id]);
+            if (careerRecord.rows.length > 0) {
+                const employeeId = careerRecord.rows[0].employee_id;
+                const terminationDate = date || new Date().toISOString().split('T')[0];
+                await query(
+                    `UPDATE employees SET type = 'Desligado', "terminationDate" = $1 WHERE id = $2`,
+                    [terminationDate, employeeId]
+                );
+            }
+        }
+        
         res.json({ success: true, message: 'Registro atualizado com sucesso' });
     } catch (err) {
-        console.error('Erro ao editar registro de carreira:', err);
-        res.status(500).json({ error: err.message });
+        console.error('Erro ao editar registro de carreira:', err.stack || err.message);
+        res.status(500).json({ error: err.message, details: err.stack });
     }
 });
 

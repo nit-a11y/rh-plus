@@ -19,6 +19,21 @@ const dbRun = async (sql, params = []) => {
     return result;
 };
 
+// ROTA: LISTAR OCORRÊNCIAS DE UM FUNCIONÁRIO
+router.get('/', async (req, res) => {
+    try {
+        const { employeeId } = req.query;
+        if (!employeeId) {
+            return res.status(400).json({ error: 'employeeId é obrigatório' });
+        }
+        const sql = `SELECT * FROM occurrences WHERE employee_id = $1 ORDER BY date DESC`;
+        const result = await query(sql, [employeeId]);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 router.post('/', async (req, res) => {
     try {
         const { employeeId, type, date, reason, responsible, observation } = req.body;
@@ -67,10 +82,22 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         const { type, date, reason, responsible, observation } = req.body;
 
+        const updateDate = date || new Date().toISOString().split('T')[0];
+        
         const sql = `UPDATE occurrences SET type = $1, date = $2, reason = $3, responsible = $4, observation = $5 WHERE id = $6`;
-        await dbRun(sql, [type, date, reason, responsible, observation, id]);
+        await dbRun(sql, [type, updateDate, reason, responsible, observation, id]);
+        
+        // Se for Justa Causa, atualizar employee
+        if (type && type.toUpperCase().includes('JUSTA CAUSA')) {
+            const occ = await dbGet(`SELECT employee_id FROM occurrences WHERE id = $1`, [id]);
+            if (occ) {
+                await dbRun(`UPDATE employees SET type = 'Desligado', "terminationDate" = $1 WHERE id = $2`, [updateDate, occ.employee_id]);
+            }
+        }
+        
         res.json({ success: true });
     } catch (err) {
+        console.error('Erro ao editar ocorrência:', err);
         res.status(500).json({ error: err.message });
     }
 });
