@@ -794,6 +794,47 @@ window.submitReturnAll = async (e) => {
 // 4. NOVO COLABORADOR
 window.openNewEmployeeModal = () => { document.getElementById('modal-new-employee').classList.remove('hidden-custom'); };
 window.closeNewEmployeeModal = () => { document.getElementById('modal-new-employee').classList.add('hidden-custom'); };
+window.validateCpfOnBlur = async (input) => {
+    let cpf = input.value.replace(/\D/g, '');
+    if (cpf.length < 11) return;
+    cpf = cpf.substring(0, 11).replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    
+    try {
+        const res = await fetch(`/api/employees-pro/search-by-cpf/${cpf.replace(/\D/g, '')}`);
+        const data = await res.json();
+        
+        if (!data.found || data.employees.length === 0) {
+            return;
+        }
+        
+        const employees = data.employees;
+        const activeEmployees = employees.filter(e => e.type !== 'Desligado');
+        
+        if (activeEmployees.length > 0) {
+            const active = activeEmployees[0];
+            const msg = `CPF já vinculado ao colaborador ativo: ${active.name}\n\nDeseja realizar uma transferência?\nAcesse: Menu do colaborador > Transferência`;
+            alert(msg);
+            input.value = '';
+            input.focus();
+        } else {
+            const lastEmployee = employees[0];
+            const confirmReativar = confirm(
+                `CPF encontrado em colaborador desligado: ${lastEmployee.name}\n\nDeseja reativar este colaborador?`
+            );
+            if (confirmReativar) {
+                closeNewEmployeeModal();
+                if (typeof window.openTransferModal === 'function') {
+                    window.openTransferModal(lastEmployee.id);
+                }
+            } else {
+                input.value = '';
+                input.focus();
+            }
+        }
+    } catch (err) {
+        console.error('Erro ao validar CPF:', err);
+    }
+};
 window.submitNewEmployee = async (e) => {
     e.preventDefault();
     const payload = {

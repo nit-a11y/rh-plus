@@ -4,6 +4,207 @@ import { formatCurrencyInput } from '../utils.js';
 
 let employees = [];
 let filterStatus = 'active';
+let cpfSearchResult = null;
+
+// Validar CPF ao sair do campo - Abre modal estilo transferência
+window.validateCpfOnBlur = async (input) => {
+    let cpf = input.value.replace(/\D/g, '');
+    if (cpf.length < 11) return;
+    cpf = cpf.substring(0, 11);
+    
+    try {
+        const res = await fetch(`/api/employees-pro/search-by-cpf/${cpf}`);
+        const data = await res.json();
+        
+        if (!data.found || data.employees.length === 0) {
+            return;
+        }
+        
+        const empList = data.employees;
+        const activeEmployees = empList.filter(e => e.type !== 'Desligado');
+        
+        if (activeEmployees.length > 0) {
+            const active = activeEmployees[0];
+            const msg = `CPF já vinculado ao colaborador ativo: ${active.name}\n\nDeseja realizar uma transferência?\nAcesse: Menu do colaborador > Transferência`;
+            alert(msg);
+            input.value = '';
+            input.focus();
+        } else {
+            const lastEmployee = empList[0];
+            
+            // Usar dados da busca CPF (já tem as informações necessárias)
+            cpfSearchResult = lastEmployee;
+            
+            const modal = document.getElementById('pro-modal-container');
+            const content = document.getElementById('pro-modal-content');
+            const today = new Date().toISOString().split('T')[0];
+            
+            content.innerHTML = `
+                <div class="bg-orange-600 p-4 md:p-6 text-white sticky top-0 z-10">
+                    <h3 class="text-lg md:text-xl font-black uppercase italic">Reativação</h3>
+                    <p class="text-xs font-medium mt-1">Reativa colaborador desligado</p>
+                </div>
+                <div class="p-4 md:p-6 space-y-4 overflow-y-auto max-h-[70vh] md:max-h-[80vh] custom-scroll">
+                    <div class="bg-blue-50 p-3 md:p-4 rounded-xl border border-blue-100">
+                        <p class="text-sm font-bold text-blue-600">Colaborador DESLIGADO:</p>
+                        <p class="text-lg font-black text-gray-800">${cpfSearchResult.name}</p>
+                        <p class="text-sm text-gray-600">Matrícula: ${cpfSearchResult.registrationNumber}</p>
+                        <p class="text-sm text-gray-600">CPF: ${cpf}</p>
+                        <p class="text-sm text-gray-600">Cargo: ${cpfSearchResult.role || 'N/A'}</p>
+                        <p class="text-sm text-gray-600">Setor: ${cpfSearchResult.sector || 'N/A'}</p>
+                        <p class="text-sm text-gray-600">Admissão: ${cpfSearchResult.admissionDate || 'N/A'}</p>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 pt-4">
+                        <p class="text-sm font-bold text-orange-600 mb-3">DADOS DA REATIVAÇÃO</p>
+                    </div>
+                    
+                    <div>
+                        <label class="pro-label">Nova Data de Admissão *</label>
+                        <input type="date" id="reativ-admission-date" class="pro-input" value="${today}">
+                    </div>
+                    
+                    <div>
+                        <label class="pro-label">Novo Empregador</label>
+                        <select id="reativ-employer" class="pro-input">
+                            <option value="">-- Selecione --</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="pro-label">Nova Unidade</label>
+                        <select id="reativ-workplace" class="pro-input">
+                            <option value="">-- Selecione --</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="pro-label">Novo Cargo/Função</label>
+                        <select id="reativ-role" class="pro-input">
+                            <option value="">-- Selecione --</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="pro-label">Novo Salário</label>
+                        <input type="text" id="reativ-salary" class="pro-input font-bold text-green-700" placeholder="R$ 0,00" value="${cpfSearchResult.currentSalary || ''}" oninput="formatCurrencyInput(event)">
+                    </div>
+                    
+                    <div>
+                        <label class="pro-label">Motivo / Observação</label>
+                        <textarea id="reativ-reason" class="pro-input" rows="2" placeholder="Descreva o motivo da reativação..."></textarea>
+                    </div>
+                    
+                    <div class="p-3 md:p-4 bg-amber-50 rounded-xl border border-amber-200">
+                        <p class="text-xs font-bold text-amber-700">ATENÇÃO:</p>
+                        <p class="text-xs text-amber-600">Um novo colaborador ATIVO será criado com os dados acima.</p>
+                    </div>
+                </div>
+                
+                <div class="p-4 md:p-6 border-t flex flex-col md:flex-row gap-3 md:justify-end">
+                    <button onclick="window.closeProModal()" class="w-full md:w-auto px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300">Cancelar</button>
+                    <button onclick="window.executeReativacao()" class="w-full md:w-auto px-6 py-3 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700">Confirmar Reativação</button>
+                </div>
+            `;
+            
+modal.classList.remove('hidden');
+            
+            // Expor função globalmente
+            window.loadCompaniesForReativacao = async () => {
+                try {
+                    const empSelect = document.getElementById('reativ-employer');
+                    const wpSelect = document.getElementById('reativ-workplace');
+                    const roleSelect = document.getElementById('reativ-role');
+                    
+                    if (!empSelect || !wpSelect) return;
+                    
+                    const [companiesRes, rolesRes] = await Promise.all([
+                        fetch('/api/companies'),
+                        fetch('/api/roles')
+                    ]);
+                    
+                    const companies = await companiesRes.json();
+                    const roles = await rolesRes.json();
+                    
+                    // Corrigir filtro: type !== 'Unidade' para empregadores, type === 'Unidade' OU 'Ambos' para unidades
+                    const employers = companies.filter(c => c.type !== 'Unidade');
+                    const workplaces = companies.filter(c => c.type === 'Unidade' || c.type === 'Ambos');
+                    
+                    empSelect.innerHTML = '<option value="">-- Selecione --</option>' + 
+                        employers.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+                    
+                    wpSelect.innerHTML = '<option value="">-- Selecione --</option>' + 
+                        workplaces.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+                    
+                    if (roleSelect && roles.length > 0) {
+                        roleSelect.innerHTML = '<option value="">-- Selecione --</option>' + 
+                            roles.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
+                        if (cpfSearchResult.role) {
+                            roleSelect.value = cpfSearchResult.role;
+                        }
+                    }
+                } catch (err) {
+                    console.error('Erro ao carregar dados:', err);
+                }
+            };
+            
+            // Carregar empregadores, unidades e cargos
+            setTimeout(() => {
+                window.loadCompaniesForReativacao();
+            }, 200);
+        }
+    } catch (err) {
+        console.error('Erro ao validar CPF:', err);
+    }
+};
+
+// Executar reativação
+window.executeReativacao = async () => {
+    const newAdmissionDate = document.getElementById('reativ-admission-date').value;
+    const newEmployer = document.getElementById('reativ-employer').value;
+    const newWorkplace = document.getElementById('reativ-workplace').value;
+    const newRole = document.getElementById('reativ-role').value;
+    const newSalary = document.getElementById('reativ-salary').value;
+    const reason = document.getElementById('reativ-reason').value;
+    
+    if (!newAdmissionDate) {
+        alert('Informe a data de admissão');
+        return;
+    }
+    
+    if (!confirm('Confirmar reativação? Um novo colaborador ATIVO será criado.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/transfers/employee/${cpfSearchResult.id}/reativar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                new_admission_date: newAdmissionDate,
+                to_employer_id: newEmployer || null,
+                to_workplace_id: newWorkplace || null,
+                new_role: newRole || null,
+                new_salary: newSalary || null,
+                reason: reason || 'Reativação via CPF',
+                changed_by: 'Sistema'
+            })
+        });
+        
+        const result = await res.json();
+        
+        if (res.ok) {
+            window.closeProModal();
+            alert('Colaborador reativado com sucesso!');
+            window.location.reload();
+        } else {
+            alert('Erro: ' + (result.error || 'Erro desconhecido'));
+        }
+    } catch (err) {
+        console.error('Erro ao reativar:', err);
+        alert('Erro ao reativar colaborador');
+    }
+};
 
 export async function initList() {
     try {
@@ -125,6 +326,9 @@ window.openEmployeeEditor = (id) => {
     }, 50);
 };
 
+// Expor função globalmente para uso no oninput
+window.formatCurrencyInput = formatCurrencyInput;
+
 window.openNewEmployeePro = async () => {
     const modal = document.getElementById('pro-modal-container');
     const content = document.getElementById('pro-modal-content');
@@ -154,7 +358,20 @@ window.openNewEmployeePro = async () => {
                 
                 <section>
                     <h4 class="text-nordeste-red font-black text-xs uppercase italic mb-6 flex items-center gap-2">
-                        <span class="w-2 h-6 bg-nordeste-red rounded-full"></span> 01. Vínculo Empregatício
+                        <span class="w-2 h-6 bg-nordeste-red rounded-full"></span> 01. Identidade
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div><label class="pro-label">CPF</label><input id="p-cpf" class="pro-input font-mono font-black" placeholder="000.000.000-00" onblur="window.validateCpfOnBlur(this)" required></div>
+                        <div class="md:col-span-2"><label class="pro-label">Nome Completo</label><input id="p-name" class="pro-input font-bold" required></div>
+                        <div><label class="pro-label">Data Nascimento</label><input type="date" id="p-birth" class="pro-input font-bold" required></div>
+                        <div><label class="pro-label">Nome da Mãe</label><input id="p-mother" class="pro-input" required></div>
+                        <div><label class="pro-label">RG Número</label><input id="p-rg" class="pro-input font-mono font-bold" required></div>
+                    </div>
+                </section>
+
+                <section>
+                    <h4 class="text-nordeste-red font-black text-xs uppercase italic mb-6 flex items-center gap-2">
+                        <span class="w-2 h-6 bg-nordeste-red rounded-full"></span> 02. Vínculo Empregatício
                     </h4>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div class="md:col-span-2"><label class="pro-label">Empregador Legal</label><select id="p-employer" class="pro-input font-bold" required><option value="">Selecione...</option>${companies.filter(c => c.type !== 'Unidade').map(c => `<option value="${c.id}">${c.name} (${c.cnpj})</option>`).join('')}</select></div>
@@ -180,7 +397,7 @@ window.openNewEmployeePro = async () => {
 
                 <section class="bg-gray-50 p-8 rounded-3xl border border-gray-100">
                     <h4 class="text-blue-600 font-black text-xs uppercase italic mb-6 flex items-center gap-2">
-                        <span class="w-2 h-6 bg-blue-600 rounded-full"></span> 02. Medidas para Fardamento & EPI
+                        <span class="w-2 h-6 bg-blue-600 rounded-full"></span> 03. Medidas para Fardamento & EPI
                     </h4>
                     <div class="grid grid-cols-3 gap-6">
                         <div><label class="pro-label">Tamanho Camisa</label><select id="p-size-shirt" class="pro-input font-black"><option>P</option><option selected>M</option><option>G</option><option>GG</option><option>XG</option></select></div>
@@ -188,19 +405,6 @@ window.openNewEmployeePro = async () => {
                         <div><label class="pro-label">Calçado (Número)</label><select id="p-size-shoe" class="pro-input font-black"><option>35</option><option>36</option><option>37</option><option>38</option><option>39</option><option selected>40</option><option>41</option><option>42</option><option>43</option><option>44</option></select></div>
                     </div>
                     <p class="text-[8px] text-gray-400 font-bold uppercase mt-4 italic">* Os itens configurados no enxoval do cargo serão injetados automaticamente com estas medidas.</p>
-                </section>
-
-                <section>
-                    <h4 class="text-nordeste-red font-black text-xs uppercase italic mb-6 flex items-center gap-2">
-                        <span class="w-2 h-6 bg-nordeste-red rounded-full"></span> 03. Identidade
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="md:col-span-2"><label class="pro-label">Nome Completo</label><input id="p-name" class="pro-input font-bold" required></div>
-                        <div><label class="pro-label">Data Nascimento</label><input type="date" id="p-birth" class="pro-input font-bold" required></div>
-                        <div><label class="pro-label">Nome da Mãe</label><input id="p-mother" class="pro-input" required></div>
-                        <div><label class="pro-label">CPF</label><input id="p-cpf" class="pro-input font-mono font-black" placeholder="000.000.000-00" required></div>
-                        <div><label class="pro-label">RG Número</label><input id="p-rg" class="pro-input font-mono font-bold" required></div>
-                    </div>
                 </section>
             </div>
 

@@ -41,78 +41,131 @@ router.get('/tempo-acumulado-cpf/:cpf', async (req, res) => {
     const { cpf } = req.params;
     
     try {
-        // Buscar todos os funcionÃ¡rios com o mesmo CPF
-        const result = await query(`
-            SELECT 
-                id,
-                name,
-                "registrationNumber",
-                "admissionDate",
-                type,
-                "photoUrl"
-            FROM employees 
-            WHERE REPLACE(REPLACE(cpf, '.', ''), '-', '') = REPLACE(REPLACE($1, '.', ''), '-', '')
-            ORDER BY "admissionDate" ASC
-        `, [cpf]);
+        const cpfLimpo = cpf.replace(/\D/g, '');
         
-        if (result.rows.length === 0) {
+        // Buscar todos os funcionário com o mesmo CPF na tabela employees
+        let employees_result = [];
+        try {
+            employees_result = await query(`
+                SELECT 
+                    id,
+                    name,
+                    "registrationNumber",
+                    "admissionDate",
+                    type,
+                    "photoUrl",
+                    "terminationDate"
+                FROM employees 
+                WHERE REPLACE(REPLACE(cpf, '.', ''), '-', '') = $1
+            `, [cpfLimpo]);
+            employees_result = employees_result.rows || [];
+        } catch (e) {
+            employees_result = [];
+        }
+        
+        // Se não encontrar em employees, buscar em employee_vinculos pelo employee_id
+        let vinculos_result = [];
+        if (employees_result.length > 0) {
+            try {
+                const employeeIds = employees_result.map(e => e.id);
+                vinculos_result = await query(`
+                    SELECT 
+                        id,
+                        employee_id,
+                        employer_id,
+                        workplace_id,
+                        admission_date,
+                        termination_date,
+                        sequencia
+                    FROM employee_vinculos 
+                    WHERE employee_id = ANY($1)
+                    ORDER BY sequencia
+                `, [employeeIds]);
+                vinculos_result = vinculos_result.rows || [];
+            } catch (e) {
+                vinculos_result = [];
+            }
+        }
+
+        // Combinar registros
+        let todosRegistros = [];
+        
+        // Adicionar employees
+        for (const emp of employees_result) {
+            todosRegistros.push({
+                ...emp,
+                from_table: 'employees',
+                dataAdmissao: emp.admissionDate,
+                dataTerminacao: emp.terminationDate || emp.type === 'Desligado' ? emp.terminationDate : null
+            });
+        }
+        
+        // Adicionar registros de vinculos que não estão em employees (se houver duplicatas)
+        for (const v of vinculos_result) {
+            const jaExiste = todosRegistros.find(e => e.id === v.employee_id);
+            if (!jaExiste) {
+                todosRegistros.push({
+                    id: v.id,
+                    employee_id: v.employee_id,
+                    from_table: 'vinculos',
+                    dataAdmissao: v.admission_date,
+                    dataTerminacao: v.termination_date
+                });
+            }
+        }
+        
+        if (todosRegistros.length === 0) {
             return res.json({ 
                 tempoAcumulado: '0 meses',
+                totalDias: 0,
                 registros: [],
-                totalRegistros: 0
+                totalRegistros: 0,
+                cpf: cpfLimpo
             });
         }
         
         let totalDias = 0;
         const registrosComTempo = [];
         
-        for (const emp of result.rows) {
-            // Buscar desligamento para este funcionÃ¡rio
-            const careerResult = await query(`
-                SELECT date 
-                FROM career_moves 
-                WHERE employee_id = $1 AND move_type = 'Desligamento'
-                ORDER BY date DESC 
-                LIMIT 1
-            `, [emp.id]);
+        for (const emp of todosRegistros) {
+            const dataAdmissao = emp.dataAdmissao || emp.admission_date;
+            const dataTerminacao = emp.dataTerminacao || emp.termination_date;
             
-            const dataAdmissao = emp.admissionDate;
-            const dataDesligamento = careerResult.rows[0]?.date;
+            if (!dataAdmissao) continue;
             
-            // Calcular dias para este registro
             const inicio = new Date(dataAdmissao);
-            const fim = dataDesligamento ? new Date(dataDesligamento) : new Date();
+            const fim = dataTerminacao ? new Date(dataTerminacao) : new Date();
             const dias = Math.floor((fim - inicio) / (1000 * 60 * 60 * 24));
             
-            totalDias += dias;
-            
-            registrosComTempo.push({
-                ...emp,
-                dataAdmissao,
-                dataDesligamento: dataDesligamento || null,
-                diasNesteRegistro: dias,
-                tempoNesteRegistro: calcularTempoCasaFormatado(dias)
-            });
+            if (dias > 0) {
+                totalDias += dias;
+                registrosComTempo.push({
+                    ...emp,
+                    dataAdmissao,
+                    dataTerminacao,
+                    dias,
+                    tempo: calcularTempoCasaFormatado(dias)
+                });
+            }
         }
         
-        // Converter total de dias para formato anos e meses
         const tempoAcumulado = calcularTempoCasaFormatado(totalDias);
         
         res.json({
             tempoAcumulado,
             totalDias,
             registros: registrosComTempo,
-            totalRegistros: result.rows.length,
-            cpf: cpf
+            totalRegistros: registrosComTempo.length,
+            cpf: cpfLimpo
         });
         
     } catch (err) {
-        console.error('Erro ao calcular tempo acumulado por CPF:', err);
+        console.error('Erro ao calcular tempo acumulado:', err);
         res.status(500).json({ error: err.message });
     }
 });
 
-// FunÃ§Ã£o auxiliar para formatar tempo
+// Função auxiliar para formatar tempo
 function calcularTempoCasaFormatado(dias) {
     if (dias <= 0) return '0 meses';
     
@@ -157,7 +210,7 @@ router.post('/benefits/bulk-init-va', async (req, res) => {
         await transaction(async (client) => {
             for (const emp of employees.rows) {
                 const existing = await client.query(
-                    `SELECT id FROM employee_benefits WHERE employee_id = $1 AND (benefit_name = $2 OR benefit_name = 'VALE ALIMENTAÃ‡ÃƒO')`,
+                    `SELECT id FROM employee_benefits WHERE employee_id = $1 AND (benefit_name = $2 OR benefit_name = 'VALE ALIMENTAÇÃO')`,
                     [emp.id, vaName]
                 );
                 if (existing.rows.length > 0) continue;
@@ -200,7 +253,7 @@ router.post('/admit', async (req, res) => {
     const id = generateId();
     const responsible = 'Sistema RH+ (Auto)';
 
-    // NormalizaÃ§Ã£o automÃ¡tica dos dados do employee
+    // Normalização automática dos dados do employee
     if (emp.name) emp.name = emp.name.toString().toUpperCase().trim();
     if (emp.role) emp.role = emp.role.toString().toUpperCase().trim();
     if (emp.sector) emp.sector = emp.sector.toString().toUpperCase().trim();
@@ -255,16 +308,16 @@ router.post('/admit', async (req, res) => {
                 return fieldMapping[lower] || name;
             };
 
-            // Preparar campos e valores para inserÃ§Ã£o
+            // Preparar campos e valores para inserção
             const empKeys = Object.keys(emp).map(k => normalizeFieldName(k));
             const empValues = Object.values(emp);
             const allKeys = ['id', ...empKeys];
             const allValues = [id, ...empValues];
             const empPlaceholders = allKeys.map((_, i) => `$${i + 1}`).join(',');
             
-            console.log('ðŸ” DEBUG - Campos recebidos:', Object.keys(emp));
-            console.log('ðŸ” DEBUG - Campos mapeados:', empKeys);
-            console.log('ðŸ” DEBUG - SQL final:', `INSERT INTO employees (${allKeys.join(',')}) VALUES (${empPlaceholders})`);
+            console.log('?? DEBUG - Campos recebidos:', Object.keys(emp));
+            console.log('?? DEBUG - Campos mapeados:', empKeys);
+            console.log('?? DEBUG - SQL final:', `INSERT INTO employees (${allKeys.join(',')}) VALUES (${empPlaceholders})`);
             
             await client.query(`INSERT INTO employees (${allKeys.map(k => `"${k}"`).join(',')}) VALUES (${empPlaceholders})`, allValues);
 
@@ -286,8 +339,8 @@ router.post('/admit', async (req, res) => {
                     let itemSize = 'M';
 
                     if (typeLower.includes('camisa') || typeLower.includes('polo')) itemSize = sizes?.shirt || 'M';
-                    else if (typeLower.includes('calca') || typeLower.includes('calÃ§a') || typeLower.includes('jeans')) itemSize = sizes?.pants || '40';
-                    else if (typeLower.includes('bota') || typeLower.includes('sapato') || typeLower.includes('tenis') || typeLower.includes('tÃªnis')) itemSize = sizes?.shoe || '40';
+                    else if (typeLower.includes('calca') || typeLower.includes('calça') || typeLower.includes('jeans')) itemSize = sizes?.pants || '40';
+                    else if (typeLower.includes('bota') || typeLower.includes('sapato') || typeLower.includes('tenis') || typeLower.includes('tênis')) itemSize = sizes?.shoe || '40';
 
                     const cycleDays = emp.type === 'ADM' ? 365 : 180;
                     const nextDate = new Date(emp.admissionDate);
@@ -344,7 +397,7 @@ router.get('/:id/full', (req, res) => res.redirect(`/api/employees-pro/${req.par
 
 router.get('/:id/dossier', async (req, res) => {
     const id = req.params.id;
-    console.log(`ðŸ” Dossier solicitado para ID: ${id}`);
+    console.log(`?? Dossier solicitado para ID: ${id}`);
     
     try {
         const sqlEmp = `
@@ -358,11 +411,11 @@ router.get('/:id/dossier', async (req, res) => {
         const empResult = await query(sqlEmp, [id]);
         
         if (!empResult.rows[0]) {
-            console.log(`âŒ Colaborador ${id} nÃ£o encontrado`);
+            console.log(`? Colaborador ${id} não encontrado`);
             return res.status(404).json({ success: false, error: 'Colaborador nao localizado' });
         }
         
-        console.log(`âœ… Colaborador encontrado: ${empResult.rows[0].name}`);
+        console.log(`? Colaborador encontrado: ${empResult.rows[0].name}`);
 
         const data = {
             success: true,
@@ -467,16 +520,16 @@ router.get('/:id/dossier', async (req, res) => {
             }
         }
 
-        console.log(`âœ… Dossier completo enviado para ${empResult.rows[0].name}`);
+        console.log(`? Dossier completo enviado para ${empResult.rows[0].name}`);
         res.json(data);
         
     } catch (err) {
-        console.error('âŒ Erro ao carregar dossier:', err);
+        console.error('? Erro ao carregar dossier:', err);
         res.status(500).json({ success: false, error: err.message, id });
     }
 });
 
-// FunÃ§Ã£o utilitÃ¡ria para obter vÃ­nculo ativo
+// Função utilitária para obter vínculo ativo
 async function getVinculoAtual(employeeId) {
     const result = await query(`
         SELECT * FROM employee_vinculos 
@@ -487,7 +540,7 @@ async function getVinculoAtual(employeeId) {
     return result.rows[0] || null;
 }
 
-// Rota PUT /:id/metadata refatorada (NÃƒO DESTRUTIVA)
+// Rota PUT /:id/metadata refatorada (NÃO DESTRUTIVA)
 
 // Middleware anti-cache para rota metadata
 router.use('/:id/metadata', (req, res, next) => {
@@ -501,7 +554,7 @@ router.put('/:id/metadata', async (req, res) => {
     const { id } = req.params;
     const { emp, docs } = req.body;
 
-    // VALIDAÃ‡ÃƒO JSON ROBUSTA - Prevenir erro de parsing
+    // VALIDAÇÃO JSON ROBUSTA - Prevenir erro de parsing
     if (emp && emp.metadata) {
         try {
             // Tentar fazer parse do metadata
@@ -509,7 +562,7 @@ router.put('/:id/metadata', async (req, res) => {
             emp.metadata = JSON.stringify(parsed);
         } catch (jsonError) {
             // Se falhar, limpar para objeto vazio
-            console.log('Metadata invÃ¡lido detectado, limpando:', jsonError.message);
+            console.log('Metadata inválido detectado, limpando:', jsonError.message);
             emp.metadata = '{}';
         }
     }
@@ -547,7 +600,7 @@ router.put('/:id/metadata', async (req, res) => {
         return fieldMapping[lower] || name;
     };
 
-    // NormalizaÃ§Ã£o de campos do emp
+    // Normalização de campos do emp
     if (emp) {
         if (emp.registrationNumber) emp.registrationNumber = emp.registrationNumber.toString().replace(/[^\d]/g, '');
         if (emp.cpf) emp.cpf = emp.cpf.toString().replace(/[^\d]/g, '');
@@ -566,7 +619,7 @@ router.put('/:id/metadata', async (req, res) => {
 
     try {
         await transaction(async (client) => {
-            // Atualiza funcionÃ¡rio - mapeando nomes de campos
+            // Atualiza funcionário - mapeando nomes de campos
             const empKeys = Object.keys(emp).filter(k => k !== 'vinculos');
             if (empKeys.length > 0) {
                 const mappedKeys = empKeys.map(k => normalizeFieldName(k));
@@ -575,7 +628,7 @@ router.put('/:id/metadata', async (req, res) => {
                     [...empKeys.map(k => emp[k]), id]);
             }
 
-            // Gerenciar vÃ­nculos de forma NÃƒO DESTRUTIVA
+            // Gerenciar vínculos de forma NÃO DESTRUTIVA
             if (emp.vinculos && Array.isArray(emp.vinculos)) {
                 const incomingVinculos = emp.vinculos
                     .map(v => ({
@@ -586,7 +639,7 @@ router.put('/:id/metadata', async (req, res) => {
                     .filter(v => v.employer_id || v.workplace_id);
 
                 if (incomingVinculos.length > 0) {
-                    // Buscar vÃ­nculos atuais
+                    // Buscar vínculos atuais
                     const currentVinculos = await client.query(`
                         SELECT * FROM employee_vinculos 
                         WHERE employee_id = $1 AND status = 'ATIVO'
@@ -598,7 +651,7 @@ router.put('/:id/metadata', async (req, res) => {
 
                     const now = new Date();
 
-                    // 1. Encerrar vÃ­nculos removidos (NÃƒO DELETE)
+                    // 1. Encerrar vínculos removidos (NÃO DELETE)
                     for (const [key, currentVinculo] of currentMap) {
                         if (!incomingMap.has(key)) {
                             await client.query(`
@@ -609,11 +662,11 @@ router.put('/:id/metadata', async (req, res) => {
                         }
                     }
 
-                    // 2. Atualizar vÃ­nculos existentes
+                    // 2. Atualizar vínculos existentes
                     for (const [key, incomingVinculo] of incomingMap) {
                         if (currentMap.has(key)) {
                             const currentVinculo = currentMap.get(key);
-                            // Atualizar apenas se necessÃ¡rio
+                            // Atualizar apenas se necessário
                             if (currentVinculo.principal !== incomingVinculo.principal) {
                                 await client.query(`
                                     UPDATE employee_vinculos 
@@ -624,7 +677,7 @@ router.put('/:id/metadata', async (req, res) => {
                         }
                     }
 
-                    // 3. Criar novos vÃ­nculos
+                    // 3. Criar novos vínculos
                     for (const [key, incomingVinculo] of incomingMap) {
                         if (!currentMap.has(key)) {
                             const vid = generateId();
@@ -637,7 +690,7 @@ router.put('/:id/metadata', async (req, res) => {
                         }
                     }
 
-                    // 4. Garantir apenas um vÃ­nculo principal
+                    // 4. Garantir apenas um vínculo principal
                     const principalVinculos = await client.query(`
                         SELECT id FROM employee_vinculos 
                         WHERE employee_id = $1 AND status = 'ATIVO' AND principal = 'S'
@@ -652,7 +705,7 @@ router.put('/:id/metadata', async (req, res) => {
                             WHERE employee_id = $2 AND status = 'ATIVO' AND principal = 'S' AND id != $3
                         `, [now, id, keepPrincipal]);
                     } else if (principalVinculos.rows.length === 0 && incomingVinculos.length > 0) {
-                        // Se nÃ£o houver principal, definir o primeiro
+                        // Se não houver principal, definir o primeiro
                         const firstVinculo = await client.query(`
                             SELECT id FROM employee_vinculos 
                             WHERE employee_id = $1 AND status = 'ATIVO'
@@ -686,11 +739,11 @@ router.put('/:id/metadata', async (req, res) => {
                 }
             }
 
-            // Atualizar documentos se necessÃ¡rio
+            // Atualizar documentos se necessário
             if (docs) {
                 const docKeys = Object.keys(docs).filter(k => docs[k] !== undefined && docs[k] !== '');
                 if (docKeys.length > 0) {
-                    // Verificar se jÃ¡ existe registro de documentos
+                    // Verificar se já existe registro de documentos
                     const existingDoc = await client.query('SELECT id FROM employee_documents WHERE employee_id = $1', [id]);
                     
                     if (existingDoc.rows.length > 0) {
@@ -745,15 +798,15 @@ router.post('/:id/documentFiles', async (req, res) => {
 });
 
 
-// Rota DELETE para excluir vÃ­nculo especÃ­fico
+// Rota DELETE para excluir vínculo específico
 router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
     const { id, vinculoId } = req.params;
     
     try {
-        // Iniciar transaÃ§Ã£o
+        // Iniciar transação
         await query('BEGIN');
         
-        // 1. Verificar se o vÃ­nculo existe e pertence ao employee
+        // 1. Verificar se o vínculo existe e pertence ao employee
         const vinculoCheck = await query(`
             SELECT ev.*, 
                    COUNT(*) OVER() as total_vinculos,
@@ -764,14 +817,14 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
         
         if (vinculoCheck.rows.length === 0) {
             await query('ROLLBACK');
-            return res.status(404).json({ error: 'VÃ­nculo nÃ£o encontrado' });
+            return res.status(404).json({ error: 'Vínculo não encontrado' });
         }
         
         const vinculo = vinculoCheck.rows[0];
         const totalVinculos = vinculo.total_vinculos;
         const ativosCount = vinculo.ativos_count;
         
-        // 2. Aplicar regras de exclusÃ£o
+        // 2. Aplicar regras de exclusão
         const deleteRules = validateDeleteRules(vinculo, totalVinculos, ativosCount);
         
         if (!deleteRules.canDelete) {
@@ -779,7 +832,7 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
             return res.status(400).json({ error: deleteRules.reason });
         }
         
-        // 3. Se for o Ãºnico vÃ­nculo, tambÃ©m limpar a tabela employees
+        // 3. Se for o único vínculo, também limpar a tabela employees
         if (totalVinculos === 1) {
             await query(`
                 UPDATE employees 
@@ -787,10 +840,10 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
                 WHERE id = $1
             `, [id]);
             
-            console.log('âœ… Tabela employees limpa (Ãºnico vÃ­nculo removido)');
+            console.log('? Tabela employees limpa (único vínculo removido)');
         }
         
-        // 4. Se for vÃ­nculo ATUAL e houver PASSADOS, promover o mais recente
+        // 4. Se for vínculo ATUAL e houver PASSADOS, promover o mais recente
         if (vinculo.tipo_vinculo === 'ATUAL' && vinculo.status === 'ATIVO') {
             const promoteVinculo = await query(`
                 SELECT id FROM employee_vinculos 
@@ -806,7 +859,7 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
                     WHERE id = $1
                 `, [promoteVinculo.rows[0].id]);
                 
-                // Atualizar employees para o novo vÃ­nculo ATUAL
+                // Atualizar employees para o novo vínculo ATUAL
                 await query(`
                     UPDATE employees e
                     SET employer_id = ev.employer_id, 
@@ -816,11 +869,11 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
                     WHERE e.id = $1 AND ev.id = $2
                 `, [id, promoteVinculo.rows[0].id]);
                 
-                console.log('âœ… VÃ­nculo promovido para ATUAL');
+                console.log('? Vínculo promovido para ATUAL');
             }
         }
         
-        // 5. Registrar exclusÃ£o no log
+        // 5. Registrar exclusão no log
         await query(`
             INSERT INTO operation_logs 
             (id, operation_type, table_name, record_id, old_data, status, created_at)
@@ -834,20 +887,20 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
             'SUCCESS'
         ]);
         
-        // 6. Excluir o vÃ­nculo
+        // 6. Excluir o vínculo
         await query(`
             DELETE FROM employee_vinculos 
             WHERE id = $1 AND employee_id = $2
         `, [vinculoId, id]);
         
-        // 7. Commit da transaÃ§Ã£o
+        // 7. Commit da transação
         await query('COMMIT');
         
-        console.log(`âœ… VÃ­nculo ${vinculoId} excluÃ­do com sucesso`);
+        console.log(`? Vínculo ${vinculoId} excluído com sucesso`);
         
         res.json({
             success: true,
-            message: 'VÃ­nculo excluÃ­do com sucesso',
+            message: 'Vínculo excluído com sucesso',
             vinculo_excluido: {
                 id: vinculoId,
                 employer_id: vinculo.employer_id,
@@ -859,59 +912,59 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
         
     } catch (error) {
         await query('ROLLBACK');
-        console.error('Erro ao excluir vÃ­nculo:', error);
+        console.error('Erro ao excluir vínculo:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// FunÃ§Ã£o para validar regras de exclusÃ£o
+// Função para validar regras de exclusão
 function validateDeleteRules(vinculo, totalVinculos, ativosCount) {
-    // Regra 1: NÃ£o pode excluir o Ãºnico vÃ­nculo
+    // Regra 1: Não pode excluir o único vínculo
     if (totalVinculos === 1) {
         return {
             canDelete: false,
-            reason: 'NÃ£o Ã© possÃ­vel excluir o Ãºnico vÃ­nculo do colaborador. Adicione um novo vÃ­nculo antes de excluir este.'
+            reason: 'Não é possível excluir o único vínculo do colaborador. Adicione um novo vínculo antes de excluir este.'
         };
     }
     
-    // Regra 2: Pode excluir vÃ­nculos PASSADOS
+    // Regra 2: Pode excluir vínculos PASSADOS
     if (vinculo.tipo_vinculo === 'PASSADO') {
         return { canDelete: true };
     }
     
-    // Regra 3: Pode excluir vÃ­nculo ATUAL se nÃ£o houver PASSADOS
+    // Regra 3: Pode excluir vínculo ATUAL se não houver PASSADOS
     if (vinculo.tipo_vinculo === 'ATUAL' && vinculo.status === 'ATIVO') {
         const hasPastVinculos = totalVinculos > ativosCount;
         
         if (hasPastVinculos) {
             return {
                 canDelete: false,
-                reason: 'NÃ£o Ã© possÃ­vel excluir o vÃ­nculo ATUAL enquanto houver vÃ­nculos PASSADOS. Exclua os vÃ­nculos PASSADOS primeiro.'
+                reason: 'Não é possível excluir o vínculo ATUAL enquanto houver vínculos PASSADOS. Exclua os vínculos PASSADOS primeiro.'
             };
         }
         
         return { canDelete: true };
     }
     
-    // Regra 4: Pode excluir vÃ­nculos ENCERRADOS/TRANSFERIDOS
+    // Regra 4: Pode excluir vínculos ENCERRADOS/TRANSFERIDOS
     if (vinculo.status === 'ENCERRADO' || vinculo.status === 'TRANSFERIDO') {
         return { canDelete: true };
     }
     
     return {
         canDelete: false,
-        reason: 'Regras de exclusÃ£o nÃ£o permitem esta operaÃ§Ã£o.'
+        reason: 'Regras de exclusão não permitem esta operação.'
     };
 }
 
 
 
-// Rota GET para obter vÃ­nculos com histÃ³rico completo
+// Rota GET para obter vínculos com histórico completo
 router.get('/:id/vinculos-com-historico', async (req, res) => {
     const { id } = req.params;
     
     try {
-        // Buscar todos os vÃ­nculos do colaborador
+        // Buscar todos os vínculos do colaborador
         const vinculos = await query(`
             SELECT 
                 ev.*,
@@ -924,7 +977,7 @@ router.get('/:id/vinculos-com-historico', async (req, res) => {
                         'Transferido em ' || TO_CHAR(ev.data_transferencia, 'DD/MM/YYYY HH:MI')
                     WHEN ev.data_fim IS NOT NULL THEN 
                         'Encerrado em ' || TO_CHAR(ev.data_fim, 'DD/MM/YYYY')
-                    ELSE 'VÃ­nculo atual'
+                    ELSE 'Vínculo atual'
                 END as status_descricao,
                 CASE 
                     WHEN ev.sequencia = 1 THEN 'PRINCIPAL'
@@ -941,20 +994,20 @@ router.get('/:id/vinculos-com-historico', async (req, res) => {
         res.json(vinculos.rows);
         
     } catch (error) {
-        console.error('Erro ao buscar vÃ­nculos:', error);
+        console.error('Erro ao buscar vínculos:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
 
 
-// Rota POST para adicionar novo vÃ­nculo
+// Rota POST para adicionar novo vínculo
 
-// Middleware para correÃ§Ã£o automÃ¡tica de estado de vÃ­nculos
+// Middleware para correção automática de estado de vínculos
 router.use('/:id/vinculos', async (req, res, next) => {
     const { id } = req.params;
     
-    // Corrigir estado antes de processar a requisiÃ§Ã£o
+    // Corrigir estado antes de processar a requisição
     await corrigirEstadoVinculos(id);
     
     next();
@@ -970,14 +1023,14 @@ router.post('/:id/vinculos', async (req, res) => {
     
     if (!employer_id || !workplace_id || !data_inicio) {
         return res.status(400).json({ 
-            error: 'Empregador, local e data de inÃ­cio sÃ£o obrigatÃ³rios' 
+            error: 'Empregador, local e data de início são obrigatórios' 
         });
     }
     
     try {
         await query('BEGIN');
         
-        // 1. Se for ATUAL, encerrar o vÃ­nculo ATUAL atual
+        // 1. Se for ATUAL, encerrar o vínculo ATUAL atual
         if (tipo_vinculo === 'ATUAL') {
             await query(`
                 UPDATE employee_vinculos 
@@ -990,7 +1043,7 @@ router.post('/:id/vinculos', async (req, res) => {
             `, [data_inicio, id]);
         }
         
-        // 2. Determinar sequÃªncia
+        // 2. Determinar sequência
         const maxSequencia = await query(`
             SELECT COALESCE(MAX(sequencia), 0) + 1 as nova_sequencia
             FROM employee_vinculos 
@@ -999,7 +1052,7 @@ router.post('/:id/vinculos', async (req, res) => {
         
         const novaSequencia = maxSequencia.rows[0].nova_sequencia;
         
-        // 3. Criar novo vÃ­nculo
+        // 3. Criar novo vínculo
         const vinculoId = require('crypto').randomBytes(8).toString('hex');
         
         await query(`
@@ -1025,7 +1078,7 @@ router.post('/:id/vinculos', async (req, res) => {
         
         res.json({
             success: true,
-            message: 'VÃ­nculo adicionado com sucesso',
+            message: 'Vínculo adicionado com sucesso',
             vinculo: {
                 id: vinculoId,
                 employee_id: id,
@@ -1042,19 +1095,19 @@ router.post('/:id/vinculos', async (req, res) => {
         
     } catch (error) {
         await query('ROLLBACK');
-        console.error('Erro ao adicionar vÃ­nculo:', error);
+        console.error('Erro ao adicionar vínculo:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
 
 
-// FunÃ§Ã£o para corrigir estado de vÃ­nculos automaticamente
+// Função para corrigir estado de vínculos automaticamente
 async function corrigirEstadoVinculos(employeeId) {
     try {
-        console.log(`ðŸ”§ Corrigindo estado dos vÃ­nculos para employee ${employeeId}...`);
+        console.log(`?? Corrigindo estado dos vínculos para employee ${employeeId}...`);
         
-        // 1. Identificar todos os vÃ­nculos ATUAIS
+        // 1. Identificar todos os vínculos ATUAIS
         const ativos = await query(`
             SELECT id, data_inicio FROM employee_vinculos 
             WHERE employee_id = $1 
@@ -1064,7 +1117,7 @@ async function corrigirEstadoVinculos(employeeId) {
         `, [employeeId]);
         
         if (ativos.rows.length <= 1) {
-            console.log('âœ… Estado jÃ¡ estÃ¡ correto');
+            console.log('? Estado já está correto');
             return;
         }
         
@@ -1080,9 +1133,9 @@ async function corrigirEstadoVinculos(employeeId) {
             AND status = 'ATIVO'
         `, [employeeId, idManter]);
         
-        console.log(`âœ… ${ativos.rows.length - 1} vÃ­nculos corrigidos para PASSADO`);
+        console.log(`? ${ativos.rows.length - 1} vínculos corrigidos para PASSADO`);
         
-        // 3. Atualizar employees para o vÃ­nculo ATUAL correto
+        // 3. Atualizar employees para o vínculo ATUAL correto
         const vinculoAtual = await query(`
             SELECT employer_id, workplace_id FROM employee_vinculos 
             WHERE id = $1
@@ -1099,15 +1152,73 @@ async function corrigirEstadoVinculos(employeeId) {
                 employeeId
             ]);
             
-            console.log('âœ… Tabela employees atualizada');
+            console.log('? Tabela employees atualizada');
         }
         
-        console.log('âœ… Estado dos vÃ­nculos corrigido');
+        console.log('? Estado dos vínculos corrigido');
         
     } catch (error) {
-        console.error('âŒ Erro ao corrigir estado:', error.message);
+        console.error('? Erro ao corrigir estado:', error.message);
     }
 }
 
+// Rota para buscar CPF (retorna todos os registros com esse CPF)
+router.get('/search-by-cpf/:cpf', async (req, res) => {
+    const { cpf } = req.params;
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    
+    if (!cpfLimpo || cpfLimpo.length < 11) {
+        return res.json({ found: false, employees: [] });
+    }
+    
+    try {
+        const result = await query(`
+            SELECT 
+                id,
+                name,
+                "registrationNumber",
+                "admissionDate",
+                "terminationDate",
+                type,
+                role,
+                sector,
+                "photoUrl",
+                employer_id,
+                workplace_id
+            FROM employees 
+            WHERE REPLACE(REPLACE(REPLACE(cpf, '.', ''), '-', ''), ' ', '') = $1
+            ORDER BY "admissionDate" DESC
+        `, [cpfLimpo]);
+        
+        const employees = result.rows || [];
+        
+        if (employees.length === 0) {
+            return res.json({ found: false, employees: [] });
+        }
+        
+        const hasActive = employees.some(e => e.type !== 'Desligado');
+        
+        res.json({
+            found: true,
+            hasActive,
+            employees: employees.map(e => ({
+                id: e.id,
+                name: e.name,
+                registrationNumber: e.registrationNumber,
+                admissionDate: e.admissionDate,
+                terminationDate: e.terminationDate,
+                type: e.type,
+                role: e.role,
+                sector: e.sector,
+                photoUrl: e.photoUrl,
+                employer_id: e.employer_id,
+                workplace_id: e.workplace_id
+            }))
+        });
+    } catch (err) {
+        console.error('Erro ao buscar CPF:', err.message);
+        res.json({ found: false, employees: [], error: err.message });
+    }
+});
 
 module.exports = router;

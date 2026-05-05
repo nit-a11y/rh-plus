@@ -62,49 +62,5 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// Criar empresa
-router.post('/', (req, res) => {
-    const { name, cnpj, address, type } = req.body;
-    const id = generateId();
-    
-    // Normalização automática para evitar dados despadronizados
-    const normalizedName = name ? name.toString().toUpperCase().trim() : '';
-    const normalizedCnpj = cnpj ? cnpj.toString().trim() : '';
-    const normalizedAddress = address ? address.toString().toUpperCase().trim() : '';
-    const normalizedType = type ? type.toString().trim() : 'Ambos';
-    
-    db.run(`INSERT INTO companies (id, name, cnpj, address, type) VALUES (?, ?, ?, ?, ?)`,
-        [id, normalizedName, normalizedCnpj, normalizedAddress, normalizedType], (err) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true, id });
-        });
-});
-
-// Deletar empresa
-router.delete('/:id', (req, res) => {
-    db.run(`DELETE FROM companies WHERE id = ?`, [req.params.id], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true });
-    });
-});
-
-// Atualizar empresa
-router.put('/:id', (req, res) => {
-    const { id } = req.params;
-    const { name, cnpj, address, type } = req.body;
-    
-    // Normalização automática
-    const normalizedName = name ? name.toString().toUpperCase().trim() : '';
-    const normalizedCnpj = cnpj ? cnpj.toString().trim() : '';
-    const normalizedAddress = address ? address.toString().toUpperCase().trim() : '';
-    const normalizedType = type ? type.toString().trim() : 'Ambos';
-    
-    const sql = `UPDATE companies SET name = ?, cnpj = ?, address = ?, type = ? WHERE id = ?`;
-    db.run(sql, [normalizedName, normalizedCnpj, normalizedAddress, normalizedType, id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        if (this.changes === 0) return res.status(404).json({ error: 'Empresa não encontrada' });
-        res.json({ success: true });
-    });
-});
 
 module.exports = router;

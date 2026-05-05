@@ -632,9 +632,13 @@ function populateVinculos(vinculos) {
         <div class="mb-4 flex justify-between items-center">
             <h3 class="text-lg font-bold text-gray-800">🏢 VÍNCULO CORPORATIVO</h3>
             <div class="flex gap-2">
-                <button onclick="window.toggleContractingType()" 
+                <button onclick="window.executeReativacaoFromEditor()" 
                         class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all text-sm">
-                    🔄 Alterar Tipo (CLT/PJ)
+                    🔄 Reativação
+                </button>
+                <button onclick="window.toggleContractingType()" 
+                        class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all text-sm">
+                    Alterar Tipo (CLT/PJ)
                 </button>
                 <button onclick="window.addVinculo()" 
                         class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm">

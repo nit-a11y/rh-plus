@@ -19,6 +19,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="md:col-span-2"><label class="text-xs font-bold text-gray-500 uppercase">Nome Completo</label><input id="new-emp-name" class="input-field" required></div>
+            <div><label class="text-xs font-bold text-gray-500 uppercase">CPF</label><input id="new-emp-cpf" class="input-field" placeholder="000.000.000-00" onblur="window.validateCpfOnBlur(this)"></div>
             <div><label class="text-xs font-bold text-gray-500 uppercase">Matrícula</label><input id="new-emp-reg" class="input-field" required></div>
             <div><label class="text-xs font-bold text-gray-500 uppercase">Nascimento</label><input type="date" id="new-emp-birth" class="input-field" required></div>
             <div><label class="text-xs font-bold text-gray-500 uppercase">Admissão</label><input type="date" id="new-emp-date" class="input-field" required></div>

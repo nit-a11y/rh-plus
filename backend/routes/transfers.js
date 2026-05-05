@@ -1,22 +1,9 @@
 const express = require('express');
 const crypto = require('crypto');
-const { query, transaction } = require('../config/database');
+const { query } = require('../config/database');
 
 const router = express.Router();
 const generateId = () => crypto.randomBytes(8).toString('hex');
-
-// Função utilitária para obter vínculo ativo
-async function getVinculoAtual(employeeId) {
-    const result = await query(`
-        SELECT * FROM employee_vinculos 
-        WHERE employee_id = $1 AND status = 'ATIVO' 
-        ORDER BY data_inicio DESC 
-        LIMIT 1
-    `, [employeeId]);
-    return result.rows[0] || null;
-}
-
-// Registrar transferência de empregador/unidade (REFATORADO)
 
 // Função utilitária para obter vínculo atual
 async function getVinculoAtual(employeeId) {
@@ -29,20 +16,24 @@ async function getVinculoAtual(employeeId) {
     return result.rows[0] || null;
 }
 
-// Rota de transferência com datas de mudança
-router.post('/employee/:id', async (req, res) => {
+// Rota de reativação/transferência - CRIA NOVO COLABORADOR (CLONE)
+router.post('/employee/:id/reativar', async (req, res) => {
     const { id } = req.params;
-    const { to_employer_id, to_workplace_id, reason, changed_by } = req.body;
-    
-    if (!to_employer_id && !to_workplace_id) {
-        return res.status(400).json({ error: 'Informe pelo menos empregador ou unidade de destino' });
-    }
+    const { 
+        to_employer_id, 
+        to_workplace_id, 
+        new_role, 
+        new_salary, 
+        new_admission_date,
+        termination_date,
+        reason, 
+        changed_by 
+    } = req.body;
 
     try {
-        // Iniciar transação
         await query('BEGIN');
         
-        // 1. Buscar dados atuais do colaborador
+        // 1. Buscar dados do colaborador ATUAL
         const empResult = await query('SELECT * FROM employees WHERE id = $1', [id]);
         const emp = empResult.rows[0];
 
@@ -51,226 +42,185 @@ router.post('/employee/:id', async (req, res) => {
             return res.status(404).json({ error: 'Colaborador não encontrado' });
         }
 
-        // 2. Buscar vínculo atual
-        const vinculoAtual = await getVinculoAtual(id);
+        // Datas
+        const novaData = new_admission_date || new Date().toISOString().split('T')[0];
+        const dataDesligamento = termination_date || novaData;
         
-        if (!vinculoAtual) {
-            await query('ROLLBACK');
-            return res.status(400).json({ error: 'Nenhum vínculo ativo encontrado' });
+        // 2. Gerar NOVO ID para o clone
+        const novoId = generateId();
+        
+        // 3. Criar NOVO colaborador (clone com todos os dados)
+        const novoEmployer = to_employer_id || emp.employer_id;
+        const novoWorkplace = to_workplace_id || emp.workplace_id;
+        const novoRole = new_role || emp.role;
+        const novoSalary = new_salary || emp.currentSalary;
+        
+        await query(`
+            INSERT INTO employees (
+                id, name, "registrationNumber", role, sector, type, hierarchy,
+                "admissionDate", "birthDate", "currentSalary", "photoUrl",
+                street, city, neighborhood, "state_uf", cep,
+                employer_id, workplace_id, "fatherName", "motherName", gender,
+                "maritalStatus", ethnicity, "educationLevel", "placeOfBirth",
+                "personalEmail", "personalPhone", "work_schedule", "work_scale", cbo,
+                "initialRole", "initialSalary", observation, cpf,
+                "terminationReason", "terminationDate"
+            )
+            SELECT 
+                $1, name, "registrationNumber", $2, sector, 'Ativo', hierarchy,
+                $3, "birthDate", $4, "photoUrl",
+                street, city, neighborhood, "state_uf", cep,
+                $5, $6, "fatherName", "motherName", gender,
+                "maritalStatus", ethnicity, "educationLevel", "placeOfBirth",
+                "personalEmail", "personalPhone", "work_schedule", "work_scale", cbo,
+                $2, $4, observation, cpf,
+                NULL, NULL
+            FROM employees WHERE id = $7
+        `, [
+            novoId, novoRole, novaData, novoSalary, novoEmployer, novoWorkplace, id
+        ]);
+
+        // 4. Buscar e copiar DOCUMENTOS do original
+        const docs = await query('SELECT * FROM employee_documents WHERE employee_id = $1', [id]);
+        if (docs.rows.length > 0) {
+            const doc = docs.rows[0];
+            await query(`
+                INSERT INTO employee_documents 
+                (employee_id, cpf, pis_pasep, rg_number, rg_organ, rg_uf, rg_date, ctps_number, cnh_number, voter_title, voter_zone, voter_section)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            `, [
+                novoId, doc.cpf, doc.pis_pasep, doc.rg_number, doc.rg_organ, doc.rg_uf, doc.rg_date, doc.ctps_number, doc.cnh_number, doc.voter_title, doc.voter_zone, doc.voter_section
+            ]);
         }
 
-        // 3. Definir data da transferência (marcador temporal)
-        const dataTransferencia = new Date();
-        const novaSequencia = (vinculoAtual.sequencia || 1) + 1;
-
-        // 4. Atualizar vínculo atual para PASSADO com data de transferência
-        await query(`
-            UPDATE employee_vinculos 
-            SET data_fim = $1, 
-                data_transferencia = $1,
-                status = 'TRANSFERIDO',
-                tipo_vinculo = 'PASSADO',
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = $2
-        `, [dataTransferencia, vinculoAtual.id]);
-
-        // 5. Criar novo vínculo ATUAL
-        const novoVinculoId = generateId();
-        await query(`
-            INSERT INTO employee_vinculos 
-            (id, employee_id, employer_id, workplace_id, data_inicio, data_fim, 
-             status, tipo_evento, principal, tipo_vinculo, sequencia, data_transferencia)
-            VALUES ($1, $2, $3, $4, $5, NULL, 'ATIVO', 'TRANSFERENCIA', 'N', 'ATUAL', $6, NULL)
-        `, [
-            novoVinculoId, 
-            id, 
-            to_employer_id || vinculoAtual.employer_id, 
-            to_workplace_id || vinculoAtual.workplace_id,
-            dataTransferencia,
-            novaSequencia
-        ]);
-
-        // 6. Atualizar tabela employees (retrocompatibilidade)
+        // 5. DESLIGAR o colaborador original com data MANUAL
         await query(`
             UPDATE employees 
-            SET employer_id = $1, workplace_id = $2, updated_at = CURRENT_TIMESTAMP
+            SET type = 'Desligado', "terminationDate" = $1, "terminationReason" = $2
             WHERE id = $3
-        `, [to_employer_id || vinculoAtual.employer_id, to_workplace_id || vinculoAtual.workplace_id, id]);
+        `, [dataDesligamento, reason || 'Reativação', id]);
 
-        // 7. Registrar transferência no histórico
-        const transferId = generateId();
+        // 6. Criar vínculo para o NOVO colaborador
+        const vinculoAtual = await getVinculoAtual(id);
+        const novoVinculoId = generateId();
+        const dataInicio = novaData + 'T00:00:00';
+        
         await query(`
-            INSERT INTO employee_vinculo_transfers 
-            (id, employee_id, from_employer_id, from_workplace_id, to_employer_id, to_workplace_id, changed_by, observation, data_transferencia)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            INSERT INTO employee_vinculos 
+            (id, employee_id, employer_id, workplace_id, principal, data_inicio, data_fim, status, tipo_evento, tipo_vinculo, sequencia)
+            VALUES ($1, $2, $3, $4, 'S', $5, NULL, 'ATIVO', 'REATIVACAO', 'ATUAL', $6)
         `, [
-            transferId, 
-            id, 
-            vinculoAtual.employer_id, 
-            vinculoAtual.workplace_id, 
-            to_employer_id || vinculoAtual.employer_id, 
-            to_workplace_id || vinculoAtual.workplace_id, 
-            changed_by, 
-            reason,
-            dataTransferencia
+            novoVinculoId, novoId, novoEmployer, novoWorkplace, dataInicio,
+            (vinculoAtual?.sequencia || 1) + 1
         ]);
 
-        // 8. Adicionar ao histórico de carreira
-        const careerId = generateId();
-        await query(`
-            INSERT INTO career_history 
-            (id, employee_id, role, sector, salary, move_type, date, responsible, observation)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        `, [
-            careerId, 
-            id, 
-            emp.role, 
-            emp.sector, 
-            emp.currentSalary, 
-            'TRANSFERENCIA', 
-            dataTransferencia.toISOString().split('T')[0], 
-            changed_by, 
-            reason
-        ]);
-
-        // 9. Commit da transação
+        // 7. Encerrar vínculo do original se existir
+        if (vinculoAtual) {
+            const dataFim = dataDesligamento + 'T00:00:00';
+            await query(`
+                UPDATE employee_vinculos 
+                SET data_fim = $1, status = 'PASSADO', tipo_vinculo = 'PASSADO'
+                WHERE id = $2
+            `, [dataFim, vinculoAtual.id]);
+        }
+        
         await query('COMMIT');
-
-        // 10. Buscar nomes para retorno
-        const [fromEmployer, toEmployer, fromWorkplace, toWorkplace] = await Promise.all([
-            vinculoAtual.employer_id ? query('SELECT name FROM companies WHERE id = $1', [vinculoAtual.employer_id]).then(r => r.rows[0]) : null,
-            to_employer_id ? query('SELECT name FROM companies WHERE id = $1', [to_employer_id]).then(r => r.rows[0]) : null,
-            vinculoAtual.workplace_id ? query('SELECT name FROM companies WHERE id = $1', [vinculoAtual.workplace_id]).then(r => r.rows[0]) : null,
-            to_workplace_id ? query('SELECT name FROM companies WHERE id = $1', [to_workplace_id]).then(r => r.rows[0]) : null
-        ]);
-
+        
         res.json({
             success: true,
-            transfer: {
-                id: transferId,
-                employee_name: emp.name,
-                from_employer: fromEmployer?.name,
-                to_employer: toEmployer?.name,
-                from_workplace: fromWorkplace?.name,
-                to_workplace: toWorkplace?.name,
-                data_transferencia: dataTransferencia,
-                sequencia_antiga: vinculoAtual.sequencia,
-                sequencia_nova: novaSequencia,
-                date: dataTransferencia.toISOString().split('T')[0],
-                changed_by
-            },
-            novo_vinculo: {
-                id: novoVinculoId,
-                sequencia: novaSequencia,
-                data_inicio: dataTransferencia,
-                tipo_vinculo: 'ATUAL'
-            }
+            message: 'Novo colaborador criado com sucesso!',
+            new_employee_id: novoId,
+            old_employee_id: id,
+            new_admission_date: novaData,
+            termination_date: dataDesligamento
         });
 
     } catch (error) {
         await query('ROLLBACK');
-        console.error('Erro na transferência:', error);
+        console.error('Erro na reativação:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Rota GET para obter histórico de transferências de um colaborador
+// Rota simples de transferência
+router.post('/employee/:id', async (req, res) => {
+    const { id } = req.params;
+    const { to_employer_id, to_workplace_id, reason, changed_by } = req.body;
+
+    if (!to_employer_id && !to_workplace_id) {
+        return res.status(400).json({ error: 'Informe pelo menos empregador ou unidade' });
+    }
+
+    try {
+        const vinculoAtual = await getVinculoAtual(id);
+        
+        if (vinculoAtual) {
+            await query(`
+                UPDATE employee_vinculos 
+                SET employer_id = COALESCE($1, employer_id), workplace_id = COALESCE($2, workplace_id)
+                WHERE id = $3
+            `, [to_employer_id, to_workplace_id, vinculoAtual.id]);
+        }
+        
+        await query(`
+            UPDATE employees 
+            SET employer_id = COALESCE($1, employer_id), workplace_id = COALESCE($2, workplace_id)
+            WHERE id = $3
+        `, [to_employer_id, to_workplace_id, id]);
+
+        res.json({ success: true, message: 'Transferência realizada' });
+    } catch (error) {
+        console.error('Erro:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota GET histórico
 router.get('/employee/:id/history', async (req, res) => {
     const { id } = req.params;
     
     try {
-        // Buscar histórico de transferências
-        const transferHistory = await query(`
-            SELECT 
-                evt.*,
-                emp_from.name as from_employer_name,
-                emp_to.name as to_employer_name,
-                wp_from.name as from_workplace_name,
-                wp_to.name as to_workplace_name
-            FROM employee_vinculo_transfers evt
-            LEFT JOIN companies emp_from ON evt.from_employer_id = emp_from.id
-            LEFT JOIN companies emp_to ON evt.to_employer_id = emp_to.id
-            LEFT JOIN companies wp_from ON evt.from_workplace_id = wp_from.id
-            LEFT JOIN companies wp_to ON evt.to_workplace_id = wp_to.id
-            WHERE evt.employee_id = $1
-            ORDER BY evt.changed_at DESC
-        `, [id]);
-
-        // Buscar histórico de vínculos
-        const vinculosHistory = await query(`
-            SELECT 
-                ev.*,
-                emp.name as employer_name,
-                wp.name as workplace_name
-            FROM employee_vinculos ev
-            LEFT JOIN companies emp ON ev.employer_id = emp.id
-            LEFT JOIN companies wp ON ev.workplace_id = wp.id
-            WHERE ev.employee_id = $1
-            ORDER BY ev.sequencia
-        `, [id]);
+        let transferHistory = [];
+        let vinculosHistory = [];
+        
+        try {
+            transferHistory = await query(`
+                SELECT evt.*, emp_from.name as from_employer_name, emp_to.name as to_employer_name,
+                       wp_from.name as from_workplace_name, wp_to.name as to_workplace_name
+                FROM employee_vinculo_transfers evt
+                LEFT JOIN companies emp_from ON evt.from_employer_id = emp_from.id
+                LEFT JOIN companies emp_to ON evt.to_employer_id = emp_to.id
+                LEFT JOIN companies wp_from ON evt.from_workplace_id = wp_from.id
+                LEFT JOIN companies wp_to ON evt.to_workplace_id = wp_to.id
+                WHERE evt.employee_id = $1
+                ORDER BY evt.changed_at DESC
+            `, [id]);
+            transferHistory = transferHistory.rows || [];
+        } catch (e) {
+            transferHistory = [];
+        }
+        
+        try {
+            vinculosHistory = await query(`
+                SELECT ev.*, emp.name as employer_name, wp.name as workplace_name
+                FROM employee_vinculos ev
+                LEFT JOIN companies emp ON ev.employer_id = emp.id
+                LEFT JOIN companies wp ON ev.workplace_id = wp.id
+                WHERE ev.employee_id = $1
+                ORDER BY ev.sequencia
+            `, [id]);
+            vinculosHistory = vinculosHistory.rows || [];
+        } catch (e) {
+            vinculosHistory = [];
+        }
 
         res.json({
             success: true,
-            transfer_history: transferHistory.rows,
-            vinculos_history: vinculosHistory.rows
+            transfer_history: transferHistory,
+            vinculos_history: vinculosHistory
         });
-
     } catch (error) {
-        console.error('Erro na transferência:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Listar todas as transferências
-router.get('/all', async (req, res) => {
-    try {
-        const result = await query(`
-            SELECT t.*, 
-                   fe.name as from_employer_name,
-                   te.name as to_employer_name,
-                   fw.name as from_workplace_name,
-                   tw.name as to_workplace_name,
-                   e.name as employee_name
-            FROM employee_vinculo_transfers t
-            LEFT JOIN employees e ON t.employee_id = e.id
-            LEFT JOIN companies fe ON t.from_employer_id = fe.id
-            LEFT JOIN companies te ON t.to_employer_id = te.id
-            LEFT JOIN companies fw ON t.from_workplace_id = fw.id
-            LEFT JOIN companies tw ON t.to_workplace_id = tw.id
-            WHERE t.employee_id = $1
-            ORDER BY t.changed_at DESC
-        `, [id]);
-
-        res.json(result.rows || []);
-    } catch (error) {
-        console.error('Erro ao buscar histórico:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Listar todas as transferências (admin)
-router.get('/all', async (req, res) => {
-    try {
-        const result = await query(`
-            SELECT t.*, 
-                   fe.name as from_employer_name,
-                   te.name as to_employer_name,
-                   fw.name as from_workplace_name,
-                   tw.name as to_workplace_name,
-                   e.name as employee_name,
-                   e.registrationNumber
-            FROM employee_vinculo_transfers t
-            LEFT JOIN employees e ON t.employee_id = e.id
-            LEFT JOIN companies fe ON t.from_employer_id = fe.id
-            LEFT JOIN companies te ON t.to_employer_id = te.id
-            LEFT JOIN companies fw ON t.from_workplace_id = fw.id
-            LEFT JOIN companies tw ON t.to_workplace_id = tw.id
-            ORDER BY t.changed_at DESC
-        `);
-
-        res.json(result.rows || []);
-    } catch (error) {
-        console.error('Erro ao listar transferências:', error);
+        console.error('Erro:', error);
         res.status(500).json({ error: error.message });
     }
 });

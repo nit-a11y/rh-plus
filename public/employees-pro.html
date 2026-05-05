@@ -157,6 +157,7 @@
                     <button onclick="window.openModuleFromEditor('uniforms')" class="w-full bg-blue-600 text-white py-2 rounded-lg font-black text-[9px] uppercase shadow hover:scale-105 transition-flex flex items-center justify-center gap-1"><span>🎽</span> Fardamento</button>
                     <button onclick="window.openModuleFromEditor('tools')" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-black text-[9px] uppercase shadow hover:scale-105 transition-flex flex items-center justify-center gap-1"><span>💻</span> Ativos</button>
                     <button onclick="window.openTerminationModal()" class="w-full bg-red-600 text-white py-2 rounded-lg font-black text-[9px] uppercase shadow hover:scale-105 transition-flex flex items-center justify-center gap-1"><span>🚪</span> Desligamento</button>
+                    <button onclick="window.openTransferModalFromEditor()" class="w-full bg-purple-600 text-white py-2 rounded-lg font-black text-[9px] uppercase shadow hover:scale-105 transition-flex flex items-center justify-center gap-1"><span>🔄</span> Transferência</button>
                 </div>
             </aside>
             <main class="flex-1 overflow-y-auto p-12 bg-gray-50/50 custom-scroll">
@@ -241,7 +242,7 @@
     <div id="pro-modal-container"
         class="hidden fixed inset-0 z-[200] bg-black/70 backdrop-blur-md flex items-center justify-center p-4 print:hidden">
         <div id="pro-modal-content"
-            class="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-pop border border-white/20">
+            class="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden overflow-y-auto max-h-[90vh] custom-scroll animate-pop border border-white/20">
         </div>
     </div>
     <script src="js/auth.js"></script>

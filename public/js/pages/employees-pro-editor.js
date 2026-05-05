@@ -99,65 +99,92 @@ window.openTransferModalFromEditor = async () => {
     // Se não encontrar nada, mostrar tudo
     const allEmployers = employers.length > 0 ? employers : companies;
     const allWorkplaces = workplaces.length > 0 ? workplaces : companies;
+    const today = new Date().toISOString().split('T')[0];
     
-    // Criar modal usando o container existente
     const modal = document.getElementById('pro-modal-container');
     const content = document.getElementById('pro-modal-content');
     
     content.innerHTML = `
-        <div class="bg-orange-500 p-6 text-white">
-            <h3 class="text-xl font-black uppercase italic">Transferência de Empregador/Unidade</h3>
+        <div class="bg-orange-500 p-6 text-white sticky top-0 z-10">
+            <h3 class="text-xl font-black uppercase italic">Transferência</h3>
+            <p class="text-xs font-medium mt-1">Transfere colaborador para novo vínculo</p>
         </div>
-        <div class="p-8 space-y-6">
+        <div class="p-8 space-y-6 overflow-y-auto max-h-[70vh] custom-scroll">
             <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                <p class="text-sm font-bold text-blue-600">Colaborador:</p>
+                <p class="text-sm font-bold text-blue-600">Colaborador ATUAL:</p>
                 <p class="text-lg font-black text-gray-800">${empData.name || 'Carregando...'}</p>
-                <p class="text-sm text-gray-600">Matrícula: ${empData.registrationNumber || 'Carregando...'}</p>
-                <p class="text-sm text-gray-600">Atual: ${empData.employer_name || 'N/A'} / ${empData.workplace_name || 'N/A'}</p>
+                <p class="text-sm text-gray-600">Matrícula: ${empData.registrationNumber || 'N/A'}</p>
+                <p class="text-sm text-gray-600">Empregador: ${empData.employer_name || 'N/A'}</p>
+                <p class="text-sm text-gray-600">Unidade: ${empData.workplace_name || 'N/A'}</p>
+                <p class="text-sm text-gray-600">Cargo: ${empData.role || 'N/A'}</p>
+                <p class="text-sm text-gray-600">Salário: ${empData.currentSalary || 'N/A'}</p>
+                <p class="text-sm text-gray-600">Admissão: ${empData.admissionDate || 'N/A'}</p>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="border-t border-gray-200 pt-4">
+                <p class="text-sm font-bold text-orange-600 mb-3">DADOS DA TRANSFERÊNCIA</p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Data Desligamento (Atual) *</label>
+                    <input type="date" id="termination-date" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500" value="${today}">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Nova Data de Admissão *</label>
+                    <input type="date" id="new-admission-date" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500" value="${today}">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">Novo Empregador</label>
                     <select id="new-employer" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500">
-                        <option value="">Manter atual</option>
+                        <option value="">-- Selecione --</option>
                         ${allEmployers.map(e => 
                             `<option value="${e.id}" ${e.id === empData.employer_id ? 'selected' : ''}>${e.name}</option>`
                         ).join('')}
                     </select>
-                    <p class="text-xs text-gray-500 mt-1">${allEmployers.length} empresa(s) disponível(is)</p>
                 </div>
-                
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">Nova Unidade</label>
                     <select id="new-workplace" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500">
-                        <option value="">Manter atual</option>
+                        <option value="">-- Selecione --</option>
                         ${allWorkplaces.map(w => 
                             `<option value="${w.id}" ${w.id === empData.workplace_id ? 'selected' : ''}>${w.name}</option>`
                         ).join('')}
                     </select>
-                    <p class="text-xs text-gray-500 mt-1">${allWorkplaces.length} unidade(s) disponível(is)</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Novo Cargo/Função</label>
+                    <input type="text" id="new-role" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500" value="${empData.role || ''}">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Novo Salário</label>
+                    <input type="text" id="new-salary" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 font-bold text-green-700" value="${empData.currentSalary || ''}">
                 </div>
             </div>
             
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Motivo da Transferência</label>
-                <textarea id="transfer-reason" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500" rows="3" 
+                <label class="block text-sm font-bold text-gray-700 mb-2">Motivo / Observação</label>
+                <textarea id="transfer-reason" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500" rows="2" 
                     placeholder="Descreva o motivo da transferência..."></textarea>
             </div>
             
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Responsável pela Transferência</label>
-                <input type="text" id="transfer-responsible" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500" 
-                    placeholder="Nome do responsável..." value="Admin">
+            <div class="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                <p class="text-xs font-bold text-amber-700">ATENÇÃO:</p>
+                <p class="text-xs text-amber-600">Uma nova transferência será feita com os dados acima.<br>O colaborador ATUAL será DESLIGADO na data informada.</p>
             </div>
             
-            <div class="flex justify-end gap-4 pt-4">
+            <div class="flex justify-end gap-4 pt-4 sticky bottom-0 bg-white py-2">
                 <button onclick="window.closeProModal()" 
                     class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-all">
                     Cancelar
                 </button>
-                <button onclick="window.executeTransferFromEditor()" 
+                <button onclick="window.executeReativacaoFromEditor()" 
                     class="px-6 py-3 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700 transition-all">
                     Confirmar Transferência
                 </button>
@@ -168,56 +195,72 @@ window.openTransferModalFromEditor = async () => {
     modal.classList.remove('hidden');
 };
 
-window.executeTransferFromEditor = async () => {
+window.executeReativacaoFromEditor = async () => {
+    const newAdmissionDate = document.getElementById('new-admission-date').value;
+    const terminationDate = document.getElementById('termination-date').value;
     const newEmployer = document.getElementById('new-employer').value;
     const newWorkplace = document.getElementById('new-workplace').value;
+    const newRole = document.getElementById('new-role').value;
+    const newSalary = document.getElementById('new-salary').value;
     const reason = document.getElementById('transfer-reason').value;
-    const responsible = document.getElementById('transfer-responsible').value;
     
-    if (!newEmployer && !newWorkplace) {
-        alert('Selecione pelo menos um novo empregador ou unidade');
+    if (!newAdmissionDate) {
+        alert('Informe a nova data de admissão');
         return;
     }
     
-    if (!reason.trim()) {
-        alert('Informe o motivo da transferência');
+    if (!terminationDate) {
+        alert('Informe a data de desligamento do colaborador atual');
+        return;
+    }
+    
+    if (!newEmployer && !newWorkplace && !newRole && !newSalary) {
+        alert('Informe pelo menos uma mudança');
+        return;
+    }
+    
+    if (!confirm('Confirmar transferência? O colaborador ATUAL será DESLIGADO na data informada e um NOVO vínculo será criado.')) {
         return;
     }
     
     try {
-        const res = await fetch(`/api/transfers/employee/${currentEmpId}`, {
+        const res = await fetch(`/api/transfers/employee/${currentEmpId}/reativar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 to_employer_id: newEmployer || null,
                 to_workplace_id: newWorkplace || null,
-                reason,
-                changed_by: responsible
+                new_role: newRole || null,
+                new_salary: newSalary || null,
+                new_admission_date: newAdmissionDate,
+                termination_date: terminationDate,
+                reason: reason,
+                changed_by: 'Sistema'
             })
         });
         
         const data = await res.json();
         
-        if (data.success) {
-            alert(`Transferência registrada com sucesso!\n\n${data.transfer.employee_name}\nDe: ${data.transfer.from_employer || 'N/A'} / ${data.transfer.from_workplace || 'N/A'}\nPara: ${data.transfer.to_employer || 'N/A'} / ${data.transfer.to_workplace || 'N/A'}`);
+        if (res.ok && data.success) {
+            alert(`Reativação realizada com sucesso!\n\nNovo colaborador criado (ID: ${data.new_employee_id})\nData admissão: ${data.new_admission_date}\nData desligamento: ${terminationDate}\n\nO colaborador original foi desligado.`);
             window.closeProModal();
             
-            // Recarregar dados do colaborador no editor usando a função correta
-            if (typeof window.loadEditorData === 'function') {
-                window.loadEditorData(currentEmpId);
-            } else if (typeof window.openEmployeeEditor === 'function') {
-                window.openEmployeeEditor(currentEmpId);
-            } else {
-                console.log('Funções disponíveis:', Object.keys(window).filter(k => k.includes('load') || k.includes('edit')));
-                // Recarregar a página como fallback
-                setTimeout(() => location.reload(), 1000);
+            // Abrir o novo colaborador criado
+            if (data.new_employee_id) {
+                if (typeof window.loadEditorData === 'function') {
+                    window.loadEditorData(data.new_employee_id);
+                } else if (typeof window.openEmployeeEditor === 'function') {
+                    window.openEmployeeEditor(data.new_employee_id);
+                } else {
+                    setTimeout(() => location.reload(), 1000);
+                }
             }
         } else {
-            alert('Erro ao registrar transferência: ' + (data.error || 'Erro desconhecido'));
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
         }
     } catch (error) {
-        console.error('Erro na transferência:', error);
-        alert('Erro ao registrar transferência. Verifique o console.');
+        console.error('Erro na reativação:', error);
+        alert('Erro de comunicação: ' + error.message);
     }
 };
 
