@@ -43,7 +43,7 @@ router.get('/tempo-acumulado-cpf/:cpf', async (req, res) => {
     try {
         const cpfLimpo = cpf.replace(/\D/g, '');
         
-        // Buscar todos os funcion�rio com o mesmo CPF na tabela employees
+        // Buscar todos os funcionários com o mesmo CPF na tabela employees
         let employees_result = [];
         try {
             employees_result = await query(`
@@ -127,7 +127,7 @@ router.get('/tempo-acumulado-cpf/:cpf', async (req, res) => {
     }
 });
 
-// Fun��o auxiliar para formatar tempo
+// Função auxiliar para formatar tempo
 function calcularTempoCasaFormatado(dias) {
     if (dias <= 0) return '0 meses';
     
@@ -172,7 +172,7 @@ router.post('/benefits/bulk-init-va', async (req, res) => {
         await transaction(async (client) => {
             for (const emp of employees.rows) {
                 const existing = await client.query(
-                    `SELECT id FROM employee_benefits WHERE employee_id = $1 AND (benefit_name = $2 OR benefit_name = 'VALE ALIMENTA��O')`,
+                    `SELECT id FROM employee_benefits WHERE employee_id = $1 AND (benefit_name = $2 OR benefit_name = 'VALE ALIMENTAÇÃO')`,
                     [emp.id, vaName]
                 );
                 if (existing.rows.length > 0) continue;
@@ -215,7 +215,7 @@ router.post('/admit', async (req, res) => {
     const id = generateId();
     const responsible = 'Sistema RH+ (Auto)';
 
-    // Normaliza��o autom�tica dos dados do employee
+    // Normalizacao automatica dos dados do employee
     if (emp.name) emp.name = emp.name.toString().toUpperCase().trim();
     if (emp.role) emp.role = emp.role.toString().toUpperCase().trim();
     if (emp.sector) emp.sector = emp.sector.toString().toUpperCase().trim();
@@ -270,7 +270,7 @@ router.post('/admit', async (req, res) => {
                 return fieldMapping[lower] || name;
             };
 
-            // Preparar campos e valores para inser��o
+            // Preparar campos e valores para insercao
             const empKeys = Object.keys(emp).map(k => normalizeFieldName(k));
             const empValues = Object.values(emp);
             const allKeys = ['id', ...empKeys];
@@ -297,8 +297,8 @@ router.post('/admit', async (req, res) => {
                     let itemSize = 'M';
 
                     if (typeLower.includes('camisa') || typeLower.includes('polo')) itemSize = sizes?.shirt || 'M';
-                    else if (typeLower.includes('calca') || typeLower.includes('cal�a') || typeLower.includes('jeans')) itemSize = sizes?.pants || '40';
-                    else if (typeLower.includes('bota') || typeLower.includes('sapato') || typeLower.includes('tenis') || typeLower.includes('t�nis')) itemSize = sizes?.shoe || '40';
+                    else if (typeLower.includes('calca') || typeLower.includes('calça') || typeLower.includes('jeans')) itemSize = sizes?.pants || '40';
+                    else if (typeLower.includes('bota') || typeLower.includes('sapato') || typeLower.includes('tenis') || typeLower.includes('tênis')) itemSize = sizes?.shoe || '40';
 
                     const cycleDays = emp.type === 'ADM' ? 365 : 180;
                     const nextDate = new Date(emp.admissionDate);
@@ -473,7 +473,7 @@ router.get('/:id/dossier', async (req, res) => {
     }
 });
 
-// Fun��o utilit�ria para obter v�nculo ativo
+// Função utilitária para obter vínculo ativo
 async function getVinculoAtual(employeeId) {
     const result = await query(`
         SELECT * FROM employee_vinculos 
@@ -660,15 +660,15 @@ router.post('/:id/documentFiles', async (req, res) => {
 });
 
 
-// Rota DELETE para excluir v�nculo espec�fico
+// Rota DELETE para excluir vínculo específico
 router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
     const { id, vinculoId } = req.params;
     
     try {
-        // Iniciar transa��o
+        // Iniciar transação
         await query('BEGIN');
         
-        // 1. Verificar se o v�nculo existe e pertence ao employee
+        // 1. Verificar se o vínculo existe e pertence ao employee
         const vinculoCheck = await query(`
             SELECT ev.*, 
                    COUNT(*) OVER() as total_vinculos,
@@ -679,14 +679,14 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
         
         if (vinculoCheck.rows.length === 0) {
             await query('ROLLBACK');
-            return res.status(404).json({ error: 'V�nculo n�o encontrado' });
+            return res.status(404).json({ error: 'Vínculo não encontrado' });
         }
         
         const vinculo = vinculoCheck.rows[0];
         const totalVinculos = vinculo.total_vinculos;
         const ativosCount = vinculo.ativos_count;
         
-        // 2. Aplicar regras de exclus�o
+        // 2. Aplicar regras de exclusão
         const deleteRules = validateDeleteRules(vinculo, totalVinculos, ativosCount);
         
         if (!deleteRules.canDelete) {
@@ -694,7 +694,7 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
             return res.status(400).json({ error: deleteRules.reason });
         }
         
-        // 3. Se for o �nico v�nculo, tamb�m limpar a tabela employees
+        // 3. Se for o único vínculo, também limpar a tabela employees
         if (totalVinculos === 1) {
             await query(`
                 UPDATE employees 
@@ -702,10 +702,10 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
                 WHERE id = $1
             `, [id]);
             
-            console.log('? Tabela employees limpa (�nico v�nculo removido)');
+            console.log('? Tabela employees limpa (único vínculo removido)');
         }
         
-        // 4. Se for v�nculo ATUAL e houver PASSADOS, promover o mais recente
+        // 4. Se for vínculo ATUAL e houver PASSADOS, promover o mais recente
         if (vinculo.tipo_vinculo === 'ATUAL' && vinculo.status === 'ATIVO') {
             const promoteVinculo = await query(`
                 SELECT id FROM employee_vinculos 
@@ -721,7 +721,7 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
                     WHERE id = $1
                 `, [promoteVinculo.rows[0].id]);
                 
-                // Atualizar employees para o novo v�nculo ATUAL
+                // Atualizar employees para o novo vínculo ATUAL
                 await query(`
                     UPDATE employees e
                     SET employer_id = ev.employer_id, 
@@ -731,11 +731,11 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
                     WHERE e.id = $1 AND ev.id = $2
                 `, [id, promoteVinculo.rows[0].id]);
                 
-                console.log('? V�nculo promovido para ATUAL');
+                console.log('? Vínculo promovido para ATUAL');
             }
         }
         
-        // 5. Registrar exclus�o no log
+        // 5. Registrar exclusão no log
         await query(`
             INSERT INTO operation_logs 
             (id, operation_type, table_name, record_id, old_data, status, created_at)
@@ -749,20 +749,20 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
             'SUCCESS'
         ]);
         
-        // 6. Excluir o v�nculo
+        // 6. Excluir o vínculo
         await query(`
             DELETE FROM employee_vinculos 
             WHERE id = $1 AND employee_id = $2
         `, [vinculoId, id]);
         
-        // 7. Commit da transa��o
+        // 7. Commit da transação
         await query('COMMIT');
         
-        console.log(`? V�nculo ${vinculoId} exclu�do com sucesso`);
+        console.log(`? Vínculo ${vinculoId} excluído com sucesso`);
         
         res.json({
             success: true,
-            message: 'V�nculo exclu�do com sucesso',
+            message: 'Vínculo excluído com sucesso',
             vinculo_excluido: {
                 id: vinculoId,
                 employer_id: vinculo.employer_id,
