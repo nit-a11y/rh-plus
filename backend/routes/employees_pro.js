@@ -576,12 +576,11 @@ router.put('/:id/metadata', async (req, res) => {
                 if (vinculoPrincipal && (vinculoPrincipal.employer_id || vinculoPrincipal.workplace_id)) {
                     await client.query(`
                         UPDATE employees 
-                        SET employer_id = $1, workplace_id = $2, updated_at = $3
-                        WHERE id = $4
+                        SET employer_id = $1, workplace_id = $2
+                        WHERE id = $3
                     `, [
                         vinculoPrincipal.employer_id || null,
                         vinculoPrincipal.workplace_id || null,
-                        new Date(),
                         id
                     ]);
                 }
@@ -647,7 +646,7 @@ router.post('/:id/documentFiles', async (req, res) => {
         // Atualizar metadata completo
         await query(`
             UPDATE employees 
-            SET metadata = $1, updated_at = CURRENT_TIMESTAMP
+            SET metadata = $1
             WHERE id = $2
         `, [JSON.stringify(parsedMeta), id]);
         
@@ -698,7 +697,7 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
         if (totalVinculos === 1) {
             await query(`
                 UPDATE employees 
-                SET employer_id = NULL, workplace_id = NULL, updated_at = CURRENT_TIMESTAMP
+                SET employer_id = NULL, workplace_id = NULL
                 WHERE id = $1
             `, [id]);
             
@@ -717,7 +716,7 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
             if (promoteVinculo.rows.length > 0) {
                 await query(`
                     UPDATE employee_vinculos 
-                    SET tipo_vinculo = 'ATUAL', status = 'ATIVO', updated_at = CURRENT_TIMESTAMP
+                    SET tipo_vinculo = 'ATUAL', status = 'ATIVO'
                     WHERE id = $1
                 `, [promoteVinculo.rows[0].id]);
                 
@@ -725,8 +724,7 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
                 await query(`
                     UPDATE employees e
                     SET employer_id = ev.employer_id, 
-                        workplace_id = ev.workplace_id,
-                        updated_at = CURRENT_TIMESTAMP
+                        workplace_id = ev.workplace_id
                     FROM employee_vinculos ev
                     WHERE e.id = $1 AND ev.id = $2
                 `, [id, promoteVinculo.rows[0].id]);
@@ -899,8 +897,7 @@ router.post('/:id/vinculos', async (req, res) => {
                 SET data_fim = $1, 
                     data_transferencia = $1,
                     status = 'TRANSFERIDO',
-                    tipo_vinculo = 'PASSADO',
-                    updated_at = CURRENT_TIMESTAMP
+                    tipo_vinculo = 'PASSADO'
                 WHERE employee_id = $2 AND tipo_vinculo = 'ATUAL' AND status = 'ATIVO'
             `, [data_inicio, id]);
         }
@@ -931,7 +928,7 @@ router.post('/:id/vinculos', async (req, res) => {
         if (tipo_vinculo === 'ATUAL') {
             await query(`
                 UPDATE employees 
-                SET employer_id = $1, workplace_id = $2, updated_at = CURRENT_TIMESTAMP
+                SET employer_id = $1, workplace_id = $2
                 WHERE id = $3
             `, [employer_id, workplace_id, id]);
         }
