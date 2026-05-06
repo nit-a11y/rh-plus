@@ -74,4 +74,36 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// Atualização parcial de campo (Edição In-Line)
+router.put('/:id', async (req, res) => {
+    const { id } = req.params;
+    const data = req.body; // Espera { field: "nome_do_campo", value: "valor" } ou um objeto com múltiplos campos
+
+    try {
+        let sql = '';
+        let values = [];
+
+        if (data.field && data.value !== undefined) {
+            // Edição de campo único
+            sql = `UPDATE employees SET "${data.field}" = $1, "updated_at" = CURRENT_TIMESTAMP WHERE id = $2`;
+            values = [data.value === '' ? null : data.value, id];
+        } else {
+            // Edição de múltiplos campos
+            const sets = [];
+            Object.keys(data).forEach((key, i) => {
+                sets.push(`"${key}" = $${i + 1}`);
+                values.push(data[key] === '' ? null : data[key]);
+            });
+            values.push(id);
+            sql = `UPDATE employees SET ${sets.join(', ')}, "updated_at" = CURRENT_TIMESTAMP WHERE id = $${values.length}`;
+        }
+
+        await query(sql, values);
+        res.json({ success: true, message: 'Registro atualizado' });
+    } catch (err) {
+        console.error('Erro ao atualizar (raw):', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

@@ -117,17 +117,53 @@
                     </td>
                     ${columns.map(c => {
                         let val = e[c];
-                        if (c.toLowerCase().includes('date') && val) {
-                            val = new Date(val).toLocaleDateString('pt-BR');
-                        }
-                        if (val === null || val === undefined) val = '<span class="text-gray-300 italic">null</span>';
+                        const isDate = c.toLowerCase().includes('date');
+                        const isProtected = ['id', 'criado_em', 'updated_at'].includes(c);
                         
-                        return `<td class="p-2 border-l max-w-[150px] truncate" title="${e[c] || ''}">${val}</td>`;
+                        let displayVal = val;
+                        if (isDate && val) displayVal = new Date(val).toLocaleDateString('pt-BR');
+                        if (val === null || val === undefined) displayVal = '';
+
+                        return `
+                            <td class="p-2 border-l max-w-[200px] truncate ${isProtected ? 'bg-gray-50 text-gray-400' : 'cursor-text focus:bg-white focus:ring-1 focus:ring-red-500'}" 
+                                ${isProtected ? '' : `contenteditable="true" onblur="updateField('${e.id}', '${c}', this)"`}
+                                title="${isProtected ? 'Protegido' : 'Clique para editar'}">
+                                ${displayVal}
+                            </td>
+                        `;
                     }).join('')}
                 </tr>
             `).join('');
 
             document.getElementById('counter').innerText = `${filtered.length} Colaboradores Encontrados`;
+        }
+
+        async function updateField(id, field, el) {
+            let newValue = el.innerText.trim();
+            
+            // Tratamento especial para datas
+            if (field.toLowerCase().includes('date') && newValue.includes('/')) {
+                const [d, m, y] = newValue.split('/');
+                if (d && m && y) newValue = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+            }
+
+            try {
+                const res = await fetch(`/api/raw-employees/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ field, value: newValue })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    el.classList.add('bg-green-50');
+                    setTimeout(() => el.classList.remove('bg-green-50'), 1000);
+                } else {
+                    alert('Erro ao atualizar: ' + result.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro na conexão ao atualizar');
+            }
         }
 
         function openModal() {
