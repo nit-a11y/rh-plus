@@ -1003,7 +1003,7 @@ async function corrigirEstadoVinculos(employeeId) {
         if (vinculoAtual.rows.length > 0) {
             await query(`
                 UPDATE employees 
-                SET employer_id = $1, workplace_id = $2, updated_at = CURRENT_TIMESTAMP
+                SET employer_id = $1, workplace_id = $2
                 WHERE id = $3
             `, [
                 vinculoAtual.rows[0].employer_id,
