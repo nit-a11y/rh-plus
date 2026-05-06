@@ -39,12 +39,15 @@ router.post('/', async (req, res) => {
         const finalColumns = [];
 
         columns.forEach((col, index) => {
-            if (data[col] !== undefined) {
+            if (data[col] !== undefined && data[col] !== '') {
                 finalColumns.push(`"${col}"`);
                 values.push(data[col]);
                 placeholders.push(`$${values.length}`);
-            } else if (col === 'id') {
-                finalColumns.push(`"id"`);
+            } else if (col === 'metadata') {
+                finalColumns.push(`"metadata"`);
+                values.push('{}');
+                placeholders.push(`$${values.length}`);
+            } else if (col === 'id') {                finalColumns.push(`"id"`);
                 values.push(id);
                 placeholders.push(`$${values.length}`);
             }

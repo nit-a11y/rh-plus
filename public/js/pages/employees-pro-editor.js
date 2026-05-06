@@ -399,6 +399,20 @@ window.loadEditorData = async (id) => {
 
         if (!resJson.success) throw new Error(resJson.error);
 
+        let metaFiles = [];
+        if (resJson.employee && resJson.employee.metadata) {
+            try {
+                const meta = typeof resJson.employee.metadata === 'string' 
+                    ? JSON.parse(resJson.employee.metadata) 
+                    : resJson.employee.metadata;
+                if (meta && meta.documentFiles) {
+                    metaFiles = meta.documentFiles;
+                }
+            } catch (e) {
+                console.error('Erro ao processar metadata:', e);
+            }
+        }
+
         currentData = {
             employee: resJson.employee || {},
             documents: resJson.documents || {},
@@ -411,7 +425,7 @@ window.loadEditorData = async (id) => {
             dependents: resJson.dependents || [],
             emergencyContacts: resJson.emergencyContacts || [],
             vinculos: resJson.vinculos || [],
-            documentFiles: resJson.documentFiles || (resJson.employee?.metadata ? JSON.parse(resJson.employee.metadata).documentFiles : []) || []
+            documentFiles: resJson.documentFiles || metaFiles
         };
 
         document.getElementById('editor-name').innerText = currentData.employee.name || 'Sem Nome';
