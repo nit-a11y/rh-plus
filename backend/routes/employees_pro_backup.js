@@ -1,4 +1,4 @@
-ï»¿const express = require('express');
+const express = require('express');
 const crypto = require('crypto');
 const { query, transaction } = require('../config/database');
 
@@ -43,7 +43,7 @@ router.get('/tempo-acumulado-cpf/:cpf', async (req, res) => {
     try {
         const cpfLimpo = cpf.replace(/\D/g, '');
         
-        // Buscar todos os funcionï¿½rio com o mesmo CPF na tabela employees
+        // Buscar todos os funcionário com o mesmo CPF na tabela employees
         let employees_result = [];
         try {
             employees_result = await query(`
@@ -63,10 +63,34 @@ router.get('/tempo-acumulado-cpf/:cpf', async (req, res) => {
             employees_result = [];
         }
         
-        // Sistema simplificado - busca apenas na tabela employees
+        // Se não encontrar em employees, buscar em employee_vinculos pelo employee_id
+        let vinculos_result = [];
+        if (employees_result.length > 0) {
+            try {
+                const employeeIds = employees_result.map(e => e.id);
+                vinculos_result = await query(`
+                    SELECT 
+                        id,
+                        employee_id,
+                        employer_id,
+                        workplace_id,
+                        admission_date,
+                        termination_date,
+                        sequencia
+                    FROM employee_vinculos 
+                    WHERE employee_id = ANY($1)
+                    ORDER BY sequencia
+                `, [employeeIds]);
+                vinculos_result = vinculos_result.rows || [];
+            } catch (e) {
+                vinculos_result = [];
+            }
+        }
+
+        // Combinar registros
         let todosRegistros = [];
         
-        // Adicionar apenas employees
+        // Adicionar employees
         for (const emp of employees_result) {
             todosRegistros.push({
                 ...emp,
@@ -74,6 +98,20 @@ router.get('/tempo-acumulado-cpf/:cpf', async (req, res) => {
                 dataAdmissao: emp.admissionDate,
                 dataTerminacao: emp.terminationDate || emp.type === 'Desligado' ? emp.terminationDate : null
             });
+        }
+        
+        // Adicionar registros de vinculos que não estão em employees (se houver duplicatas)
+        for (const v of vinculos_result) {
+            const jaExiste = todosRegistros.find(e => e.id === v.employee_id);
+            if (!jaExiste) {
+                todosRegistros.push({
+                    id: v.id,
+                    employee_id: v.employee_id,
+                    from_table: 'vinculos',
+                    dataAdmissao: v.admission_date,
+                    dataTerminacao: v.termination_date
+                });
+            }
         }
         
         if (todosRegistros.length === 0) {
@@ -127,7 +165,7 @@ router.get('/tempo-acumulado-cpf/:cpf', async (req, res) => {
     }
 });
 
-// Funï¿½ï¿½o auxiliar para formatar tempo
+// Função auxiliar para formatar tempo
 function calcularTempoCasaFormatado(dias) {
     if (dias <= 0) return '0 meses';
     
@@ -172,7 +210,7 @@ router.post('/benefits/bulk-init-va', async (req, res) => {
         await transaction(async (client) => {
             for (const emp of employees.rows) {
                 const existing = await client.query(
-                    `SELECT id FROM employee_benefits WHERE employee_id = $1 AND (benefit_name = $2 OR benefit_name = 'VALE ALIMENTAï¿½ï¿½O')`,
+                    `SELECT id FROM employee_benefits WHERE employee_id = $1 AND (benefit_name = $2 OR benefit_name = 'VALE ALIMENTAÇÃO')`,
                     [emp.id, vaName]
                 );
                 if (existing.rows.length > 0) continue;
@@ -215,7 +253,7 @@ router.post('/admit', async (req, res) => {
     const id = generateId();
     const responsible = 'Sistema RH+ (Auto)';
 
-    // Normalizaï¿½ï¿½o automï¿½tica dos dados do employee
+    // Normalização automática dos dados do employee
     if (emp.name) emp.name = emp.name.toString().toUpperCase().trim();
     if (emp.role) emp.role = emp.role.toString().toUpperCase().trim();
     if (emp.sector) emp.sector = emp.sector.toString().toUpperCase().trim();
@@ -270,7 +308,7 @@ router.post('/admit', async (req, res) => {
                 return fieldMapping[lower] || name;
             };
 
-            // Preparar campos e valores para inserï¿½ï¿½o
+            // Preparar campos e valores para inserção
             const empKeys = Object.keys(emp).map(k => normalizeFieldName(k));
             const empValues = Object.values(emp);
             const allKeys = ['id', ...empKeys];
@@ -283,7 +321,11 @@ router.post('/admit', async (req, res) => {
             
             await client.query(`INSERT INTO employees (${allKeys.map(k => `"${k}"`).join(',')}) VALUES (${empPlaceholders})`, allValues);
 
-            
+            const docKeys = ['employee_id', ...Object.keys(docs)];
+            const docValues = [id, ...Object.values(docs)];
+            const docPlaceholders = docKeys.map((_, i) => `$${i + 1}`).join(',');
+            await client.query(`INSERT INTO employee_documents (${docKeys.join(',')}) VALUES (${docPlaceholders})`, docValues);
+
             const roleResult = await client.query(`SELECT id FROM roles_master WHERE name = $1`, [emp.role]);
             if (roleResult.rows[0]) {
                 const itemsResult = await client.query(
@@ -297,8 +339,8 @@ router.post('/admit', async (req, res) => {
                     let itemSize = 'M';
 
                     if (typeLower.includes('camisa') || typeLower.includes('polo')) itemSize = sizes?.shirt || 'M';
-                    else if (typeLower.includes('calca') || typeLower.includes('calï¿½a') || typeLower.includes('jeans')) itemSize = sizes?.pants || '40';
-                    else if (typeLower.includes('bota') || typeLower.includes('sapato') || typeLower.includes('tenis') || typeLower.includes('tï¿½nis')) itemSize = sizes?.shoe || '40';
+                    else if (typeLower.includes('calca') || typeLower.includes('calça') || typeLower.includes('jeans')) itemSize = sizes?.pants || '40';
+                    else if (typeLower.includes('bota') || typeLower.includes('sapato') || typeLower.includes('tenis') || typeLower.includes('tênis')) itemSize = sizes?.shoe || '40';
 
                     const cycleDays = emp.type === 'ADM' ? 365 : 180;
                     const nextDate = new Date(emp.admissionDate);
@@ -369,13 +411,8 @@ router.get('/:id/dossier', async (req, res) => {
         const empResult = await query(sqlEmp, [id]);
         
         if (!empResult.rows[0]) {
-            console.log(`? Colaborador ${id} nÃ£o encontrado`);
-            return res.status(404).json({ 
-                success: false, 
-                error: 'Colaborador nÃ£o localizado',
-                received_id: id,
-                suggestion: 'Verifique se o ID estÃ¡ correto ou recarregue a pÃ¡gina'
-            });
+            console.log(`? Colaborador ${id} não encontrado`);
+            return res.status(404).json({ success: false, error: 'Colaborador nao localizado' });
         }
         
         console.log(`? Colaborador encontrado: ${empResult.rows[0].name}`);
@@ -422,7 +459,14 @@ router.get('/:id/dossier', async (req, res) => {
             query(`SELECT * FROM sst_certificates WHERE employee_id = $1 ORDER BY start_date DESC`, [id]),
             query(`SELECT * FROM tool_items WHERE employee_id = $1 AND status != 'Devolvido'`, [id]),
             query(`SELECT * FROM tool_history WHERE employee_id = $1 ORDER BY data_hora DESC`, [id]),
-            Promise.resolve({ rows: [] }), // NÃ£o busca mais employee_vinculos
+            query(`
+                SELECT ev.*, emp.name as employer_name, emp.cnpj as employer_cnpj, wp.name as workplace_name, wp.cnpj as workplace_cnpj
+                FROM employee_vinculos ev
+                LEFT JOIN companies emp ON ev.employer_id = emp.id
+                LEFT JOIN companies wp ON ev.workplace_id = wp.id
+                WHERE ev.employee_id = $1
+                ORDER BY ev.principal DESC
+            `, [id]),
             query(`
                 SELECT * FROM employee_terminations
                 WHERE employee_id = $1
@@ -462,7 +506,19 @@ router.get('/:id/dossier', async (req, res) => {
             }
         }
 
-        // NÃ£o usa mais employee_vinculos - dados diretos do employee
+        // Adicionar vinculos ao employee se existir
+        if (data.vinculos && data.vinculos.length > 0) {
+            data.employee.vinculos = data.vinculos;
+            const principal = data.vinculos.find(v => v.principal) || data.vinculos[0];
+            if (principal) {
+                data.employee.employer_id = principal.employer_id;
+                data.employee.workplace_id = principal.workplace_id;
+                data.employee.employer_name = principal.employer_name;
+                data.employee.employer_cnpj = principal.employer_cnpj;
+                data.employee.workplace_name = principal.workplace_name;
+                data.employee.workplace_cnpj = principal.workplace_cnpj;
+            }
+        }
 
         console.log(`? Dossier completo enviado para ${empResult.rows[0].name}`);
         res.json(data);
@@ -473,7 +529,7 @@ router.get('/:id/dossier', async (req, res) => {
     }
 });
 
-// Funï¿½ï¿½o utilitï¿½ria para obter vï¿½nculo ativo
+// Função utilitária para obter vínculo ativo
 async function getVinculoAtual(employeeId) {
     const result = await query(`
         SELECT * FROM employee_vinculos 
@@ -484,6 +540,8 @@ async function getVinculoAtual(employeeId) {
     return result.rows[0] || null;
 }
 
+// Rota PUT /:id/metadata refatorada (NÃO DESTRUTIVA)
+
 // Middleware anti-cache para rota metadata
 router.use('/:id/metadata', (req, res, next) => {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -492,23 +550,24 @@ router.use('/:id/metadata', (req, res, next) => {
     next();
 });
 
-// ROTA PRINCIPAL DE SALVAMENTO - SIMPLIFICADA
 router.put('/:id/metadata', async (req, res) => {
     const { id } = req.params;
     const { emp, docs } = req.body;
 
-    // VALIDAÃ‡ÃƒO JSON ROBUSTA
+    // VALIDAÇÃO JSON ROBUSTA - Prevenir erro de parsing
     if (emp && emp.metadata) {
         try {
+            // Tentar fazer parse do metadata
             const parsed = JSON.parse(emp.metadata);
             emp.metadata = JSON.stringify(parsed);
         } catch (jsonError) {
-            console.log('Metadata invÃ¡lido detectado, limpando:', jsonError.message);
+            // Se falhar, limpar para objeto vazio
+            console.log('Metadata inválido detectado, limpando:', jsonError.message);
             emp.metadata = '{}';
         }
     }
 
-    // MAPEAMENTO DE CAMPOS - Frontend â†’ Banco
+    // Mapeamento de campos do frontend para colunas do banco
     const fieldMapping = {
         'birthdate': 'birthDate',
         'birth_date': 'birthDate',
@@ -535,13 +594,13 @@ router.put('/:id/metadata', async (req, res) => {
         'terminationreason': 'terminationReason'
     };
 
-    // FUNÃ‡ÃƒO DE NORMALIZAÃ‡ÃƒO
+    // Normaliza nomes de campos
     const normalizeFieldName = (name) => {
         const lower = name.toLowerCase();
         return fieldMapping[lower] || name;
     };
 
-    // NORMALIZAÃ‡ÃƒO DE DADOS
+    // Normalização de campos do emp
     if (emp) {
         if (emp.registrationNumber) emp.registrationNumber = emp.registrationNumber.toString().replace(/[^\d]/g, '');
         if (emp.cpf) emp.cpf = emp.cpf.toString().replace(/[^\d]/g, '');
@@ -560,7 +619,7 @@ router.put('/:id/metadata', async (req, res) => {
 
     try {
         await transaction(async (client) => {
-            // 1. ATUALIZAR DADOS DO FUNCIONÃRIO
+            // Atualiza funcionário - mapeando nomes de campos
             const empKeys = Object.keys(emp).filter(k => k !== 'vinculos');
             if (empKeys.length > 0) {
                 const mappedKeys = empKeys.map(k => normalizeFieldName(k));
@@ -569,30 +628,123 @@ router.put('/:id/metadata', async (req, res) => {
                     [...empKeys.map(k => emp[k]), id]);
             }
 
-            // 2. ATUALIZAR VÃNCULOS (Simplificado - apenas campos diretos)
-            if (emp.vinculos && Array.isArray(emp.vinculos) && emp.vinculos.length > 0) {
-                const vinculoPrincipal = emp.vinculos.find(v => v.principal) || emp.vinculos[0];
-                
-                if (vinculoPrincipal && (vinculoPrincipal.employer_id || vinculoPrincipal.workplace_id)) {
-                    await client.query(`
-                        UPDATE employees 
-                        SET employer_id = $1, workplace_id = $2, updated_at = $3
-                        WHERE id = $4
-                    `, [
-                        vinculoPrincipal.employer_id || null,
-                        vinculoPrincipal.workplace_id || null,
-                        new Date(),
-                        id
-                    ]);
+            // Gerenciar vínculos de forma NÃO DESTRUTIVA
+            if (emp.vinculos && Array.isArray(emp.vinculos)) {
+                const incomingVinculos = emp.vinculos
+                    .map(v => ({
+                        employer_id: String(v.employer_id || '').trim(),
+                        workplace_id: String(v.workplace_id || '').trim(),
+                        principal: !!v.principal
+                    }))
+                    .filter(v => v.employer_id || v.workplace_id);
+
+                if (incomingVinculos.length > 0) {
+                    // Buscar vínculos atuais
+                    const currentVinculos = await client.query(`
+                        SELECT * FROM employee_vinculos 
+                        WHERE employee_id = $1 AND status = 'ATIVO'
+                        ORDER BY data_inicio DESC
+                    `, [id]);
+
+                    const currentMap = new Map(currentVinculos.rows.map(v => [`${v.employer_id}_${v.workplace_id}`, v]));
+                    const incomingMap = new Map(incomingVinculos.map(v => [`${v.employer_id}_${v.workplace_id}`, v]));
+
+                    const now = new Date();
+
+                    // 1. Encerrar vínculos removidos (NÃO DELETE)
+                    for (const [key, currentVinculo] of currentMap) {
+                        if (!incomingMap.has(key)) {
+                            await client.query(`
+                                UPDATE employee_vinculos 
+                                SET data_fim = $1, status = 'ENCERRADO', updated_at = $1
+                                WHERE id = $2
+                            `, [now, currentVinculo.id]);
+                        }
+                    }
+
+                    // 2. Atualizar vínculos existentes
+                    for (const [key, incomingVinculo] of incomingMap) {
+                        if (currentMap.has(key)) {
+                            const currentVinculo = currentMap.get(key);
+                            // Atualizar apenas se necessário
+                            if (currentVinculo.principal !== incomingVinculo.principal) {
+                                await client.query(`
+                                    UPDATE employee_vinculos 
+                                    SET principal = $1, updated_at = $2
+                                    WHERE id = $3
+                                `, [incomingVinculo.principal ? 'S' : 'N', now, currentVinculo.id]);
+                            }
+                        }
+                    }
+
+                    // 3. Criar novos vínculos
+                    for (const [key, incomingVinculo] of incomingMap) {
+                        if (!currentMap.has(key)) {
+                            const vid = generateId();
+                            await client.query(`
+                                INSERT INTO employee_vinculos 
+                                (id, employee_id, employer_id, workplace_id, principal, data_inicio, status, tipo_evento, created_at)
+                                VALUES ($1, $2, $3, $4, $5, $6, 'ATIVO', 'ADMISSAO', $6)
+                            `, [vid, id, incomingVinculo.employer_id, incomingVinculo.workplace_id, 
+                                incomingVinculo.principal ? 'S' : 'N', now]);
+                        }
+                    }
+
+                    // 4. Garantir apenas um vínculo principal
+                    const principalVinculos = await client.query(`
+                        SELECT id FROM employee_vinculos 
+                        WHERE employee_id = $1 AND status = 'ATIVO' AND principal = 'S'
+                    `, [id]);
+
+                    if (principalVinculos.rows.length > 1) {
+                        // Manter apenas o mais recente como principal
+                        const keepPrincipal = principalVinculos.rows[0].id;
+                        await client.query(`
+                            UPDATE employee_vinculos 
+                            SET principal = 'N', updated_at = $1
+                            WHERE employee_id = $2 AND status = 'ATIVO' AND principal = 'S' AND id != $3
+                        `, [now, id, keepPrincipal]);
+                    } else if (principalVinculos.rows.length === 0 && incomingVinculos.length > 0) {
+                        // Se não houver principal, definir o primeiro
+                        const firstVinculo = await client.query(`
+                            SELECT id FROM employee_vinculos 
+                            WHERE employee_id = $1 AND status = 'ATIVO'
+                            ORDER BY data_inicio ASC
+                            LIMIT 1
+                        `, [id]);
+                        
+                        if (firstVinculo.rows.length > 0) {
+                            await client.query(`
+                                UPDATE employee_vinculos 
+                                SET principal = 'S', updated_at = $1
+                                WHERE id = $2
+                            `, [now, firstVinculo.rows[0].id]);
+                        }
+                    }
+
+                    // 5. Atualizar tabela employees para retrocompatibilidade
+                    const principalVinculo = await client.query(`
+                        SELECT employer_id, workplace_id FROM employee_vinculos 
+                        WHERE employee_id = $1 AND status = 'ATIVO' AND principal = 'S'
+                        LIMIT 1
+                    `, [id]);
+
+                    if (principalVinculo.rows.length > 0) {
+                        await client.query(`
+                            UPDATE employees 
+                            SET employer_id = $1, workplace_id = $2
+                            WHERE id = $3
+                        `, [principalVinculo.rows[0].employer_id, principalVinculo.rows[0].workplace_id, id]);
+                    }
                 }
             }
 
-            // 3. ATUALIZAR DOCUMENTOS (employee_documents)
+            // Atualizar documentos se necessário
             if (docs) {
                 const docKeys = Object.keys(docs).filter(k => docs[k] !== undefined && docs[k] !== '');
                 if (docKeys.length > 0) {
-                    // Verificar se jÃ¡ existe
-                    const existingDoc = await client.query('SELECT employee_id FROM employee_documents WHERE employee_id = $1', [id]);
+                    // Verificar se já existe registro de documentos
+                    const existingDoc = await client.query('SELECT id FROM employee_documents WHERE employee_id = $1', [id]);
                     
                     if (existingDoc.rows.length > 0) {
                         // UPDATE
@@ -601,8 +753,9 @@ router.put('/:id/metadata', async (req, res) => {
                             [id, ...docKeys.map(k => docs[k])]);
                     } else {
                         // INSERT
-                        const docColumns = ['employee_id', ...docKeys];
-                        const docValues = [id, ...docKeys.map(k => docs[k])];
+                        const docId = generateId();
+                        const docColumns = ['id', 'employee_id', ...docKeys];
+                        const docValues = [docId, id, ...docKeys.map(k => docs[k])];
                         const placeholders = docColumns.map((_, i) => `$${i + 1}`).join(', ');
                         
                         await client.query(`INSERT INTO employee_documents (${docColumns.join(', ')}) VALUES (${placeholders})`, docValues);
@@ -619,7 +772,7 @@ router.put('/:id/metadata', async (req, res) => {
     }
 });
 
-// ROTA PARA SALVAR ARQUIVOS DE DOCUMENTOS - CORRIGIDA
+// Rota para salvar arquivos de documentos
 router.post('/:id/documentFiles', async (req, res) => {
     const { id } = req.params;
     const { documentFiles } = req.body;
@@ -629,27 +782,12 @@ router.post('/:id/documentFiles', async (req, res) => {
             return res.status(400).json({ error: 'documentFiles deve ser um array' });
         }
         
-        // Buscar metadata atual
-        const currentMeta = await query('SELECT metadata FROM employees WHERE id = $1', [id]);
-        const existingMeta = currentMeta.rows[0]?.metadata || '{}';
-        
-        // Fazer parse do metadata existente
-        let parsedMeta = {};
-        try {
-            parsedMeta = JSON.parse(existingMeta);
-        } catch (e) {
-            parsedMeta = {};
-        }
-        
-        // Adicionar documentFiles ao metadata
-        parsedMeta.documentFiles = documentFiles;
-        
-        // Atualizar metadata completo
+        // Salvar arquivos no metadata do employee
         await query(`
             UPDATE employees 
-            SET metadata = $1, updated_at = CURRENT_TIMESTAMP
+            SET metadata = COALESCE(metadata, '{}') || $1
             WHERE id = $2
-        `, [JSON.stringify(parsedMeta), id]);
+        `, [JSON.stringify({ documentFiles }), id]);
         
         res.json({ success: true, message: 'Arquivos salvos com sucesso' });
         
@@ -660,15 +798,15 @@ router.post('/:id/documentFiles', async (req, res) => {
 });
 
 
-// Rota DELETE para excluir vï¿½nculo especï¿½fico
+// Rota DELETE para excluir vínculo específico
 router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
     const { id, vinculoId } = req.params;
     
     try {
-        // Iniciar transaï¿½ï¿½o
+        // Iniciar transação
         await query('BEGIN');
         
-        // 1. Verificar se o vï¿½nculo existe e pertence ao employee
+        // 1. Verificar se o vínculo existe e pertence ao employee
         const vinculoCheck = await query(`
             SELECT ev.*, 
                    COUNT(*) OVER() as total_vinculos,
@@ -679,14 +817,14 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
         
         if (vinculoCheck.rows.length === 0) {
             await query('ROLLBACK');
-            return res.status(404).json({ error: 'Vï¿½nculo nï¿½o encontrado' });
+            return res.status(404).json({ error: 'Vínculo não encontrado' });
         }
         
         const vinculo = vinculoCheck.rows[0];
         const totalVinculos = vinculo.total_vinculos;
         const ativosCount = vinculo.ativos_count;
         
-        // 2. Aplicar regras de exclusï¿½o
+        // 2. Aplicar regras de exclusão
         const deleteRules = validateDeleteRules(vinculo, totalVinculos, ativosCount);
         
         if (!deleteRules.canDelete) {
@@ -694,7 +832,7 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
             return res.status(400).json({ error: deleteRules.reason });
         }
         
-        // 3. Se for o ï¿½nico vï¿½nculo, tambï¿½m limpar a tabela employees
+        // 3. Se for o único vínculo, também limpar a tabela employees
         if (totalVinculos === 1) {
             await query(`
                 UPDATE employees 
@@ -702,10 +840,10 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
                 WHERE id = $1
             `, [id]);
             
-            console.log('? Tabela employees limpa (ï¿½nico vï¿½nculo removido)');
+            console.log('? Tabela employees limpa (único vínculo removido)');
         }
         
-        // 4. Se for vï¿½nculo ATUAL e houver PASSADOS, promover o mais recente
+        // 4. Se for vínculo ATUAL e houver PASSADOS, promover o mais recente
         if (vinculo.tipo_vinculo === 'ATUAL' && vinculo.status === 'ATIVO') {
             const promoteVinculo = await query(`
                 SELECT id FROM employee_vinculos 
@@ -721,7 +859,7 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
                     WHERE id = $1
                 `, [promoteVinculo.rows[0].id]);
                 
-                // Atualizar employees para o novo vï¿½nculo ATUAL
+                // Atualizar employees para o novo vínculo ATUAL
                 await query(`
                     UPDATE employees e
                     SET employer_id = ev.employer_id, 
@@ -731,11 +869,11 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
                     WHERE e.id = $1 AND ev.id = $2
                 `, [id, promoteVinculo.rows[0].id]);
                 
-                console.log('? Vï¿½nculo promovido para ATUAL');
+                console.log('? Vínculo promovido para ATUAL');
             }
         }
         
-        // 5. Registrar exclusï¿½o no log
+        // 5. Registrar exclusão no log
         await query(`
             INSERT INTO operation_logs 
             (id, operation_type, table_name, record_id, old_data, status, created_at)
@@ -749,20 +887,20 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
             'SUCCESS'
         ]);
         
-        // 6. Excluir o vï¿½nculo
+        // 6. Excluir o vínculo
         await query(`
             DELETE FROM employee_vinculos 
             WHERE id = $1 AND employee_id = $2
         `, [vinculoId, id]);
         
-        // 7. Commit da transaï¿½ï¿½o
+        // 7. Commit da transação
         await query('COMMIT');
         
-        console.log(`? Vï¿½nculo ${vinculoId} excluï¿½do com sucesso`);
+        console.log(`? Vínculo ${vinculoId} excluído com sucesso`);
         
         res.json({
             success: true,
-            message: 'Vï¿½nculo excluï¿½do com sucesso',
+            message: 'Vínculo excluído com sucesso',
             vinculo_excluido: {
                 id: vinculoId,
                 employer_id: vinculo.employer_id,
@@ -774,59 +912,59 @@ router.delete('/:id/vinculos/:vinculoId', async (req, res) => {
         
     } catch (error) {
         await query('ROLLBACK');
-        console.error('Erro ao excluir vï¿½nculo:', error);
+        console.error('Erro ao excluir vínculo:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Funï¿½ï¿½o para validar regras de exclusï¿½o
+// Função para validar regras de exclusão
 function validateDeleteRules(vinculo, totalVinculos, ativosCount) {
-    // Regra 1: Nï¿½o pode excluir o ï¿½nico vï¿½nculo
+    // Regra 1: Não pode excluir o único vínculo
     if (totalVinculos === 1) {
         return {
             canDelete: false,
-            reason: 'Nï¿½o ï¿½ possï¿½vel excluir o ï¿½nico vï¿½nculo do colaborador. Adicione um novo vï¿½nculo antes de excluir este.'
+            reason: 'Não é possível excluir o único vínculo do colaborador. Adicione um novo vínculo antes de excluir este.'
         };
     }
     
-    // Regra 2: Pode excluir vï¿½nculos PASSADOS
+    // Regra 2: Pode excluir vínculos PASSADOS
     if (vinculo.tipo_vinculo === 'PASSADO') {
         return { canDelete: true };
     }
     
-    // Regra 3: Pode excluir vï¿½nculo ATUAL se nï¿½o houver PASSADOS
+    // Regra 3: Pode excluir vínculo ATUAL se não houver PASSADOS
     if (vinculo.tipo_vinculo === 'ATUAL' && vinculo.status === 'ATIVO') {
         const hasPastVinculos = totalVinculos > ativosCount;
         
         if (hasPastVinculos) {
             return {
                 canDelete: false,
-                reason: 'Nï¿½o ï¿½ possï¿½vel excluir o vï¿½nculo ATUAL enquanto houver vï¿½nculos PASSADOS. Exclua os vï¿½nculos PASSADOS primeiro.'
+                reason: 'Não é possível excluir o vínculo ATUAL enquanto houver vínculos PASSADOS. Exclua os vínculos PASSADOS primeiro.'
             };
         }
         
         return { canDelete: true };
     }
     
-    // Regra 4: Pode excluir vï¿½nculos ENCERRADOS/TRANSFERIDOS
+    // Regra 4: Pode excluir vínculos ENCERRADOS/TRANSFERIDOS
     if (vinculo.status === 'ENCERRADO' || vinculo.status === 'TRANSFERIDO') {
         return { canDelete: true };
     }
     
     return {
         canDelete: false,
-        reason: 'Regras de exclusï¿½o nï¿½o permitem esta operaï¿½ï¿½o.'
+        reason: 'Regras de exclusão não permitem esta operação.'
     };
 }
 
 
 
-// Rota GET para obter vï¿½nculos com histï¿½rico completo
+// Rota GET para obter vínculos com histórico completo
 router.get('/:id/vinculos-com-historico', async (req, res) => {
     const { id } = req.params;
     
     try {
-        // Buscar todos os vï¿½nculos do colaborador
+        // Buscar todos os vínculos do colaborador
         const vinculos = await query(`
             SELECT 
                 ev.*,
@@ -839,7 +977,7 @@ router.get('/:id/vinculos-com-historico', async (req, res) => {
                         'Transferido em ' || TO_CHAR(ev.data_transferencia, 'DD/MM/YYYY HH:MI')
                     WHEN ev.data_fim IS NOT NULL THEN 
                         'Encerrado em ' || TO_CHAR(ev.data_fim, 'DD/MM/YYYY')
-                    ELSE 'Vï¿½nculo atual'
+                    ELSE 'Vínculo atual'
                 END as status_descricao,
                 CASE 
                     WHEN ev.sequencia = 1 THEN 'PRINCIPAL'
@@ -856,20 +994,20 @@ router.get('/:id/vinculos-com-historico', async (req, res) => {
         res.json(vinculos.rows);
         
     } catch (error) {
-        console.error('Erro ao buscar vï¿½nculos:', error);
+        console.error('Erro ao buscar vínculos:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
 
 
-// Rota POST para adicionar novo vï¿½nculo
+// Rota POST para adicionar novo vínculo
 
-// Middleware para correï¿½ï¿½o automï¿½tica de estado de vï¿½nculos
+// Middleware para correção automática de estado de vínculos
 router.use('/:id/vinculos', async (req, res, next) => {
     const { id } = req.params;
     
-    // Corrigir estado antes de processar a requisiï¿½ï¿½o
+    // Corrigir estado antes de processar a requisição
     await corrigirEstadoVinculos(id);
     
     next();
@@ -885,14 +1023,14 @@ router.post('/:id/vinculos', async (req, res) => {
     
     if (!employer_id || !workplace_id || !data_inicio) {
         return res.status(400).json({ 
-            error: 'Empregador, local e data de inï¿½cio sï¿½o obrigatï¿½rios' 
+            error: 'Empregador, local e data de início são obrigatórios' 
         });
     }
     
     try {
         await query('BEGIN');
         
-        // 1. Se for ATUAL, encerrar o vï¿½nculo ATUAL atual
+        // 1. Se for ATUAL, encerrar o vínculo ATUAL atual
         if (tipo_vinculo === 'ATUAL') {
             await query(`
                 UPDATE employee_vinculos 
@@ -905,7 +1043,7 @@ router.post('/:id/vinculos', async (req, res) => {
             `, [data_inicio, id]);
         }
         
-        // 2. Determinar sequï¿½ncia
+        // 2. Determinar sequência
         const maxSequencia = await query(`
             SELECT COALESCE(MAX(sequencia), 0) + 1 as nova_sequencia
             FROM employee_vinculos 
@@ -914,7 +1052,7 @@ router.post('/:id/vinculos', async (req, res) => {
         
         const novaSequencia = maxSequencia.rows[0].nova_sequencia;
         
-        // 3. Criar novo vï¿½nculo
+        // 3. Criar novo vínculo
         const vinculoId = require('crypto').randomBytes(8).toString('hex');
         
         await query(`
@@ -940,7 +1078,7 @@ router.post('/:id/vinculos', async (req, res) => {
         
         res.json({
             success: true,
-            message: 'Vï¿½nculo adicionado com sucesso',
+            message: 'Vínculo adicionado com sucesso',
             vinculo: {
                 id: vinculoId,
                 employee_id: id,
@@ -957,19 +1095,19 @@ router.post('/:id/vinculos', async (req, res) => {
         
     } catch (error) {
         await query('ROLLBACK');
-        console.error('Erro ao adicionar vï¿½nculo:', error);
+        console.error('Erro ao adicionar vínculo:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
 
 
-// Funï¿½ï¿½o para corrigir estado de vï¿½nculos automaticamente
+// Função para corrigir estado de vínculos automaticamente
 async function corrigirEstadoVinculos(employeeId) {
     try {
-        console.log(`?? Corrigindo estado dos vï¿½nculos para employee ${employeeId}...`);
+        console.log(`?? Corrigindo estado dos vínculos para employee ${employeeId}...`);
         
-        // 1. Identificar todos os vï¿½nculos ATUAIS
+        // 1. Identificar todos os vínculos ATUAIS
         const ativos = await query(`
             SELECT id, data_inicio FROM employee_vinculos 
             WHERE employee_id = $1 
@@ -979,7 +1117,7 @@ async function corrigirEstadoVinculos(employeeId) {
         `, [employeeId]);
         
         if (ativos.rows.length <= 1) {
-            console.log('? Estado jï¿½ estï¿½ correto');
+            console.log('? Estado já está correto');
             return;
         }
         
@@ -995,9 +1133,9 @@ async function corrigirEstadoVinculos(employeeId) {
             AND status = 'ATIVO'
         `, [employeeId, idManter]);
         
-        console.log(`? ${ativos.rows.length - 1} vï¿½nculos corrigidos para PASSADO`);
+        console.log(`? ${ativos.rows.length - 1} vínculos corrigidos para PASSADO`);
         
-        // 3. Atualizar employees para o vï¿½nculo ATUAL correto
+        // 3. Atualizar employees para o vínculo ATUAL correto
         const vinculoAtual = await query(`
             SELECT employer_id, workplace_id FROM employee_vinculos 
             WHERE id = $1
@@ -1017,7 +1155,7 @@ async function corrigirEstadoVinculos(employeeId) {
             console.log('? Tabela employees atualizada');
         }
         
-        console.log('? Estado dos vï¿½nculos corrigido');
+        console.log('? Estado dos vínculos corrigido');
         
     } catch (error) {
         console.error('? Erro ao corrigir estado:', error.message);

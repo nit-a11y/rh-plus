@@ -436,68 +436,67 @@ function renderTab() {
 }
 
 function populateVinculos(vinculos) {
-    // Substituir pelo novo sistema de cards
-    if (window.vinculosCardsManager && currentEmpId) {
-        window.vinculosCardsManager.init(currentEmpId);
-        return;
-    }
-    
-    // Fallback para o sistema antigo caso o novo não esteja disponível
+    // Simplificado - usa apenas dados diretos do employee
     const container = document.getElementById('vinculos-container');
     if (!container) return;
 
-    container.innerHTML = vinculos.map((vinculo, index) => `
-        <div class="vinculo-item bg-white p-4 rounded-lg border border-gray-200 shadow-sm" data-index="${index}">
+    // Pega dados diretos do employee atual
+    const emp = currentData.employee || {};
+    const employerId = emp.employer_id || '';
+    const workplaceId = emp.workplace_id || '';
+
+    container.innerHTML = `
+        <div class="vinculo-item bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
             <div class="flex justify-between items-center mb-3">
-                <h4 class="font-bold text-gray-800 uppercase text-sm">Vínculo ${index + 1}</h4>
-                <div class="flex gap-2">
-                    <label class="flex items-center gap-1 text-xs">
-                        <input type="checkbox" class="vinculo-principal" ${vinculo.principal ? 'checked' : ''} onchange="window.togglePrincipal(${index})">
-                        Principal
-                    </label>
-                    ${vinculos.length > 1 ? `<button onclick="window.removeVinculo(${index})" class="text-red-500 hover:text-red-700 text-sm">✕</button>` : ''}
-                </div>
+                <h4 class="font-bold text-gray-800 uppercase text-sm">🏢 Vínculo Corporativo</h4>
+                <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold">ÚNICO VÍNCULO</span>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="pro-label uppercase text-xs">EMPREGADOR (CONTRATUAL)</label>
-                    <select class="vinculo-employer pro-input font-bold uppercase"></select>
+                    <select id="employee-employer" class="pro-input font-bold uppercase">
+                        <option value="">-- SELECIONE --</option>
+                    </select>
                 </div>
                 <div>
                     <label class="pro-label uppercase text-xs">LOCAL DE ATUAÇÃO (FÍSICO)</label>
-                    <select class="vinculo-workplace pro-input font-bold uppercase"></select>
+                    <select id="employee-workplace" class="pro-input font-bold uppercase">
+                        <option value="">-- SELECIONE --</option>
+                    </select>
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
 
-    vinculos.forEach((vinculo, index) => {
-        const employerSel = container.querySelector(`[data-index="${index}"] .vinculo-employer`);
-        const workplaceSel = container.querySelector(`[data-index="${index}"] .vinculo-workplace`);
-
-        if (employerSel) {
-            employerSel.innerHTML = '<option value="">-- SELECIONE --</option>' + allCompanies.filter(c => c.type !== 'Unidade').map(c =>
-                `<option value="${c.id}" ${vinculo.employer_id === c.id ? 'selected' : ''}>${c.name}</option>`
-            ).join('');
-        }
-
-        if (workplaceSel) {
-            workplaceSel.innerHTML = '<option value="">-- SELECIONE --</option>' + allCompanies.filter(c => c.type !== 'Empregador').map(c =>
-                `<option value="${c.id}" ${vinculo.workplace_id === c.id ? 'selected' : ''}>${c.name}</option>`
-            ).join('');
-        }
-    });
+    // Carregar empresas e unidades
+    fetch('/api/companies')
+        .then(res => res.json())
+        .then(companies => {
+            const employers = companies.filter(c => c.type !== 'Unidade');
+            const workplaces = companies.filter(c => c.type === 'Unidade' || c.type === 'Ambos');
+            
+            // Preencher empregadores
+            const employerSel = document.getElementById('employee-employer');
+            if (employerSel) {
+                employerSel.innerHTML = '<option value="">-- SELECIONE --</option>' + 
+                    employers.map(c => `<option value="${c.id}" ${employerId === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
+            }
+            
+            // Preencher locais
+            const workplaceSel = document.getElementById('employee-workplace');
+            if (workplaceSel) {
+                workplaceSel.innerHTML = '<option value="">-- SELECIONE --</option>' + 
+                    workplaces.map(c => `<option value="${c.id}" ${workplaceId === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
+            }
+        })
+        .catch(error => console.error('Erro ao carregar empresas:', error));
 }
 
 function populateIdentity(e) {
     const emp = e || {};
-    const vinculos = emp.vinculos || currentData.vinculos || (emp.employer_id ? [{
-        employer_id: emp.employer_id,
-        workplace_id: emp.workplace_id,
-        principal: true
-    }] : []);
-
-    populateVinculos(vinculos);
+    
+    // Chamar populateVinculos sem parâmetro (usará dados diretos do employee)
+    populateVinculos();
 
     // Mantém os outros campos
     let natCity = '';
@@ -893,8 +892,7 @@ async function saveAll() {
                 voter_title: getVal('doc-title', docsOrig.voter_title),
                 voter_zone: getVal('doc-zone', docsOrig.voter_zone),
                 voter_section: getVal('doc-section', docsOrig.voter_section),
-                cnh_number: getVal('doc-cnh', docsOrig.cnh_number),
-                documentFiles: currentData.documentFiles || [] // Injetado direto no parser Base da Rota Existente
+                cnh_number: getVal('doc-cnh', docsOrig.cnh_number)
             }
         };
 
@@ -937,155 +935,16 @@ window.previewEditorImage = (input) => {
     }
 };
 
-window.addVinculo = () => {
-    const container = document.getElementById('vinculos-container');
-    if (!container) return;
-    
-    const vinculos = Array.from(container.querySelectorAll('.vinculo-item')).map(item => {
-        const index = parseInt(item.dataset.index);
-        const employer = item.querySelector('.vinculo-employer').value;
-        const workplace = item.querySelector('.vinculo-workplace').value;
-        const principal = item.querySelector('.vinculo-principal').checked;
-        return { employer_id: employer, workplace_id: workplace, principal };
-    });
-    
-    vinculos.push({ employer_id: '', workplace_id: '', principal: false });
-    
-    // Re-render
-    populateVinculos(vinculos);
-};
-
-window.removeVinculo = (index) => {
-    const container = document.getElementById('vinculos-container');
-    if (!container) return;
-    
-    const vinculos = Array.from(container.querySelectorAll('.vinculo-item')).map(item => {
-        const idx = parseInt(item.dataset.index);
-        const employer = item.querySelector('.vinculo-employer').value;
-        const workplace = item.querySelector('.vinculo-workplace').value;
-        const principal = item.querySelector('.vinculo-principal').checked;
-        return { employer_id: employer, workplace_id: workplace, principal };
-    });
-    
-    vinculos.splice(index, 1);
-    
-    // Garante que pelo menos um é principal
-    if (vinculos.length > 0 && !vinculos.some(v => v.principal)) {
-        vinculos[0].principal = true;
-    }
-    
-    populateVinculos(vinculos);
-};
-
-window.togglePrincipal = (index) => {
-    const container = document.getElementById('vinculos-container');
-    if (!container) return;
-    
-    const checkboxes = container.querySelectorAll('.vinculo-principal');
-    checkboxes.forEach((cb, i) => {
-        cb.checked = (i === index);
-    });
-};
+// Funções de múltiplos vínculos removidas - agora apenas um vínculo por employee
 
 function getVinculosData() {
-    const container = document.getElementById('vinculos-container');
-    if (!container) return [];
-
-    // Coletar dados do formulário
-    const formVinculos = Array.from(container.querySelectorAll('.vinculo-item')).map(item => {
-        const employer = (item.querySelector('.vinculo-employer').value || '').trim();
-        const workplace = (item.querySelector('.vinculo-workplace').value || '').trim();
-        const principal = item.querySelector('.vinculo-principal').checked;
-        const index = parseInt(item.dataset.index);
-        
-        return { 
-            employer_id: employer, 
-            workplace_id: workplace, 
-            principal,
-            index,
-            isFromForm: true
-        };
-    }).filter(v => v.employer_id || v.workplace_id);
-
-    // Obter vínculos atuais do sistema
-    const currentVinculos = Array.isArray(currentData.vinculos) ? currentData.vinculos : [];
+    // Simplificado - pega dados diretos dos campos do employee
+    const employer = (document.getElementById('employee-employer')?.value || '').trim();
+    const workplace = (document.getElementById('employee-workplace')?.value || '').trim();
     
-    // Se não houver vínculos no formulário, manter os atuais (evitar deleção acidental)
-    if (formVinculos.length === 0) {
-        return currentVinculos.map(v => ({
-            employer_id: v.employer_id || '',
-            workplace_id: v.workplace_id || '',
-            principal: !!v.principal,
-            id: v.id,
-            data_inicio: v.data_inicio,
-            status: v.status
-        }));
-    }
-
-    // Mapear vínculos atuais por chave única
-    const currentMap = new Map();
-    currentVinculos.forEach(v => {
-        const key = `${v.employer_id}_${v.workplace_id}`;
-        currentMap.set(key, {
-            ...v,
-            principal: !!v.principal,
-            id: v.id,
-            data_inicio: v.data_inicio,
-            status: v.status
-        });
-    });
-
-    // Processar vínculos do formulário
-    const processedVinculos = formVinculos.map(formVinculo => {
-        const key = `${formVinculo.employer_id}_${formVinculo.workplace_id}`;
-        const currentVinculo = currentMap.get(key);
-        
-        return {
-            employer_id: formVinculo.employer_id,
-            workplace_id: formVinculo.workplace_id,
-            principal: formVinculo.principal,
-            id: currentVinculo?.id,
-            data_inicio: currentVinculo?.data_inicio,
-            status: currentVinculo?.status || 'ATIVO',
-            isFromForm: true
-        };
-    });
-
-    // Garantir apenas um vínculo principal
-    const principalCount = processedVinculos.filter(v => v.principal).length;
-    
-    if (principalCount === 0 && processedVinculos.length > 0) {
-        // Se não houver principal, definir o primeiro
-        processedVinculos[0].principal = true;
-    } else if (principalCount > 1) {
-        // Se houver múltiplos principais, manter apenas o primeiro
-        let foundFirst = false;
-        processedVinculos.forEach(v => {
-            if (v.principal && !foundFirst) {
-                foundFirst = true;
-            } else {
-                v.principal = false;
-            }
-        });
-    }
-
-    // Identificar vínculos removidos (para encerramento no backend)
-    const removedVinculos = currentVinculos.filter(currentVinculo => {
-        const key = `${currentVinculo.employer_id}_${currentVinculo.workplace_id}`;
-        return !processedVinculos.some(formVinculo => 
-            `${formVinculo.employer_id}_${formVinculo.workplace_id}` === key
-        );
-    });
-
-    // Adicionar vínculos removidos com flag para encerramento
-    removedVinculos.forEach(removed => {
-        processedVinculos.push({
-            ...removed,
-            principal: false,
-            status: 'ENCERRAR',
-            isRemoved: true
-        });
-    });
-
-    return processedVinculos;
+    return [{ 
+        employer_id: employer, 
+        workplace_id: workplace, 
+        principal: true
+    }];
 }

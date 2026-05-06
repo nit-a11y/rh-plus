@@ -242,11 +242,11 @@ function renderFullDossier() {
     const toolsHist = dossierData.toolHistory || [];
     const todayStr = new Date().toLocaleString('pt-BR');
 
-    const vinculoPrincipal = (dossierData.vinculos || []).find(v => v.principal) || (dossierData.vinculos || [])[0] || {};
-    const employerName = vinculoPrincipal.employer_name || e.employer_name || 'AR2 SERVIÇOS E SOLUÇÕES LTDA';
-    const employerCnpj = vinculoPrincipal.employer_cnpj || e.employer_cnpj || '43.529.100/0001-12';
-    const workplaceName = vinculoPrincipal.workplace_name || e.workplace_name || 'N/A';
-    const workplaceCnpj = vinculoPrincipal.workplace_cnpj || e.workplace_cnpj || '-';
+    // Simplificado - usa apenas dados diretos do employee
+    const employerName = e.employer_name || 'AR2 SERVIÇOS E SOLUÇÕES LTDA';
+    const employerCnpj = e.employer_cnpj || '43.529.100/0001-12';
+    const workplaceName = e.workplace_name || 'N/A';
+    const workplaceCnpj = e.workplace_cnpj || '-';
 
     // Cálculos de Tempo e Desligamento
     const desligamento = career.find(c => c.move_type === 'Desligamento');
