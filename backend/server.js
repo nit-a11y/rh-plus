@@ -156,11 +156,11 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/headcount', headcountRoutes);
 app.use('/api/population', populationRoutes);
 app.use('/api/population-historico', populationHistoricoRoutes);
-app.use('/api/overtime', overtimeSimpleRoutes);
+// app.use('/api/overtime', overtimeSimpleRoutes); // Removido - conflito com overtimeRoutes
 app.use('/api/roles-matrix', roleMatrixRoutes);
-app.use('/api', consultaColaboradoresRoutes);
 
 // Removido app.use('/api/overtime', overtimeAnalysisRoutes);
+app.use('/api', consultaColaboradoresRoutes);
 
 app.use('/api', (req, res) => {
     res.status(404).json({ success: false, error: `Rota de API não encontrada: ${req.originalUrl}` });

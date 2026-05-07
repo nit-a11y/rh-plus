@@ -228,8 +228,9 @@ router.post('/', async (req, res) => {
         const empInfo = await query(`
             SELECT 
                 e.name,
-                e.sector as workplace_name
+                c.name as workplace_name
             FROM employees e
+            LEFT JOIN companies c ON e.workplace_id = c.id
             WHERE e.id = $1
         `, [employee_id]);
         
@@ -326,6 +327,21 @@ router.put('/:id', async (req, res) => {
     }
 });
 
+// ROTA: Apagar todos os registros de hora extra
+router.delete('/delete-all', async (req, res) => {
+    try {
+        const result = await query(`DELETE FROM overtime_records`);
+        
+        res.json({ 
+            success: true, 
+            message: `Todos os ${result.rowCount} registros de hora extra foram apagados com sucesso!`,
+            deleted_count: result.rowCount
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ROTA: Excluir registro
 router.delete('/:id', async (req, res) => {
     try {
@@ -391,8 +407,9 @@ router.post('/bulk', async (req, res) => {
                 const empInfo = await query(`
                     SELECT 
                         e.name,
-                        e.sector as workplace_name
+                        c.name as workplace_name
                     FROM employees e
+                    LEFT JOIN companies c ON e.workplace_id = c.id
                     WHERE e.id = $1
                 `, [employee_id]);
                 
@@ -449,6 +466,154 @@ async function countAllActiveEmployees() {
 }
 
 const { countActiveEmployees } = require('./overtime-fixed');
+
+// ROTA: Inserção em massa de hora extra
+router.post('/mass-insert', async (req, res) => {
+    try {
+        const { records, overwrite_duplicates = false } = req.body;
+        
+        if (!records || !Array.isArray(records) || records.length === 0) {
+            return res.status(400).json({ error: 'Lista de registros é obrigatória' });
+        }
+        
+        const created = [];
+        const errors = [];
+        const skipped = [];
+        
+        await query('BEGIN');
+        
+        for (let index = 0; index < records.length; index++) {
+            const rec = records[index];
+            const { employee_id, month_year, overtime_time, overtime_value } = rec;
+            
+            if (!employee_id) {
+                errors.push({ index, error: 'Colaborador não informado' });
+                continue;
+            }
+            
+            // Verificar duplicata
+            if (!overwrite_duplicates) {
+                const existingCheck = await query(`
+                    SELECT id FROM overtime_records 
+                    WHERE employee_id = $1 AND mes = $2
+                `, [employee_id, month_year]);
+                
+                if (existingCheck.rows.length > 0) {
+                    skipped.push({ 
+                        index, 
+                        employee_id, 
+                        month_year,
+                        reason: 'Registro duplicado' 
+                    });
+                    continue;
+                }
+            }
+            
+            const id = generateId();
+            
+            // Normalizar valor
+            let value = 0;
+            if (overtime_value !== undefined && overtime_value !== null) {
+                const strValue = overtime_value.toString().trim();
+                
+                if (strValue.includes(',')) {
+                    const cleanValue = strValue
+                        .replace(/R\$\s*/gi, '')
+                        .replace(/\./g, '')
+                        .replace(',', '.');
+                    value = parseFloat(cleanValue) || 0;
+                } else if (strValue.includes('.')) {
+                    value = parseFloat(strValue) || 0;
+                } else {
+                    value = parseFloat(strValue) || 0;
+                }
+            }
+            
+            // Normalizar tempo
+            let time = overtime_time || '';
+            if (time) {
+                time = time.toString().trim();
+            }
+            
+            try {
+                console.log('DEBUG - Processando registro:', { index, employee_id, month_year, overtime_time, overtime_value });
+                
+                // Buscar informações do colaborador
+                const empInfo = await query(`
+                    SELECT 
+                        e.name,
+                        c.name as workplace_name
+                    FROM employees e
+                    LEFT JOIN companies c ON e.workplace_id = c.id
+                    WHERE e.id = $1
+                `, [employee_id]);
+                
+                if (empInfo.rows.length === 0) {
+                    console.log('ERRO - Colaborador não encontrado:', employee_id);
+                    errors.push({ index, error: `Colaborador não encontrado: ${employee_id}` });
+                    continue;
+                }
+                
+                const employeeName = empInfo.rows[0]?.name || '';
+                const workplaceName = empInfo.rows[0]?.workplace_name || '';
+                
+                // Teste com query mais simples
+                console.log('DEBUG INSERT - Valores:', {
+                    id, 
+                    employee_id, 
+                    month_year: month_year.toUpperCase().trim(),
+                    workplaceName,
+                    employeeName,
+                    time,
+                    value,
+                    created_by: 'Mass Insert'
+                });
+                
+                await query(`
+                    INSERT INTO overtime_records (id, employee_id, mes, unidade, nome, extra, valor, created_by)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                `, [
+                    id, 
+                    employee_id, 
+                    month_year.toUpperCase().trim(),
+                    workplaceName,
+                    employeeName,
+                    time,
+                    value,
+                    'Mass Insert'
+                ]);
+                
+                console.log('DEBUG - Registro inserido com sucesso:', id);
+                created.push(id);
+            } catch (err) {
+                console.log('ERRO - Falha ao inserir registro:', { index, error: err.message, stack: err.stack });
+                errors.push({ index, error: err.message });
+            }
+        }
+        
+        if (errors.length > 0) {
+            await query('ROLLBACK');
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Ocorreram erros durante a inserção',
+                details: errors 
+            });
+        }
+        
+        await query('COMMIT');
+        
+        res.json({ 
+            success: true, 
+            created: created.length, 
+            skipped: skipped.length,
+            errors: errors.length,
+            message: `${created.length} registros inseridos com sucesso${skipped.length > 0 ? `, ${skipped.length} ignorados (duplicados)` : ''}`
+        });
+    } catch (err) {
+        await query('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    }
+});
 
 module.exports = router;
 module.exports.countActiveEmployees = countActiveEmployees;

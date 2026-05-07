@@ -120,6 +120,17 @@
             </div>
         </div>
         <div id="employees-list" class="flex-1 overflow-y-auto custom-scroll bg-white"></div>
+        
+        <!-- Botões de ações no menu lateral -->
+        <div class="p-4 border-t bg-white space-y-3">
+            <button onclick="openMassInsertModal()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                📥 Inserir em Massa
+            </button>
+            <button onclick="deleteAllRecords()" class="w-full bg-red-600 text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-red-700 transition-all flex items-center justify-center gap-2">
+                🗑️ Apagar Todos os Registros
+            </button>
+            <p class="text-[8px] text-gray-400 text-center">Requer senha de administrador para apagar</p>
+        </div>
     </aside>
 
     <!-- Main Content -->
@@ -348,6 +359,89 @@
         </div>
     </div>
 
+    <!-- Modal de Inserção em Massa -->
+    <div id="mass-insert-modal" class="hidden fixed inset-0 z-[200] bg-nordeste-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] w-full max-w-4xl shadow-2xl overflow-hidden animate-pop max-h-[90vh] flex flex-col">
+            <div class="bg-nordeste-black p-6 text-white flex justify-between items-center">
+                <h2 class="text-lg font-black uppercase italic">Inserção em Massa de Hora Extra</h2>
+                <button onclick="closeMassInsertModal()" class="text-white hover:text-gray-300 text-2xl">×</button>
+            </div>
+            
+            <div class="p-6 flex-1 overflow-y-auto">
+                <div class="mb-4">
+                    <label class="form-label">Cole os dados abaixo (formato: MÊS/ANO	NOME	HORAS:MINUTOS	VALOR)</label>
+                    <textarea id="mass-data" rows="10" class="w-full p-4 border-2 border-gray-300 rounded-xl text-xs font-mono" 
+                        placeholder="março 2025	AGATHA LOURENCO DA SILVA MONTEIRO	01:05	R$ 26,60
+junho 2025	AGATHA LOURENCO DA SILVA MONTEIRO	00:15	R$ 6,14
+janeiro 2025	AILTON VENANCIO DA FONSECA	05:27	R$ 66,33"></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <button onclick="parseMassData()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-blue-700 transition-all">
+                        🔍 Analisar Dados
+                    </button>
+                </div>
+                
+                <!-- Preview dos dados parseados -->
+                <div id="parsed-preview" class="hidden mb-4">
+                    <h3 class="font-black text-sm mb-3">Prévia dos Dados</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="border p-2 text-left">Mês/Ano</th>
+                                    <th class="border p-2 text-left">Colaborador</th>
+                                    <th class="border p-2 text-left">Tempo</th>
+                                    <th class="border p-2 text-left">Valor</th>
+                                    <th class="border p-2 text-left">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="parsed-data-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Seleção de colaboradores não encontrados -->
+                <div id="employee-selection" class="hidden mb-4">
+                    <h3 class="font-black text-sm mb-3 text-red-600">⚠️ Selecione os colaboradores não encontrados</h3>
+                    <div id="employee-matches" class="space-y-2 max-h-40 overflow-y-auto"></div>
+                </div>
+                
+                <!-- Duplicatas detectadas -->
+                <div id="duplicates-warning" class="hidden mb-4 p-4 bg-yellow-100 border border-yellow-400 rounded-lg">
+                    <h3 class="font-black text-sm mb-2 text-yellow-800">⚠️ Duplicatas Detectadas</h3>
+                    <div id="duplicates-list" class="text-xs"></div>
+                    <div class="mt-3">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="overwrite-duplicates" class="mr-2">
+                            <span class="text-xs">Sobrescrever registros existentes</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Barra de progresso -->
+                <div id="progress-container" class="hidden mb-4">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span id="progress-text">Processando...</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-3 p-6 border-t">
+                <button onclick="closeMassInsertModal()" class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-black text-[10px] uppercase hover:bg-gray-200 transition-all">
+                    Cancelar
+                </button>
+                <button onclick="processMassInsert()" id="process-btn" disabled class="flex-1 bg-nordeste-red text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-nordeste-darkRed transition-all disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    Processar Dados
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/auth.js"></script>
     <script>
         // Variáveis globais
@@ -505,8 +599,11 @@
         
         function parseCurrency(valueStr) {
             if (!valueStr) return 0;
-            // Remove pontos de milhar e substitui vírgula por ponto
-            const clean = valueStr.replace(/\./g, '').replace(',', '.');
+            // Remove R$, espaços, pontos de milhar e substitui vírgula por ponto
+            const clean = valueStr
+                .replace(/R\$\s*/gi, '')
+                .replace(/\./g, '')
+                .replace(',', '.');
             return parseFloat(clean) || 0;
         }
         
@@ -968,9 +1065,340 @@
             link.click();
         }
 
+        // Apagar todos os registros
+        async function deleteAllRecords() {
+            const password = prompt('⚠️ ATENÇÃO: Esta ação irá APAGAR TODOS os registros de hora extra!\n\nDigite a senha para confirmar:');
+            
+            if (password !== '12Nordeste34+') {
+                if (password !== null) {
+                    alert('❌ Senha incorreta! Operação cancelada.');
+                }
+                return;
+            }
+            
+            if (!confirm('🚨 ÚLTIMO AVISO: Tem certeza que deseja apagar TODOS os registros?\n\nEsta ação é IRREVERSÍVEL!')) {
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/overtime/delete-all', { method: 'DELETE' });
+                const result = await res.json();
+                
+                if (result.success) {
+                    alert(`✅ ${result.message}`);
+                    await loadAllOvertime();
+                    if (currentEmployeeId) {
+                        loadEmployeeOvertime();
+                    } else {
+                        loadGeneralData();
+                    }
+                } else {
+                    alert('❌ Erro: ' + (result.error || 'Erro desconhecido'));
+                }
+            } catch (e) {
+                alert('❌ Erro ao apagar registros: ' + e.message);
+            }
+        }
+
+        // Abrir modal de inserção em massa
+        function openMassInsertModal() {
+            document.getElementById('mass-insert-modal').classList.remove('hidden');
+        }
+
+        // Fechar modal de inserção em massa
+        function closeMassInsertModal() {
+            document.getElementById('mass-insert-modal').classList.add('hidden');
+            // Limpar dados
+            document.getElementById('mass-data').value = '';
+            document.getElementById('parsed-preview').classList.add('hidden');
+            document.getElementById('employee-selection').classList.add('hidden');
+            document.getElementById('duplicates-warning').classList.add('hidden');
+            document.getElementById('progress-container').classList.add('hidden');
+            document.getElementById('process-btn').disabled = true;
+        }
+
+        // Variáveis globais para inserção em massa
+        let parsedData = [];
+        let employeeMap = new Map();
+
+        // Parser de dados em massa
+        function parseMassData() {
+            const textData = document.getElementById('mass-data').value.trim();
+            if (!textData) {
+                alert('Cole os dados no textarea!');
+                return;
+            }
+
+            const lines = textData.split('\n').filter(line => line.trim());
+            parsedData = [];
+            const notFoundEmployees = new Map();
+
+            // Criar mapa de colaboradores para busca rápida
+            if (employeeMap.size === 0) {
+                allEmployees.forEach(emp => {
+                    employeeMap.set(emp.name.toUpperCase(), emp);
+                });
+            }
+
+            lines.forEach((line, index) => {
+                const parts = line.split('\t').map(p => p.trim());
+                if (parts.length < 4) return;
+
+                const [monthYear, name, time, value] = parts;
+                
+                // Validar formato
+                if (!monthYear || !name || !time || !value) {
+                    return;
+                }
+
+                // Buscar colaborador
+                let employee = employeeMap.get(name.toUpperCase());
+                if (!employee) {
+                    // Busca por similaridade
+                    const matches = allEmployees.filter(emp => 
+                        emp.name.toUpperCase().includes(name.toUpperCase()) || 
+                        name.toUpperCase().includes(emp.name.toUpperCase())
+                    );
+                    
+                    if (matches.length === 1) {
+                        employee = matches[0];
+                    } else if (matches.length > 1) {
+                        notFoundEmployees.set(name, matches);
+                    } else {
+                        notFoundEmployees.set(name, []);
+                    }
+                }
+
+                // Converter tempo para formato HH:MM
+                let formattedTime = time;
+                if (!time.includes(':')) {
+                    // Se só tem horas, adicionar :00
+                    formattedTime = time.padStart(2, '0') + ':00';
+                }
+
+                // Converter valor para número
+                const numValue = parseCurrency(value);
+
+                parsedData.push({
+                    line: index + 1,
+                    monthYear: monthYear.toUpperCase(),
+                    name: name,
+                    time: formattedTime,
+                    value: numValue,
+                    employee: employee,
+                    status: employee ? '✅ Encontrado' : '❌ Não encontrado'
+                });
+            });
+
+            // Mostrar preview
+            showParsedPreview();
+            
+            // Mostrar seleção de colaboradores não encontrados
+            if (notFoundEmployees.size > 0) {
+                showEmployeeSelection(notFoundEmployees);
+            } else {
+                document.getElementById('employee-selection').classList.add('hidden');
+            }
+
+            // Habilitar botão de processar se houver dados
+            document.getElementById('process-btn').disabled = parsedData.length === 0;
+        }
+
+        // Mostrar preview dos dados parseados
+        function showParsedPreview() {
+            const tbody = document.getElementById('parsed-data-body');
+            tbody.innerHTML = parsedData.map(item => `
+                <tr class="${item.employee ? '' : 'bg-red-50'}">
+                    <td class="border p-2">${item.monthYear}</td>
+                    <td class="border p-2">${item.name}</td>
+                    <td class="border p-2">${item.time}</td>
+                    <td class="border p-2">R$ ${item.value.toFixed(2)}</td>
+                    <td class="border p-2">${item.status}</td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('parsed-preview').classList.remove('hidden');
+        }
+
+        // Mostrar seleção de colaboradores
+        function showEmployeeSelection(notFoundEmployees) {
+            const container = document.getElementById('employee-matches');
+            container.innerHTML = '';
+            
+            notFoundEmployees.forEach((matches, name) => {
+                const div = document.createElement('div');
+                div.className = 'p-3 border rounded-lg';
+                
+                if (matches.length === 0) {
+                    div.className += ' bg-red-100 border-red-300';
+                    div.innerHTML = `
+                        <div class="font-bold text-red-800">${name}</div>
+                        <div class="text-xs text-red-600">Nenhum colaborador encontrado</div>
+                    `;
+                } else {
+                    div.className += ' bg-yellow-100 border-yellow-300';
+                    div.innerHTML = `
+                        <div class="font-bold text-yellow-800">${name}</div>
+                        <div class="text-xs text-yellow-600 mb-2">Selecione o colaborador correto:</div>
+                        <select class="w-full p-2 border rounded text-xs" data-original-name="${name}">
+                            <option value="">Selecione...</option>
+                            ${matches.map(emp => `
+                                <option value="${emp.id}">${emp.name} - ${emp.role || 'Sem cargo'}</option>
+                            `).join('')}
+                        </select>
+                    `;
+                }
+                
+                container.appendChild(div);
+            });
+            
+            document.getElementById('employee-selection').classList.remove('hidden');
+        }
+
+        // Processar inserção em massa (individual sequencial)
+        async function processMassInsert() {
+            const validData = parsedData.filter(item => item.employee);
+            
+            if (validData.length === 0) {
+                alert('Nenhum dado válido para processar!');
+                return;
+            }
+
+            // Confirmar processamento
+            if (!confirm(`Processar ${validData.length} registros de hora extra individualmente?`)) {
+                return;
+            }
+
+            // Mostrar progresso
+            document.getElementById('progress-container').classList.remove('hidden');
+            document.getElementById('process-btn').disabled = true;
+
+            try {
+                let processed = 0;
+                let errors = 0;
+                const overwriteDuplicates = document.getElementById('overwrite-duplicates').checked;
+
+                for (let i = 0; i < validData.length; i++) {
+                    const item = validData[i];
+                    const progress = ((i + 1) / validData.length) * 100;
+                    
+                    updateProgress(`Processando registro ${i + 1}/${validData.length}: ${item.name}...`, progress);
+
+                    try {
+                        // Verificar duplicata individual
+                        if (!overwriteDuplicates) {
+                            const existingCheck = await fetch(`/api/overtime?employee_id=${item.employee.id}&month=${encodeURIComponent(item.monthYear)}`);
+                            const existingResult = await existingCheck.json();
+                            
+                            if (existingResult.data && existingResult.data.length > 0) {
+                                console.log(`Registro duplicado ignorado: ${item.name} - ${item.monthYear}`);
+                                continue;
+                            }
+                        }
+
+                        // Inserir registro individual usando a rota normal
+                        const res = await fetch('/api/overtime', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                employee_id: item.employee.id,
+                                month_year: item.monthYear,
+                                overtime_time: item.time,
+                                overtime_value: item.value,
+                                created_by: 'Mass Insert'
+                            })
+                        });
+
+                        const result = await res.json();
+                        if (!result.success) {
+                            console.error(`Erro ao inserir registro ${i + 1}:`, result.error);
+                            errors++;
+                        } else {
+                            processed++;
+                        }
+
+                        // Pequeno delay para não sobrecarregar
+                        await new Promise(resolve => setTimeout(resolve, 100));
+
+                    } catch (e) {
+                        console.error(`Erro ao processar registro ${i + 1}:`, e.message);
+                        errors++;
+                    }
+                }
+
+                updateProgress('Concluído!', 100);
+                
+                setTimeout(() => {
+                    if (errors === 0) {
+                        alert(`✅ ${processed} registros inseridos com sucesso!`);
+                    } else {
+                        alert(`⚠️ ${processed} registros inseridos, ${errors} erros encontrados.`);
+                    }
+                    closeMassInsertModal();
+                    loadAllOvertime();
+                    if (currentEmployeeId) loadEmployeeOvertime();
+                    else loadGeneralData();
+                }, 1000);
+
+            } catch (e) {
+                alert('❌ Erro ao processar: ' + e.message);
+                document.getElementById('progress-container').classList.add('hidden');
+                document.getElementById('process-btn').disabled = false;
+            }
+        }
+
+        // Verificar duplicatas
+        async function checkDuplicates(data) {
+            const duplicates = [];
+            
+            for (const item of data) {
+                const res = await fetch(`/api/overtime?employee_id=${item.employee.id}&month=${encodeURIComponent(item.monthYear)}`);
+                const result = await res.json();
+                
+                if (result.data && result.data.length > 0) {
+                    duplicates.push({
+                        employee: item.employee.name,
+                        month: item.monthYear,
+                        existing: result.data[0]
+                    });
+                }
+            }
+
+            if (duplicates.length > 0) {
+                showDuplicatesWarning(duplicates);
+            } else {
+                document.getElementById('duplicates-warning').classList.add('hidden');
+            }
+        }
+
+        // Mostrar aviso de duplicatas
+        function showDuplicatesWarning(duplicates) {
+            const container = document.getElementById('duplicates-list');
+            container.innerHTML = duplicates.map(dup => `
+                <div class="mb-2 p-2 bg-yellow-50 rounded">
+                    <strong>${dup.employee}</strong> - ${dup.month}<br>
+                    <small>Registro existente: ${dup.existing.extra} - R$ ${dup.existing.valor}</small>
+                </div>
+            `).join('');
+            
+            document.getElementById('duplicates-warning').classList.remove('hidden');
+        }
+
+        // Atualizar barra de progresso
+        function updateProgress(text, percent) {
+            document.getElementById('progress-text').textContent = text;
+            document.getElementById('progress-bar').style.width = percent + '%';
+            document.getElementById('progress-percent').textContent = Math.round(percent) + '%';
+        }
+
         // Fechar modal ao clicar fora
         document.getElementById('modal-overlay').addEventListener('click', (e) => {
             if (e.target === document.getElementById('modal-overlay')) closeModal();
+        });
+
+        // Fechar modal de massa ao clicar fora
+        document.getElementById('mass-insert-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('mass-insert-modal')) closeMassInsertModal();
         });
     </script>
 </body>
