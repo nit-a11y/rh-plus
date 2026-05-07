@@ -319,7 +319,7 @@ router.get('/detailed', async (req, res) => {
             limit = 50 
         } = req.query;
         
-        // SQL base com todos os joins necessários
+        // SQL base simplificado (sem employee_vinculos)
         let sql = `
             SELECT 
                 o.id,
@@ -335,11 +335,10 @@ router.get('/detailed', async (req, res) => {
                 e.role,
                 e.sector,
                 e.type,
-                wp.name as workplace_name
+                c.name as workplace_name
             FROM overtime_records o
             JOIN employees e ON o.employee_id = e.id
-            LEFT JOIN employee_vinculos ev ON e.id = ev.employee_id AND ev.principal = '1'
-            LEFT JOIN companies wp ON ev.workplace_id = wp.id
+            LEFT JOIN companies c ON e.workplace_id = c.id
             WHERE 1=1
         `;
         
@@ -377,9 +376,8 @@ router.get('/detailed', async (req, res) => {
             params.push(employee_id);
         }
         
-        // Contagem total para paginação
-        const countSql = sql.replace('SELECT o.id, o.mes, o.unidade, o.nome, o.extra, o.valor, o.created_at, e.id as employee_id, e.name as employee_name, e."registrationNumber", e.role, e.sector, e.type, wp.name as workplace_name FROM overtime_records o JOIN employees e ON o.employee_id = e.id LEFT JOIN employee_vinculos ev ON e.id = ev.employee_id AND ev.principal = \'1\' LEFT JOIN companies wp ON ev.workplace_id = wp.id WHERE 1=1', 'SELECT COUNT(*) as total FROM overtime_records o JOIN employees e ON o.employee_id = e.id LEFT JOIN employee_vinculos ev ON e.id = ev.employee_id AND ev.principal = \'1\' LEFT JOIN companies wp ON ev.workplace_id = wp.id WHERE 1=1');
-        
+        // Contagem total para paginação usando subquery
+        const countSql = `SELECT COUNT(*) as total FROM (${sql}) as sub`;
         const countResult = await query(countSql, params);
         const totalRecords = parseInt(countResult.rows[0]?.total || 0);
         
@@ -635,6 +633,78 @@ router.get('/periods', async (req, res) => {
         });
     } catch (err) {
         console.error('Erro ao obter períodos:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ROTA: Snapshot de headcount por período (INFALÍVEL - Regra de Negócio NIT)
+router.get('/headcount-snapshot', async (req, res) => {
+    try {
+        const { year, month } = req.query;
+        
+        if (!year || !month) {
+            return res.status(400).json({ success: false, error: 'Ano e mês são obrigatórios' });
+        }
+
+        const monthMap = {
+            'JANEIRO': 1, 'FEVEREIRO': 2, 'MARCO': 3, 'MARÇO': 3, 'ABRIL': 4,
+            'MAIO': 5, 'JUNHO': 6, 'JULHO': 7, 'AGOSTO': 8,
+            'SETEMBRO': 9, 'OUTUBRO': 10, 'NOVEMBRO': 11, 'DEZEMBRO': 12
+        };
+
+        const monthNum = monthMap[month.toUpperCase()];
+        if (!monthNum) {
+            return res.status(400).json({ success: false, error: 'Mês inválido: ' + month });
+        }
+
+        // Primeiro dia do mês (Ex: 2025-01-01)
+        const startDate = `${year}-${monthNum.toString().padStart(2, '0')}-01`;
+        
+        // Último dia do mês (Ex: 2025-01-31)
+        const lastDay = new Date(parseInt(year), monthNum, 0).getDate();
+        const endDate = `${year}-${monthNum.toString().padStart(2, '0')}-${lastDay}`;
+
+        console.log(`[HEADCOUNT] 🔍 Calculando para ${month}/${year} (${startDate} até ${endDate})`);
+
+        // Query aplicando a regra: admissao <= fim_mes AND (saida IS NULL OR saida >= inicio_mes)
+        const sql = `
+            SELECT 
+                c.name as unit_name,
+                COUNT(DISTINCT e.id) as active_employees
+            FROM employees e
+            JOIN companies c ON e.workplace_id = c.id
+            WHERE 
+                -- Regra 1: Entrou antes do fim do mês selecionado
+                (e."admissionDate" IS NOT NULL AND e."admissionDate" != '' AND e."admissionDate" <= $2)
+                AND 
+                -- Regra 2: Ainda não saiu OU saiu durante/depois do mês selecionado
+                (e."terminationDate" IS NULL OR e."terminationDate" = '' OR e."terminationDate" >= $1)
+            GROUP BY c.name
+            ORDER BY c.name
+        `;
+
+        const result = await query(sql, [startDate, endDate]);
+        
+        // Converter contagens para número (Postgres COUNT retorna string)
+        const data = result.rows.map(row => ({
+            unit_name: row.unit_name,
+            active_employees: parseInt(row.active_employees)
+        }));
+
+        console.log(`[HEADCOUNT] ✅ Resultado para ${month}/${year}:`, JSON.stringify(data));
+
+        res.json({
+            success: true,
+            data: data,
+            period: {
+                start: startDate,
+                end: endDate,
+                month,
+                year
+            }
+        });
+    } catch (err) {
+        console.error('❌ Erro no snapshot de headcount:', err);
         res.status(500).json({ error: err.message });
     }
 });

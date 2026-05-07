@@ -194,6 +194,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadData();
 });
 
+// Função para encontrar e selecionar o mês/ano mais recente disponível nos dados
+function setLatestMonthFilter() {
+    if (!allOvertime || allOvertime.length === 0) return;
+    
+    // Normalizar todos os registros para encontrar a maior chave de ordenação
+    const normalizedDates = allOvertime.map(r => {
+        const dateStr = r.mes || r.MES || r.month_year;
+        return normalizeMonthYear(dateStr);
+    }).filter(d => d.sortKey);
+    
+    if (normalizedDates.length === 0) return;
+    
+    // Ordenar por sortKey (YYYY-MM) descendente
+    normalizedDates.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+    
+    const latest = normalizedDates[0];
+    
+    const monthSelect = document.getElementById('filter-month');
+    const yearSelect = document.getElementById('filter-year');
+    
+    if (monthSelect && yearSelect) {
+        // Verificar se os valores existem nas opções
+        const hasMonth = Array.from(monthSelect.options).some(opt => opt.value === latest.month);
+        const hasYear = Array.from(yearSelect.options).some(opt => opt.value === latest.year);
+        
+        if (hasMonth && hasYear) {
+            monthSelect.value = latest.month;
+            yearSelect.value = latest.year;
+            console.log(`[DASHBOARD] Auto-selecionado: ${latest.normalized}`);
+            
+            // Atualizar a filteredData globalmente antes do updateDashboard
+            filteredData = allOvertime.filter(r => {
+                return extractMonthFromRecord(r) === latest.month && extractYearFromRecord(r) === latest.year;
+            });
+        }
+    }
+}
+
 // Carregar dados usando as APIs existentes
 async function loadData() {
     try {
@@ -205,10 +243,17 @@ async function loadData() {
         
         if (data.success) {
             allOvertime = data.data || [];
-            filteredData = [...allOvertime];
             
-            // Popular filtros
+            // Popular filtros primeiro para garantir que os selects tenham as opções
             populateFilters();
+            
+            // Tentar selecionar o mês mais recente automaticamente
+            setLatestMonthFilter();
+            
+            // Se o setLatestMonthFilter não encontrou nada,FilteredData continua sendo allOvertime
+            if (filteredData.length === 0 && allOvertime.length > 0) {
+                filteredData = [...allOvertime];
+            }
             
             // Atualizar dashboard
             await updateDashboard();
@@ -325,111 +370,68 @@ async function updateSummaryCards() {
 // Função para calcular horas esperadas e porcentagem de extras equivalentes
 async function calculateExpectedHoursAndPercentage(totalExtraMinutes) {
     try {
-        // Verificar se há filtros de mês/ano aplicados
         const monthFilter = document.getElementById('filter-month').value;
         const yearFilter = document.getElementById('filter-year').value;
+        const unitFilter = document.getElementById('filter-unit').value;
         
         let response;
         let data;
         
+        // Sempre buscar o snapshot se mês e ano estiverem selecionados
         if (monthFilter && yearFilter) {
-            // Se há filtro de mês/ano, usar API de histórico para obter dados daquele período
-            const monthNumber = MONTH_ORDER[monthFilter.toUpperCase()] || 1;
-            const startDate = `${yearFilter}-${monthNumber.toString().padStart(2, '0')}-01`;
-            
-            // Calcular último dia do mês corretamente
-            const lastDayOfMonth = new Date(parseInt(yearFilter), monthNumber, 0).getDate();
-            const endDate = `${yearFilter}-${monthNumber.toString().padStart(2, '0')}-${lastDayOfMonth}`;
-            
-            console.log(`Buscando dados históricos para o período: ${startDate} a ${endDate}`);
-            
-            response = await fetch(`/api/population/history?start_date=${startDate}&end_date=${endDate}`);
+            response = await fetch(`/api/analysis/headcount-snapshot?year=${yearFilter}&month=${encodeURIComponent(monthFilter)}`);
             data = await response.json();
-            
-            if (!data.success || !data.data) {
-                console.log('Não há dados históricos para o período, usando dados atuais');
-                // Fallback para dados atuais
-                response = await fetch('/api/population/units');
-                data = await response.json();
-            }
         } else {
-            // Se não há filtro de mês/ano, usar dados atuais
+            // Fallback para dados populacionais atuais se não houver filtro de período completo
             response = await fetch('/api/population/units');
             data = await response.json();
         }
         
         if (data.success && data.data) {
-            const unitsData = data.data;
-            
-            // Mapear colaboradores ativos por unidade
+            const unitsSnapshot = data.data;
             const activeEmployeesByUnit = {};
             
-            // Verificar se são dados de histórico (têm record_date) ou dados atuais
-            const isHistoricalData = unitsData.length > 0 && unitsData[0].record_date;
+            // Totalizar ativos de TODAS as unidades encontradas no snapshot
+            let grandTotalActive = 0;
             
-            if (isHistoricalData) {
-                // Dados históricos: pegar o registro mais recente de cada unidade no período
-                const latestRecordsByUnit = {};
-                unitsData.forEach(record => {
-                    const unitName = record.unit_name || '';
-                    if (unitName) {
-                        // Se ainda não tiver registro para esta unidade, ou se este for mais recente
-                        if (!latestRecordsByUnit[unitName] || 
-                            new Date(record.record_date) > new Date(latestRecordsByUnit[unitName].record_date)) {
-                            latestRecordsByUnit[unitName] = record;
-                        }
-                    }
-                });
-                
-                // Mapear colaboradores ativos usando os registros mais recentes
-                Object.values(latestRecordsByUnit).forEach(record => {
-                    const unitName = record.unit_name || '';
-                    if (unitName) {
-                        activeEmployeesByUnit[unitName] = parseInt(record.active_employees) || 0;
-                    }
-                });
-                
-                console.log('Dados históricos processados:', activeEmployeesByUnit);
-            } else {
-                // Dados atuais: usar lógica original
-                unitsData.forEach(unit => {
-                    const unitName = unit.unit_name || unit.name || '';
-                    if (unitName) {
-                        // Converter para número, pois a API retorna como string
-                        activeEmployeesByUnit[unitName] = parseInt(unit.active_employees) || 0;
-                    }
-                });
-                
-                console.log('Dados atuais processados:', activeEmployeesByUnit);
-            }
+            unitsSnapshot.forEach(item => {
+                const unitName = item.unit_name || item.name || '';
+                const count = parseInt(item.active_employees) || 0;
+                if (unitName) {
+                    activeEmployeesByUnit[unitName] = count;
+                }
+                grandTotalActive += count;
+            });
             
-            // Calcular horas esperadas totais (colaboradores_ativos x 220 horas)
             let totalExpectedHours = 0;
             let totalActiveEmployees = 0;
             
-            // Para cada unidade nos dados de horas extras, buscar colaboradores ativos correspondentes
-            const uniqueUnits = [...new Set(filteredData.map(r => r.unidade || r.UNIDADE).filter(Boolean))];
+            // LÓGICA DE AUDITORIA:
+            // Se o usuário selecionou uma unidade específica, comparamos o extra dela com o headcount dela.
+            // Se o usuário NÃO selecionou uma unidade, comparamos o extra total com o headcount total da empresa.
             
-            uniqueUnits.forEach(unitName => {
-                // Tentar encontrar correspondência exata ou aproximada
-                let activeEmployees = activeEmployeesByUnit[unitName] || 0;
+            if (unitFilter) {
+                // Tentar encontrar correspondência para a unidade filtrada
+                let activeCount = activeEmployeesByUnit[unitFilter] || 0;
                 
-                // Se não encontrar exata, tentar correspondência aproximada
-                if (activeEmployees === 0) {
-                    const normalizedUnitName = unitName.toUpperCase().trim();
-                    const matchingKey = Object.keys(activeEmployeesByUnit).find(key => 
-                        key.toUpperCase().trim() === normalizedUnitName ||
-                        key.toUpperCase().trim().includes(normalizedUnitName) ||
-                        normalizedUnitName.includes(key.toUpperCase().trim())
-                    );
-                    if (matchingKey) {
-                        activeEmployees = activeEmployeesByUnit[matchingKey];
-                    }
+                // Fuzzy matching para unidade se não encontrar exata
+                if (activeCount === 0) {
+                    const normalizedFilter = unitFilter.toUpperCase().trim();
+                    const matchingKey = Object.keys(activeEmployeesByUnit).find(key => {
+                        const k = key.toUpperCase().trim();
+                        return k === normalizedFilter || k.includes(normalizedFilter) || normalizedFilter.includes(k);
+                    });
+                    if (matchingKey) activeCount = activeEmployeesByUnit[matchingKey];
                 }
                 
-                totalActiveEmployees += activeEmployees;
-                totalExpectedHours += activeEmployees * 220; // 220 horas por colaborador ativo
-            });
+                totalActiveEmployees = activeCount;
+            } else {
+                // Nenhuma unidade filtrada: usar o total da empresa no período
+                totalActiveEmployees = grandTotalActive;
+            }
+
+            // 220 horas padrão por colaborador
+            totalExpectedHours = totalActiveEmployees * 220;
             
             // Converter horas esperadas para minutos
             const expectedMinutes = totalExpectedHours * 60;
@@ -440,30 +442,42 @@ async function calculateExpectedHoursAndPercentage(totalExtraMinutes) {
                 extraPercentage = (totalExtraMinutes / expectedMinutes) * 100;
             }
             
-            // Atualizar cards
+            // Atualizar cards com as métricas do período
             document.getElementById('active-employees-total').textContent = formatNumber(totalActiveEmployees);
             document.getElementById('expected-hours-total').textContent = formatTime(expectedMinutes);
             document.getElementById('overtime-percentage-expected').textContent = extraPercentage.toFixed(2) + '%';
             
-            // Adicionar indicadores visuais baseados na porcentagem
+            // Feedback visual de severidade (Regras de BI)
             const percentageCard = document.getElementById('overtime-percentage-expected').parentElement.parentElement;
-            if (extraPercentage > 100) {
-                percentageCard.style.borderColor = '#DC2626'; // Vermelho para excesso
-            } else if (extraPercentage > 80) {
-                percentageCard.style.borderColor = '#F59E0B'; // Laranja para atenção
+            if (extraPercentage > 8) { // Mais de 8% de extra em relação à frota total é crítico
+                percentageCard.style.borderColor = '#DC2626'; // Vermelho
+            } else if (extraPercentage > 4) {
+                percentageCard.style.borderColor = '#F59E0B'; // Laranja
             } else {
-                percentageCard.style.borderColor = '#10B981'; // Verde para normal
+                percentageCard.style.borderColor = '#10B981'; // Verde
+            }
+            
+            // Adicionar uma label pequena indicando o que o número representa
+            const percentageTitle = percentageCard.querySelector('h3');
+            if (percentageTitle && !percentageTitle.dataset.labeled) {
+                const label = document.createElement('span');
+                label.className = 'block text-[8px] opacity-60 normal-case font-normal mt-1';
+                label.textContent = unitFilter ? 'Carga vs Unidade' : 'Carga vs Frota Total';
+                percentageTitle.appendChild(label);
+                percentageTitle.dataset.labeled = 'true';
+            } else if (percentageTitle) {
+                const label = percentageTitle.querySelector('span');
+                if (label) label.textContent = unitFilter ? 'Carga vs Unidade' : 'Carga vs Frota Total';
             }
             
         } else {
-            // Se não conseguir buscar dados, mostrar valores zerados
+            // Estado neutro
             document.getElementById('active-employees-total').textContent = '--';
             document.getElementById('expected-hours-total').textContent = '--:--';
             document.getElementById('overtime-percentage-expected').textContent = '--%';
         }
     } catch (error) {
         console.error('Erro ao calcular horas esperadas:', error);
-        // Em caso de erro, mostrar valores padrão
         document.getElementById('active-employees-total').textContent = '--';
         document.getElementById('expected-hours-total').textContent = '--:--';
         document.getElementById('overtime-percentage-expected').textContent = '--%';
