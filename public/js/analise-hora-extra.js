@@ -893,6 +893,66 @@ function showLoading(show = true) {
     }
 }
 
+// Funções para o Modal de Headcount
+async function showHeadcountDetails() {
+    const month = document.getElementById('filter-month').value;
+    const year = document.getElementById('filter-year').value;
+    const unit = document.getElementById('filter-unit').value;
+    
+    if (!month || !year) {
+        alert('Por favor, selecione um mês e um ano para ver os detalhes.');
+        return;
+    }
+    
+    const modal = document.getElementById('headcount-modal');
+    const tbody = document.getElementById('headcount-modal-body');
+    const subtitle = document.getElementById('headcount-modal-subtitle');
+    
+    // Abrir modal e mostrar loading
+    modal.classList.remove('hidden');
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10">Carregando lista de colaboradores...</td></tr>';
+    subtitle.textContent = `Período: ${month}/${year} ${unit ? `| Unidade: ${unit}` : ''}`;
+    
+    try {
+        let url = `/api/analysis/headcount-details?year=${year}&month=${encodeURIComponent(month)}`;
+        if (unit) url += `&unit=${encodeURIComponent(unit)}`;
+        
+        const response = await fetch(url);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            if (result.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-gray-400">Nenhum colaborador encontrado nesta regra para o período.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = result.data.map(emp => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="py-4"><strong>${emp.name}</strong></td>
+                    <td class="py-4">${emp.registrationNumber || '-'}</td>
+                    <td class="py-4 text-xs">${emp.unit_name || '-'}</td>
+                    <td class="py-4">${emp.admissionDate ? new Date(emp.admissionDate).toLocaleDateString('pt-BR') : '-'}</td>
+                    <td class="py-4">${emp.terminationDate ? new Date(emp.terminationDate).toLocaleDateString('pt-BR') : '-'}</td>
+                    <td class="py-4 text-center">
+                        <span class="px-2 py-1 bg-green-100 text-green-700 rounded-lg font-bold text-xs">
+                            ${emp.dias_no_mes} dias
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        } else {
+            throw new Error(result.error || 'Erro ao buscar dados');
+        }
+    } catch (error) {
+        console.error('Erro ao carregar detalhes do headcount:', error);
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-red-500 font-bold">Erro: ${error.message}</td></tr>`;
+    }
+}
+
+function closeHeadcountModal() {
+    document.getElementById('headcount-modal').classList.add('hidden');
+}
+
 function hideLoading() {
     const loading = document.getElementById('loading');
     const dashboard = document.getElementById('dashboard');
@@ -921,3 +981,5 @@ window.applyFilters = applyFilters;
 window.clearFilters = clearFilters;
 window.refreshData = refreshData;
 window.exportData = exportData;
+window.showHeadcountDetails = showHeadcountDetails;
+window.closeHeadcountModal = closeHeadcountModal;

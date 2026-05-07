@@ -676,16 +676,15 @@ router.get('/headcount-snapshot', async (req, res) => {
             JOIN companies c ON e.workplace_id = c.id
             WHERE 
                 -- Regra 1: Entrou antes do fim do mês selecionado
-                (e."admissionDate" IS NOT NULL AND e."admissionDate" != '' AND e."admissionDate" <= $2)
+                (e."admissionDate" IS NOT NULL AND e."admissionDate" != '' AND e."admissionDate"::date <= $2::date)
                 AND 
                 -- Regra 2: Ainda não saiu OU saiu durante/depois do mês selecionado
-                (e."terminationDate" IS NULL OR e."terminationDate" = '' OR e."terminationDate" >= $1)
+                (e."terminationDate" IS NULL OR e."terminationDate" = '' OR e."terminationDate"::date >= $1::date)
                 AND (
                     -- Regra dos 15 dias (NIT):
-                    -- Dias no mês = LEAST(terminationDate, endDate) - GREATEST(admissionDate, startDate) + 1
                     (
                         LEAST(COALESCE(NULLIF(e."terminationDate", '')::date, $2::date), $2::date) - 
-                        GREATEST(e."admissionDate"::date, $1::date) + 1
+                        GREATEST(COALESCE(NULLIF(e."admissionDate", '')::date, $1::date), $1::date) + 1
                     ) >= 15
                 )
             GROUP BY c.name
@@ -714,6 +713,76 @@ router.get('/headcount-snapshot', async (req, res) => {
         });
     } catch (err) {
         console.error('❌ Erro no snapshot de headcount:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ROTA: Detalhes dos colaboradores no snapshot de headcount
+router.get('/headcount-details', async (req, res) => {
+    try {
+        const { year, month, unit } = req.query;
+        
+        if (!year || !month) {
+            return res.status(400).json({ success: false, error: 'Ano e mês são obrigatórios' });
+        }
+
+        const monthMap = {
+            'JANEIRO': 1, 'FEVEREIRO': 2, 'MARCO': 3, 'MARÇO': 3, 'ABRIL': 4,
+            'MAIO': 5, 'JUNHO': 6, 'JULHO': 7, 'AGOSTO': 8,
+            'SETEMBRO': 9, 'OUTUBRO': 10, 'NOVEMBRO': 11, 'DEZEMBRO': 12
+        };
+
+        const monthNum = monthMap[month.toUpperCase()];
+        if (!monthNum) return res.status(400).json({ success: false, error: 'Mês inválido' });
+
+        const startDate = `${year}-${monthNum.toString().padStart(2, '0')}-01`;
+        const lastDay = new Date(parseInt(year), monthNum, 0).getDate();
+        const endDate = `${year}-${monthNum.toString().padStart(2, '0')}-${lastDay}`;
+
+        let sql = `
+            SELECT 
+                e.id,
+                e.name,
+                e."registrationNumber",
+                e.role,
+                e.sector,
+                e."admissionDate",
+                e."terminationDate",
+                c.name as unit_name,
+                (
+                    LEAST(COALESCE(NULLIF(e."terminationDate", '')::date, $2::date), $2::date) - 
+                    GREATEST(COALESCE(NULLIF(e."admissionDate", '')::date, $1::date), $1::date) + 1
+                ) as dias_no_mes
+            FROM employees e
+            JOIN companies c ON e.workplace_id = c.id
+            WHERE 
+                (e."admissionDate" IS NOT NULL AND e."admissionDate" != '' AND e."admissionDate"::date <= $2::date)
+                AND (e."terminationDate" IS NULL OR e."terminationDate" = '' OR e."terminationDate"::date >= $1::date)
+                AND (
+                    (
+                        LEAST(COALESCE(NULLIF(e."terminationDate", '')::date, $2::date), $2::date) - 
+                        GREATEST(COALESCE(NULLIF(e."admissionDate", '')::date, $1::date), $1::date) + 1
+                    ) >= 15
+                )
+        `;
+
+        const params = [startDate, endDate];
+        if (unit) {
+            sql += ` AND c.name = $3`;
+            params.push(unit);
+        }
+
+        sql += ` ORDER BY e.name ASC`;
+
+        const result = await query(sql, params);
+        
+        res.json({
+            success: true,
+            data: result.rows,
+            period: { month, year, start: startDate, end: endDate }
+        });
+    } catch (err) {
+        console.error('❌ Erro nos detalhes de headcount:', err);
         res.status(500).json({ error: err.message });
     }
 });
