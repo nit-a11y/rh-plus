@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { query, pool } = require('../config/database');
+const { query, getPool } = require('../config/database');
 const crypto = require('crypto');
 
 const generateId = () => crypto.randomBytes(4).toString('hex');
@@ -467,140 +467,122 @@ async function countAllActiveEmployees() {
 
 const { countActiveEmployees } = require('./overtime-fixed');
 
-// ROTA: Inserção em lote ultra-otimizada para produção
+// ROTA: Inserção em lote otimizada e funcional
 router.post('/batch-insert', async (req, res) => {
-    // Configurar timeout para evitar 504
-    req.setTimeout(300000); // 5 minutos
+    // Configurar timeout para evitar interrupções em lotes grandes
+    req.setTimeout(600000); // 10 minutos
     
-    const client = await pool.connect();
+    const { records, overwrite_duplicates = false } = req.body;
+    
+    if (!records || !Array.isArray(records) || records.length === 0) {
+        return res.status(400).json({ error: 'Lista de registros é obrigatória' });
+    }
     
     try {
-        await client.query('BEGIN');
+        // 1. Coletar IDs únicos de colaboradores para busca em massa
+        const uniqueEmployeeIds = [...new Set(records.map(r => r.employee_id))];
         
-        const { records, overwrite_duplicates = false } = req.body;
+        // 2. Buscar nomes e unidades de todos os colaboradores envolvidos
+        const empResults = await query(`
+            SELECT e.id, e.name, c.name as workplace_name
+            FROM employees e
+            LEFT JOIN companies c ON e.workplace_id = c.id
+            WHERE e.id = ANY($1)
+        `, [uniqueEmployeeIds]);
         
-        if (!records || !Array.isArray(records) || records.length === 0) {
-            return res.status(400).json({ error: 'Lista de registros é obrigatória' });
-        }
+        const employeeInfoMap = new Map();
+        empResults.rows.forEach(emp => {
+            employeeInfoMap.set(emp.id, emp);
+        });
         
-        // Limitar tamanho do lote para evitar timeout
-        const MAX_BATCH_SIZE = 100;
-        const batches = [];
-        for (let i = 0; i < records.length; i += MAX_BATCH_SIZE) {
-            batches.push(records.slice(i, i + MAX_BATCH_SIZE));
-        }
+        // 3. Iniciar transação
+        await query('BEGIN');
         
         let totalInserted = 0;
+        let totalUpdated = 0;
+        let errors = 0;
         
-        // Processar em micro-lotes
-        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-            const batch = batches[batchIndex];
+        for (const record of records) {
+            const { employee_id, month_year, overtime_time, overtime_value } = record;
+            const empInfo = employeeInfoMap.get(employee_id);
             
-            const values = [];
-            const placeholders = [];
-            let baseIndex = 1;
+            if (!empInfo) {
+                errors++;
+                continue;
+            }
             
-            // Cache de colaboradores para evitar queries repetidas
-            const employeeCache = new Map();
+            const monthYearUpper = month_year.toUpperCase().trim();
+            const employeeName = empInfo.name;
+            const workplaceName = empInfo.workplace_name || '';
             
-            for (const record of batch) {
-                const { employee_id, month_year, overtime_time, overtime_value } = record;
-                
-                // Verificar duplicata se necessário (batch check)
-                if (!overwrite_duplicates) {
-                    const existingCheck = await client.query(`
-                        SELECT id FROM overtime_records 
-                        WHERE employee_id = $1 AND mes = $2
-                        LIMIT 1
-                    `, [employee_id, month_year]);
-                    
-                    if (existingCheck.rows.length > 0) {
-                        continue; // Pular duplicatas
-                    }
+            // Normalizar valor
+            let value = 0;
+            if (overtime_value !== undefined && overtime_value !== null) {
+                const strValue = overtime_value.toString().trim();
+                const cleanValue = strValue
+                    .replace(/R\$\s*/gi, '')
+                    .replace(/\./g, '')
+                    .replace(',', '.');
+                value = parseFloat(cleanValue) || 0;
+            }
+            
+            // Verificar se já existe registro para este colaborador no mês
+            const existingRecord = await query(`
+                SELECT id FROM overtime_records 
+                WHERE employee_id = $1 AND mes = $2
+                LIMIT 1
+            `, [employee_id, monthYearUpper]);
+            
+            if (existingRecord.rows.length > 0) {
+                if (overwrite_duplicates) {
+                    // Atualizar registro existente
+                    await query(`
+                        UPDATE overtime_records 
+                        SET extra = $1, valor = $2, unidade = $3, nome = $4, created_by = $5
+                        WHERE id = $6
+                    `, [overtime_time, value, workplaceName, employeeName, 'Batch Update', existingRecord.rows[0].id]);
+                    totalUpdated++;
+                } else {
+                    // Ignorar duplicata
+                    continue;
                 }
-                
-                // Cache de colaboradores
-                if (!employeeCache.has(employee_id)) {
-                    const empInfo = await client.query(`
-                        SELECT e.name, c.name as workplace_name
-                        FROM employees e
-                        LEFT JOIN companies c ON e.workplace_id = c.id
-                        WHERE e.id = $1
-                        LIMIT 1
-                    `, [employee_id]);
-                    
-                    if (empInfo.rows.length === 0) continue;
-                    
-                    employeeCache.set(employee_id, {
-                        name: empInfo.rows[0].name,
-                        workplace_name: empInfo.rows[0].workplace_name || ''
-                    });
-                }
-                
-                const empData = employeeCache.get(employee_id);
+            } else {
+                // Inserir novo registro
                 const id = generateId();
-                
-                // Normalizar valor (otimizado)
-                let value = 0;
-                if (overtime_value) {
-                    const cleanValue = overtime_value.toString()
-                        .replace(/R\$\s*/gi, '')
-                        .replace(/\./g, '')
-                        .replace(',', '.');
-                    value = parseFloat(cleanValue) || 0;
-                }
-                
-                // Adicionar placeholders e valores
-                placeholders.push(`($${baseIndex}, $${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6})`);
-                
-                values.push(
-                    id,
-                    employee_id,
-                    month_year.toUpperCase().trim(),
-                    empData.workplace_name,
-                    empData.name,
+                await query(`
+                    INSERT INTO overtime_records (
+                        id, employee_id, mes, unidade, nome, extra, valor, created_by
+                    ) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                `, [
+                    id, 
+                    employee_id, 
+                    monthYearUpper,
+                    workplaceName,
+                    employeeName,
                     overtime_time || '',
                     value,
                     'Batch Insert'
-                );
-                
-                baseIndex += 7;
-            }
-            
-            if (values.length > 0) {
-                // Insert em massa do micro-lote
-                const query = `
-                    INSERT INTO overtime_records 
-                    (id, employee_id, mes, unidade, nome, extra, valor, created_by)
-                    VALUES ${placeholders.join(', ')}
-                `;
-                
-                await client.query(query, values);
-                totalInserted += Math.floor(values.length / 7);
-                
-                // Pequeno delay entre micro-lotes para não sobrecarregar
-                if (batchIndex < batches.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 10));
-                }
+                ]);
+                totalInserted++;
             }
         }
         
-        await client.query('COMMIT');
+        await query('COMMIT');
         
         res.json({ 
             success: true, 
             inserted: totalInserted,
+            updated: totalUpdated,
             processed: records.length,
-            batches: batches.length,
-            message: `${totalInserted} registros inseridos com sucesso em ${batches.length} micro-lotes!`
+            errors: errors,
+            message: `${totalInserted} registros inseridos e ${totalUpdated} atualizados com sucesso!`
         });
         
     } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Erro batch-insert:', err);
-        res.status(500).json({ error: err.message });
-    } finally {
-        client.release();
+        await query('ROLLBACK');
+        console.error('Erro no processamento em lote:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
@@ -673,8 +655,6 @@ router.post('/mass-insert', async (req, res) => {
             }
             
             try {
-                console.log('DEBUG - Processando registro:', { index, employee_id, month_year, overtime_time, overtime_value });
-                
                 // Buscar informações do colaborador
                 const empInfo = await query(`
                     SELECT 
@@ -686,7 +666,6 @@ router.post('/mass-insert', async (req, res) => {
                 `, [employee_id]);
                 
                 if (empInfo.rows.length === 0) {
-                    console.log('ERRO - Colaborador não encontrado:', employee_id);
                     errors.push({ index, error: `Colaborador não encontrado: ${employee_id}` });
                     continue;
                 }
@@ -694,21 +673,9 @@ router.post('/mass-insert', async (req, res) => {
                 const employeeName = empInfo.rows[0]?.name || '';
                 const workplaceName = empInfo.rows[0]?.workplace_name || '';
                 
-                // Teste com query mais simples
-                console.log('DEBUG INSERT - Valores:', {
-                    id, 
-                    employee_id, 
-                    month_year: month_year.toUpperCase().trim(),
-                    workplaceName,
-                    employeeName,
-                    time,
-                    value,
-                    created_by: 'Mass Insert'
-                });
-                
                 await query(`
                     INSERT INTO overtime_records (id, employee_id, mes, unidade, nome, extra, valor, created_by)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 `, [
                     id, 
                     employee_id, 
@@ -720,10 +687,8 @@ router.post('/mass-insert', async (req, res) => {
                     'Mass Insert'
                 ]);
                 
-                console.log('DEBUG - Registro inserido com sucesso:', id);
                 created.push(id);
             } catch (err) {
-                console.log('ERRO - Falha ao inserir registro:', { index, error: err.message, stack: err.stack });
                 errors.push({ index, error: err.message });
             }
         }

@@ -1265,7 +1265,7 @@ janeiro 2025	AILTON VENANCIO DA FONSECA	05:27	R$ 66,33"></textarea>
             }
 
             // Confirmar processamento
-            if (!confirm(`Processar ${validData.length} registros de hora extra em micro-lotes otimizados?`)) {
+            if (!confirm(`Processar ${validData.length} registros de hora extra individualmente?`)) {
                 return;
             }
 
@@ -1289,7 +1289,7 @@ janeiro 2025	AILTON VENANCIO DA FONSECA	05:27	R$ 66,33"></textarea>
 
                 // Configurar timeout estendido para produção
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutos
+                const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutos
 
                 // Única request para todos os dados com timeout estendido
                 const res = await fetch('/api/overtime/batch-insert', {
@@ -1317,8 +1317,8 @@ janeiro 2025	AILTON VENANCIO DA FONSECA	05:27	R$ 66,33"></textarea>
                 
                 setTimeout(() => {
                     let message = `✅ ${result.inserted} registros inseridos com sucesso!`;
-                    if (result.batches > 1) {
-                        message += `\n📊 Processado em ${result.batches} micro-lotes para otimização.`;
+                    if (result.method === 'INDIVIDUAL') {
+                        message += `\n� Processado individualmente para estabilidade.`;
                     }
                     alert(message);
                     closeMassInsertModal();
