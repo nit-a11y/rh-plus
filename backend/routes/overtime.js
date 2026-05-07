@@ -197,21 +197,18 @@ router.post('/', async (req, res) => {
         if (overtime_value !== undefined && overtime_value !== null) {
             const strValue = overtime_value.toString().trim();
             
-            // Se tem vírgula, assume formato brasileiro (100,73)
-            if (strValue.includes(',')) {
+            // Se for apenas números e tiver pelo menos 3 dígitos, e não tiver separadores,
+            // poderíamos estar recebendo o valor "cru" do input com máscara.
+            // Mas o parseMassData do front já envia um número decimal.
+            
+            if (typeof overtime_value === 'number') {
+                value = overtime_value;
+            } else {
                 const cleanValue = strValue
                     .replace(/R\$\s*/gi, '')
                     .replace(/\./g, '')      // Remove pontos de milhar
                     .replace(',', '.');       // Troca vírgula por ponto decimal
                 value = parseFloat(cleanValue) || 0;
-            } 
-            // Se tem ponto e é número decimal (100.73)
-            else if (strValue.includes('.')) {
-                value = parseFloat(strValue) || 0;
-            }
-            // Se é número inteiro sem separadores
-            else {
-                value = parseFloat(strValue) || 0;
             }
         }
         
@@ -286,25 +283,17 @@ router.put('/:id', async (req, res) => {
         }
         
         if (valor !== undefined && valor !== null) {
-            // Normalizar valor - suporta número ou string formatada
+            // Normalizar valor
             let value = 0;
-            const strValue = valor.toString().trim();
-            
-            // Se tem vírgula, assume formato brasileiro (100,73)
-            if (strValue.includes(',')) {
+            if (typeof valor === 'number') {
+                value = valor;
+            } else {
+                const strValue = valor.toString().trim();
                 const cleanValue = strValue
                     .replace(/R\$\s*/gi, '')
-                    .replace(/\./g, '')      // Remove pontos de milhar
-                    .replace(',', '.');       // Troca vírgula por ponto decimal
+                    .replace(/\./g, '')
+                    .replace(',', '.');
                 value = parseFloat(cleanValue) || 0;
-            } 
-            // Se tem ponto e é número decimal (100.73)
-            else if (strValue.includes('.')) {
-                value = parseFloat(strValue) || 0;
-            }
-            // Se é número inteiro sem separadores
-            else {
-                value = parseFloat(strValue) || 0;
             }
             
             paramIndex++;
@@ -379,26 +368,18 @@ router.post('/bulk', async (req, res) => {
             
             const id = generateId();
             
-            // Normalizar valor - suporta número ou string formatada
+            // Normalizar valor
             let value = 0;
             if (overtime_value !== undefined && overtime_value !== null) {
-                const strValue = overtime_value.toString().trim();
-                
-                // Se tem vírgula, assume formato brasileiro (100,73)
-                if (strValue.includes(',')) {
+                if (typeof overtime_value === 'number') {
+                    value = overtime_value;
+                } else {
+                    const strValue = overtime_value.toString().trim();
                     const cleanValue = strValue
                         .replace(/R\$\s*/gi, '')
-                        .replace(/\./g, '')      // Remove pontos de milhar
-                        .replace(',', '.');       // Troca vírgula por ponto decimal
+                        .replace(/\./g, '')
+                        .replace(',', '.');
                     value = parseFloat(cleanValue) || 0;
-                } 
-                // Se tem ponto e é número decimal (100.73)
-                else if (strValue.includes('.')) {
-                    value = parseFloat(strValue) || 0;
-                }
-                // Se é número inteiro sem separadores
-                else {
-                    value = parseFloat(strValue) || 0;
                 }
             }
             
@@ -518,12 +499,16 @@ router.post('/batch-insert', async (req, res) => {
             // Normalizar valor
             let value = 0;
             if (overtime_value !== undefined && overtime_value !== null) {
-                const strValue = overtime_value.toString().trim();
-                const cleanValue = strValue
-                    .replace(/R\$\s*/gi, '')
-                    .replace(/\./g, '')
-                    .replace(',', '.');
-                value = parseFloat(cleanValue) || 0;
+                if (typeof overtime_value === 'number') {
+                    value = overtime_value;
+                } else {
+                    const strValue = overtime_value.toString().trim();
+                    const cleanValue = strValue
+                        .replace(/R\$\s*/gi, '')
+                        .replace(/\./g, '')
+                        .replace(',', '.');
+                    value = parseFloat(cleanValue) || 0;
+                }
             }
             
             // Verificar se já existe registro para este colaborador no mês
@@ -633,18 +618,15 @@ router.post('/mass-insert', async (req, res) => {
             // Normalizar valor
             let value = 0;
             if (overtime_value !== undefined && overtime_value !== null) {
-                const strValue = overtime_value.toString().trim();
-                
-                if (strValue.includes(',')) {
+                if (typeof overtime_value === 'number') {
+                    value = overtime_value;
+                } else {
+                    const strValue = overtime_value.toString().trim();
                     const cleanValue = strValue
                         .replace(/R\$\s*/gi, '')
                         .replace(/\./g, '')
                         .replace(',', '.');
                     value = parseFloat(cleanValue) || 0;
-                } else if (strValue.includes('.')) {
-                    value = parseFloat(strValue) || 0;
-                } else {
-                    value = parseFloat(strValue) || 0;
                 }
             }
             
