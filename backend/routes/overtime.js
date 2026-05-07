@@ -467,8 +467,11 @@ async function countAllActiveEmployees() {
 
 const { countActiveEmployees } = require('./overtime-fixed');
 
-// ROTA: Inserção em lote profissional
+// ROTA: Inserção em lote ultra-otimizada para produção
 router.post('/batch-insert', async (req, res) => {
+    // Configurar timeout para evitar 504
+    req.setTimeout(300000); // 5 minutos
+    
     const client = await pool.connect();
     
     try {
@@ -480,90 +483,121 @@ router.post('/batch-insert', async (req, res) => {
             return res.status(400).json({ error: 'Lista de registros é obrigatória' });
         }
         
-        const values = [];
-        const placeholders = [];
-        let baseIndex = 1;
+        // Limitar tamanho do lote para evitar timeout
+        const MAX_BATCH_SIZE = 100;
+        const batches = [];
+        for (let i = 0; i < records.length; i += MAX_BATCH_SIZE) {
+            batches.push(records.slice(i, i + MAX_BATCH_SIZE));
+        }
         
-        for (const record of records) {
-            const { employee_id, month_year, overtime_time, overtime_value } = record;
+        let totalInserted = 0;
+        
+        // Processar em micro-lotes
+        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+            const batch = batches[batchIndex];
             
-            // Verificar duplicata se necessário
-            if (!overwrite_duplicates) {
-                const existingCheck = await client.query(`
-                    SELECT id FROM overtime_records 
-                    WHERE employee_id = $1 AND mes = $2
-                `, [employee_id, month_year]);
+            const values = [];
+            const placeholders = [];
+            let baseIndex = 1;
+            
+            // Cache de colaboradores para evitar queries repetidas
+            const employeeCache = new Map();
+            
+            for (const record of batch) {
+                const { employee_id, month_year, overtime_time, overtime_value } = record;
                 
-                if (existingCheck.rows.length > 0) {
-                    continue; // Pular duplicatas
+                // Verificar duplicata se necessário (batch check)
+                if (!overwrite_duplicates) {
+                    const existingCheck = await client.query(`
+                        SELECT id FROM overtime_records 
+                        WHERE employee_id = $1 AND mes = $2
+                        LIMIT 1
+                    `, [employee_id, month_year]);
+                    
+                    if (existingCheck.rows.length > 0) {
+                        continue; // Pular duplicatas
+                    }
+                }
+                
+                // Cache de colaboradores
+                if (!employeeCache.has(employee_id)) {
+                    const empInfo = await client.query(`
+                        SELECT e.name, c.name as workplace_name
+                        FROM employees e
+                        LEFT JOIN companies c ON e.workplace_id = c.id
+                        WHERE e.id = $1
+                        LIMIT 1
+                    `, [employee_id]);
+                    
+                    if (empInfo.rows.length === 0) continue;
+                    
+                    employeeCache.set(employee_id, {
+                        name: empInfo.rows[0].name,
+                        workplace_name: empInfo.rows[0].workplace_name || ''
+                    });
+                }
+                
+                const empData = employeeCache.get(employee_id);
+                const id = generateId();
+                
+                // Normalizar valor (otimizado)
+                let value = 0;
+                if (overtime_value) {
+                    const cleanValue = overtime_value.toString()
+                        .replace(/R\$\s*/gi, '')
+                        .replace(/\./g, '')
+                        .replace(',', '.');
+                    value = parseFloat(cleanValue) || 0;
+                }
+                
+                // Adicionar placeholders e valores
+                placeholders.push(`($${baseIndex}, $${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6})`);
+                
+                values.push(
+                    id,
+                    employee_id,
+                    month_year.toUpperCase().trim(),
+                    empData.workplace_name,
+                    empData.name,
+                    overtime_time || '',
+                    value,
+                    'Batch Insert'
+                );
+                
+                baseIndex += 7;
+            }
+            
+            if (values.length > 0) {
+                // Insert em massa do micro-lote
+                const query = `
+                    INSERT INTO overtime_records 
+                    (id, employee_id, mes, unidade, nome, extra, valor, created_by)
+                    VALUES ${placeholders.join(', ')}
+                `;
+                
+                await client.query(query, values);
+                totalInserted += Math.floor(values.length / 7);
+                
+                // Pequeno delay entre micro-lotes para não sobrecarregar
+                if (batchIndex < batches.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 10));
                 }
             }
-            
-            // Buscar informações do colaborador
-            const empInfo = await client.query(`
-                SELECT e.name, c.name as workplace_name
-                FROM employees e
-                LEFT JOIN companies c ON e.workplace_id = c.id
-                WHERE e.id = $1
-            `, [employee_id]);
-            
-            if (empInfo.rows.length === 0) continue;
-            
-            const id = generateId();
-            const employeeName = empInfo.rows[0].name;
-            const workplaceName = empInfo.rows[0].workplace_name || '';
-            
-            // Normalizar valor
-            let value = 0;
-            if (overtime_value !== undefined && overtime_value !== null) {
-                const strValue = overtime_value.toString().trim();
-                const cleanValue = strValue
-                    .replace(/R\$\s*/gi, '')
-                    .replace(/\./g, '')
-                    .replace(',', '.');
-                value = parseFloat(cleanValue) || 0;
-            }
-            
-            // Adicionar placeholders e valores
-            placeholders.push(`($${baseIndex}, $${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6})`);
-            
-            values.push(
-                id,
-                employee_id,
-                month_year.toUpperCase().trim(),
-                workplaceName,
-                employeeName,
-                overtime_time || '',
-                value,
-                'Batch Insert'
-            );
-            
-            baseIndex += 7;
         }
         
-        if (values.length === 0) {
-            await client.query('ROLLBACK');
-            return res.json({ success: true, message: 'Nenhum registro para inserir' });
-        }
-        
-        // Insert em massa
-        const query = `
-            INSERT INTO overtime_records 
-            (id, employee_id, mes, unidade, nome, extra, valor, created_by)
-            VALUES ${placeholders.join(', ')}
-        `;
-        
-        await client.query(query, values);
         await client.query('COMMIT');
         
         res.json({ 
             success: true, 
-            inserted: Math.floor(values.length / 7),
-            message: `${Math.floor(values.length / 7)} registros inseridos com sucesso!`
+            inserted: totalInserted,
+            processed: records.length,
+            batches: batches.length,
+            message: `${totalInserted} registros inseridos com sucesso em ${batches.length} micro-lotes!`
         });
         
     } catch (err) {
         await client.query('ROLLBACK');
+        console.error('Erro batch-insert:', err);
         res.status(500).json({ error: err.message });
     } finally {
         client.release();

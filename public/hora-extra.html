@@ -1255,7 +1255,7 @@ janeiro 2025	AILTON VENANCIO DA FONSECA	05:27	R$ 66,33"></textarea>
             document.getElementById('employee-selection').classList.remove('hidden');
         }
 
-        // Processar inserção em massa (única request profissional)
+        // Processar inserção em massa (ultra-otimizado para produção)
         async function processMassInsert() {
             const validData = parsedData.filter(item => item.employee);
             
@@ -1265,7 +1265,7 @@ janeiro 2025	AILTON VENANCIO DA FONSECA	05:27	R$ 66,33"></textarea>
             }
 
             // Confirmar processamento
-            if (!confirm(`Processar ${validData.length} registros de hora extra em lote único?`)) {
+            if (!confirm(`Processar ${validData.length} registros de hora extra em micro-lotes otimizados?`)) {
                 return;
             }
 
@@ -1274,7 +1274,7 @@ janeiro 2025	AILTON VENANCIO DA FONSECA	05:27	R$ 66,33"></textarea>
             document.getElementById('process-btn').disabled = true;
 
             try {
-                updateProgress('Enviando lote completo para processamento...', 20);
+                updateProgress('Preparando dados para envio otimizado...', 10);
 
                 // Preparar dados para envio
                 const records = validData.map(item => ({
@@ -1285,19 +1285,26 @@ janeiro 2025	AILTON VENANCIO DA FONSECA	05:27	R$ 66,33"></textarea>
                     created_by: 'Mass Insert'
                 }));
 
-                updateProgress(`Enviando ${records.length} registros para o servidor...`, 40);
+                updateProgress(`Enviando ${records.length} registros em micro-lotes...`, 20);
 
-                // Única request para todos os dados
+                // Configurar timeout estendido para produção
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutos
+
+                // Única request para todos os dados com timeout estendido
                 const res = await fetch('/api/overtime/batch-insert', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         records,
                         overwrite_duplicates: document.getElementById('overwrite-duplicates').checked
-                    })
+                    }),
+                    signal: controller.signal
                 });
 
-                updateProgress('Processando lote no servidor...', 70);
+                clearTimeout(timeoutId);
+
+                updateProgress('Processando micro-lotes no servidor...', 60);
 
                 const result = await res.json();
                 
@@ -1309,7 +1316,11 @@ janeiro 2025	AILTON VENANCIO DA FONSECA	05:27	R$ 66,33"></textarea>
                 updateProgress('Concluído!', 100);
                 
                 setTimeout(() => {
-                    alert(`✅ ${result.inserted} registros inseridos com sucesso em lote único!`);
+                    let message = `✅ ${result.inserted} registros inseridos com sucesso!`;
+                    if (result.batches > 1) {
+                        message += `\n📊 Processado em ${result.batches} micro-lotes para otimização.`;
+                    }
+                    alert(message);
                     closeMassInsertModal();
                     loadAllOvertime();
                     if (currentEmployeeId) loadEmployeeOvertime();
@@ -1317,7 +1328,11 @@ janeiro 2025	AILTON VENANCIO DA FONSECA	05:27	R$ 66,33"></textarea>
                 }, 1000);
 
             } catch (e) {
-                alert('❌ Erro ao processar: ' + e.message);
+                if (e.name === 'AbortError') {
+                    alert('❌ Timeout: O processamento demorou muito. Tente com um lote menor.');
+                } else {
+                    alert('❌ Erro ao processar: ' + e.message);
+                }
                 document.getElementById('progress-container').classList.add('hidden');
                 document.getElementById('process-btn').disabled = false;
             }
