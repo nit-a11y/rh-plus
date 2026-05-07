@@ -1255,7 +1255,7 @@ janeiro 2025	AILTON VENANCIO DA FONSECA	05:27	R$ 66,33"></textarea>
             document.getElementById('employee-selection').classList.remove('hidden');
         }
 
-        // Processar inserção em massa (individual sequencial)
+        // Processar inserção em massa (única request profissional)
         async function processMassInsert() {
             const validData = parsedData.filter(item => item.employee);
             
@@ -1265,7 +1265,7 @@ janeiro 2025	AILTON VENANCIO DA FONSECA	05:27	R$ 66,33"></textarea>
             }
 
             // Confirmar processamento
-            if (!confirm(`Processar ${validData.length} registros de hora extra individualmente?`)) {
+            if (!confirm(`Processar ${validData.length} registros de hora extra em lote único?`)) {
                 return;
             }
 
@@ -1274,66 +1274,42 @@ janeiro 2025	AILTON VENANCIO DA FONSECA	05:27	R$ 66,33"></textarea>
             document.getElementById('process-btn').disabled = true;
 
             try {
-                let processed = 0;
-                let errors = 0;
-                const overwriteDuplicates = document.getElementById('overwrite-duplicates').checked;
+                updateProgress('Enviando lote completo para processamento...', 20);
 
-                for (let i = 0; i < validData.length; i++) {
-                    const item = validData[i];
-                    const progress = ((i + 1) / validData.length) * 100;
-                    
-                    updateProgress(`Processando registro ${i + 1}/${validData.length}: ${item.name}...`, progress);
+                // Preparar dados para envio
+                const records = validData.map(item => ({
+                    employee_id: item.employee.id,
+                    month_year: item.monthYear,
+                    overtime_time: item.time,
+                    overtime_value: item.value,
+                    created_by: 'Mass Insert'
+                }));
 
-                    try {
-                        // Verificar duplicata individual
-                        if (!overwriteDuplicates) {
-                            const existingCheck = await fetch(`/api/overtime?employee_id=${item.employee.id}&month=${encodeURIComponent(item.monthYear)}`);
-                            const existingResult = await existingCheck.json();
-                            
-                            if (existingResult.data && existingResult.data.length > 0) {
-                                console.log(`Registro duplicado ignorado: ${item.name} - ${item.monthYear}`);
-                                continue;
-                            }
-                        }
+                updateProgress(`Enviando ${records.length} registros para o servidor...`, 40);
 
-                        // Inserir registro individual usando a rota normal
-                        const res = await fetch('/api/overtime', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                employee_id: item.employee.id,
-                                month_year: item.monthYear,
-                                overtime_time: item.time,
-                                overtime_value: item.value,
-                                created_by: 'Mass Insert'
-                            })
-                        });
+                // Única request para todos os dados
+                const res = await fetch('/api/overtime/batch-insert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        records,
+                        overwrite_duplicates: document.getElementById('overwrite-duplicates').checked
+                    })
+                });
 
-                        const result = await res.json();
-                        if (!result.success) {
-                            console.error(`Erro ao inserir registro ${i + 1}:`, result.error);
-                            errors++;
-                        } else {
-                            processed++;
-                        }
+                updateProgress('Processando lote no servidor...', 70);
 
-                        // Pequeno delay para não sobrecarregar
-                        await new Promise(resolve => setTimeout(resolve, 100));
-
-                    } catch (e) {
-                        console.error(`Erro ao processar registro ${i + 1}:`, e.message);
-                        errors++;
-                    }
+                const result = await res.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error);
                 }
 
+                updateProgress('Finalizando processamento...', 90);
                 updateProgress('Concluído!', 100);
                 
                 setTimeout(() => {
-                    if (errors === 0) {
-                        alert(`✅ ${processed} registros inseridos com sucesso!`);
-                    } else {
-                        alert(`⚠️ ${processed} registros inseridos, ${errors} erros encontrados.`);
-                    }
+                    alert(`✅ ${result.inserted} registros inseridos com sucesso em lote único!`);
                     closeMassInsertModal();
                     loadAllOvertime();
                     if (currentEmployeeId) loadEmployeeOvertime();

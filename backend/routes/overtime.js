@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { query } = require('../config/database');
+const { query, pool } = require('../config/database');
 const crypto = require('crypto');
 
 const generateId = () => crypto.randomBytes(4).toString('hex');
@@ -467,7 +467,110 @@ async function countAllActiveEmployees() {
 
 const { countActiveEmployees } = require('./overtime-fixed');
 
-// ROTA: Inserção em massa de hora extra
+// ROTA: Inserção em lote profissional
+router.post('/batch-insert', async (req, res) => {
+    const client = await pool.connect();
+    
+    try {
+        await client.query('BEGIN');
+        
+        const { records, overwrite_duplicates = false } = req.body;
+        
+        if (!records || !Array.isArray(records) || records.length === 0) {
+            return res.status(400).json({ error: 'Lista de registros é obrigatória' });
+        }
+        
+        const values = [];
+        const placeholders = [];
+        let baseIndex = 1;
+        
+        for (const record of records) {
+            const { employee_id, month_year, overtime_time, overtime_value } = record;
+            
+            // Verificar duplicata se necessário
+            if (!overwrite_duplicates) {
+                const existingCheck = await client.query(`
+                    SELECT id FROM overtime_records 
+                    WHERE employee_id = $1 AND mes = $2
+                `, [employee_id, month_year]);
+                
+                if (existingCheck.rows.length > 0) {
+                    continue; // Pular duplicatas
+                }
+            }
+            
+            // Buscar informações do colaborador
+            const empInfo = await client.query(`
+                SELECT e.name, c.name as workplace_name
+                FROM employees e
+                LEFT JOIN companies c ON e.workplace_id = c.id
+                WHERE e.id = $1
+            `, [employee_id]);
+            
+            if (empInfo.rows.length === 0) continue;
+            
+            const id = generateId();
+            const employeeName = empInfo.rows[0].name;
+            const workplaceName = empInfo.rows[0].workplace_name || '';
+            
+            // Normalizar valor
+            let value = 0;
+            if (overtime_value !== undefined && overtime_value !== null) {
+                const strValue = overtime_value.toString().trim();
+                const cleanValue = strValue
+                    .replace(/R\$\s*/gi, '')
+                    .replace(/\./g, '')
+                    .replace(',', '.');
+                value = parseFloat(cleanValue) || 0;
+            }
+            
+            // Adicionar placeholders e valores
+            placeholders.push(`($${baseIndex}, $${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6})`);
+            
+            values.push(
+                id,
+                employee_id,
+                month_year.toUpperCase().trim(),
+                workplaceName,
+                employeeName,
+                overtime_time || '',
+                value,
+                'Batch Insert'
+            );
+            
+            baseIndex += 7;
+        }
+        
+        if (values.length === 0) {
+            await client.query('ROLLBACK');
+            return res.json({ success: true, message: 'Nenhum registro para inserir' });
+        }
+        
+        // Insert em massa
+        const query = `
+            INSERT INTO overtime_records 
+            (id, employee_id, mes, unidade, nome, extra, valor, created_by)
+            VALUES ${placeholders.join(', ')}
+        `;
+        
+        await client.query(query, values);
+        await client.query('COMMIT');
+        
+        res.json({ 
+            success: true, 
+            inserted: Math.floor(values.length / 7),
+            message: `${Math.floor(values.length / 7)} registros inseridos com sucesso!`
+        });
+        
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+// ROTA: Inserção em massa de hora extra (legado)
 router.post('/mass-insert', async (req, res) => {
     try {
         const { records, overwrite_duplicates = false } = req.body;
