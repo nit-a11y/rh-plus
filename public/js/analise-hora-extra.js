@@ -13,7 +13,132 @@ const MONTH_ORDER = {
 // Variáveis globais
 let allOvertime = [];
 let filteredData = [];
+let allHeadcountDetails = [];
 let summaryData = [];
+
+// Funções para o Modal de Headcount
+async function showHeadcountDetails() {
+    const month = document.getElementById('filter-month').value;
+    const year = document.getElementById('filter-year').value;
+    const unit = document.getElementById('filter-unit').value;
+    
+    if (!month || !year) {
+        alert('Por favor, selecione um mês e um ano para ver os detalhes.');
+        return;
+    }
+    
+    const modal = document.getElementById('headcount-modal');
+    const subtitle = document.getElementById('headcount-modal-subtitle');
+    
+    // Abrir modal e resetar filtros
+    modal.classList.remove('hidden');
+    document.getElementById('modal-search').value = '';
+    document.getElementById('modal-date-start').value = '';
+    document.getElementById('modal-date-end').value = '';
+    subtitle.textContent = `Período: ${month}/${year} ${unit ? `| Unidade: ${unit}` : ''}`;
+    
+    try {
+        let url = `/api/analysis/headcount-details?year=${year}&month=${encodeURIComponent(month)}`;
+        if (unit) url += `&unit=${encodeURIComponent(unit)}`;
+        
+        const response = await fetch(url);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            allHeadcountDetails = result.data;
+            renderHeadcountTable(allHeadcountDetails);
+        } else {
+            throw new Error(result.error || 'Erro ao buscar dados');
+        }
+    } catch (error) {
+        console.error('Erro ao carregar detalhes do headcount:', error);
+        document.getElementById('headcount-modal-body').innerHTML = `<tr><td colspan="6" class="text-center py-10 text-red-500 font-bold">Erro: ${error.message}</td></tr>`;
+    }
+}
+
+function renderHeadcountTable(data) {
+    const tbody = document.getElementById('headcount-modal-body');
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-gray-400">Nenhum colaborador encontrado.</td></tr>';
+        return;
+    }
+    
+    // Obter visibilidade atual das colunas
+    const showAdm = document.querySelector('input[onchange*="col-admission"]').checked;
+    const showTerm = document.querySelector('input[onchange*="col-termination"]').checked;
+    const showDays = document.querySelector('input[onchange*="col-days"]').checked;
+    
+    tbody.innerHTML = data.map(emp => `
+        <tr class="hover:bg-gray-50 transition-colors border-b">
+            <td class="py-4"><strong>${emp.name}</strong></td>
+            <td class="py-4">${emp.registrationNumber || '-'}</td>
+            <td class="py-4 text-xs">${emp.unit_name || '-'}</td>
+            <td class="py-4 ${showAdm ? '' : 'hidden'}">${emp.admissionDate ? new Date(emp.admissionDate).toLocaleDateString('pt-BR') : '-'}</td>
+            <td class="py-4 ${showTerm ? '' : 'hidden'}">${emp.terminationDate ? new Date(emp.terminationDate).toLocaleDateString('pt-BR') : '-'}</td>
+            <td class="py-4 text-center ${showDays ? '' : 'hidden'}">
+                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-lg font-bold text-xs">
+                    ${emp.dias_no_mes} dias
+                </span>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function sortAndRenderModal() {
+    const searchTerm = document.getElementById('modal-search').value.toLowerCase();
+    const sortBy = document.getElementById('modal-sort').value;
+    
+    // 1. Filtrar
+    let processed = allHeadcountDetails.filter(emp => 
+        emp.name.toLowerCase().includes(searchTerm) || 
+        (emp.registrationNumber && emp.registrationNumber.includes(searchTerm))
+    );
+    
+    // 2. Ordenar
+    processed.sort((a, b) => {
+        if (sortBy === 'name') return a.name.localeCompare(b.name);
+        if (sortBy === 'days') return b.dias_no_mes - a.dias_no_mes;
+        if (sortBy === 'admission') return new Date(a.admissionDate) - new Date(b.admissionDate);
+        return 0;
+    });
+    
+    renderHeadcountTable(processed);
+}
+
+function toggleColumn(className) {
+    const isChecked = document.querySelector(`input[onchange*="${className}"]`).checked;
+    
+    // Esconder/Mostrar colunas (cabeçalhos e células)
+    document.querySelectorAll(`.${className}`).forEach(el => {
+        el.classList.toggle('hidden', !isChecked);
+    });
+}
+
+function sortAndRenderModal() {
+    const searchTerm = document.getElementById('modal-search').value.toLowerCase();
+    const sortBy = document.getElementById('modal-sort').value;
+    
+    // 1. Filtrar
+    let processed = allHeadcountDetails.filter(emp => {
+        const name = emp.name ? emp.name.toLowerCase() : '';
+        const reg = emp.registrationNumber ? emp.registrationNumber.toString().toLowerCase() : '';
+        return name.includes(searchTerm) || reg.includes(searchTerm);
+    });
+    
+    // 2. Ordenar
+    processed.sort((a, b) => {
+        if (sortBy === 'name') return a.name.localeCompare(b.name);
+        if (sortBy === 'days') return (b.dias_no_mes || 0) - (a.dias_no_mes || 0);
+        if (sortBy === 'admission') return new Date(a.admissionDate) - new Date(b.admissionDate);
+        return 0;
+    });
+    
+    renderHeadcountTable(processed);
+}
+function closeHeadcountModal() {
+    document.getElementById('headcount-modal').classList.add('hidden');
+}
 
 // Função de ordenação cronológica para strings "MÊS ANO"
 function sortMonthYear(a, b) {

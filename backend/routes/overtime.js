@@ -158,12 +158,9 @@ router.get('/:id', async (req, res) => {
                 e.name as employee_name,
                 e."registrationNumber",
                 e.role,
-                e.sector,
-                wp.name as workplace_name
+                e.sector
             FROM overtime_records o
             JOIN employees e ON o.employee_id = e.id
-            LEFT JOIN employee_vinculos ev ON e.id = ev.employee_id AND ev.principal = 1
-            LEFT JOIN companies wp ON ev.workplace_id = wp.id
             WHERE o.id = $1
         `, [id]);
         if (!result.rows[0]) return res.status(404).json({ error: 'Registro não encontrado' });
@@ -231,10 +228,8 @@ router.post('/', async (req, res) => {
         const empInfo = await query(`
             SELECT 
                 e.name,
-                wp.name as workplace_name
+                e.sector as workplace_name
             FROM employees e
-            LEFT JOIN employee_vinculos ev ON e.id = ev.employee_id AND ev.principal = 1
-            LEFT JOIN companies wp ON ev.workplace_id = wp.id
             WHERE e.id = $1
         `, [employee_id]);
         
@@ -396,10 +391,8 @@ router.post('/bulk', async (req, res) => {
                 const empInfo = await query(`
                     SELECT 
                         e.name,
-                        wp.name as workplace_name
+                        e.sector as workplace_name
                     FROM employees e
-                    LEFT JOIN employee_vinculos ev ON e.id = ev.employee_id AND ev.principal = 1
-                    LEFT JOIN companies wp ON ev.workplace_id = wp.id
                     WHERE e.id = $1
                 `, [employee_id]);
                 
