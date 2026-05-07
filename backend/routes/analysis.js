@@ -666,7 +666,8 @@ router.get('/headcount-snapshot', async (req, res) => {
 
         console.log(`[HEADCOUNT] 🔍 Calculando para ${month}/${year} (${startDate} até ${endDate})`);
 
-        // Query aplicando a regra: admissao <= fim_mes AND (saida IS NULL OR saida >= inicio_mes)
+        // Query aplicando a regra de 15 dias: admissao <= fim_mes AND (saida IS NULL OR saida >= inicio_mes)
+        // AND cálculo de permanência mínima de 15 dias no mês para maior exatidão
         const sql = `
             SELECT 
                 c.name as unit_name,
@@ -679,6 +680,14 @@ router.get('/headcount-snapshot', async (req, res) => {
                 AND 
                 -- Regra 2: Ainda não saiu OU saiu durante/depois do mês selecionado
                 (e."terminationDate" IS NULL OR e."terminationDate" = '' OR e."terminationDate" >= $1)
+                AND (
+                    -- Regra dos 15 dias (NIT):
+                    -- Dias no mês = LEAST(terminationDate, endDate) - GREATEST(admissionDate, startDate) + 1
+                    (
+                        LEAST(COALESCE(NULLIF(e."terminationDate", '')::date, $2::date), $2::date) - 
+                        GREATEST(e."admissionDate"::date, $1::date) + 1
+                    ) >= 15
+                )
             GROUP BY c.name
             ORDER BY c.name
         `;

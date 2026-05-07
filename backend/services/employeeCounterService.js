@@ -71,11 +71,16 @@ class EmployeeCounterService {
                     AND c.name IS NOT NULL 
                     AND c.name != ''
                     AND e.type != 'Desligado'
-                    AND e.admissionDate <= $2
+                    AND e."admissionDate" <= $2
                     AND (
-                        e.terminationDate IS NULL 
-                        OR e.terminationDate = '' 
-                        OR e.terminationDate >= $3
+                        e."terminationDate" IS NULL 
+                        OR e."terminationDate" = '' 
+                        OR e."terminationDate" >= $3
+                    )
+                    AND (
+                        -- Regra dos 15 dias
+                        (LEAST(COALESCE(NULLIF(e."terminationDate", '')::date, $2::date), $2::date) - 
+                         GREATEST(e."admissionDate"::date, $3::date) + 1) >= 15
                     )
             `;
             
@@ -131,6 +136,11 @@ class EmployeeCounterService {
                         e."terminationDate" IS NULL 
                         OR e."terminationDate" = '' 
                         OR e."terminationDate" >= '${dates.periodStart}'
+                    )
+                    AND (
+                        -- Regra dos 15 dias
+                        (LEAST(COALESCE(NULLIF(e."terminationDate", '')::date, '${dates.periodEnd}'::date), '${dates.periodEnd}'::date) - 
+                         GREATEST(e."admissionDate"::date, '${dates.periodStart}'::date) + 1) >= 15
                     )
                 GROUP BY c.name
                 ORDER BY colaboradores DESC
