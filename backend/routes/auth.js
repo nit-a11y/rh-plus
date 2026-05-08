@@ -11,7 +11,7 @@ function getClientIp(req) {
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-        const sql = `SELECT id, name, username, COALESCE("photoUrl", "photourl", NULL) as "photoUrl", role, permissions FROM users WHERE username = $1 AND password = $2`;
+        const sql = `SELECT id, name, username, role, permissions FROM users WHERE username = $1 AND password = $2`;
         
         const result = await query(sql, [username, password]);
         const user = result.rows[0];
