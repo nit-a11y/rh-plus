@@ -485,7 +485,6 @@ async function updateSummaryCards() {
     await calculateExpectedHoursAndPercentage(totalMinutes);
     
     // Atualizar cards
-    document.getElementById('total-records').textContent = formatNumber(totalRecords);
     document.getElementById('total-hours').textContent = formattedTime;
     document.getElementById('total-value').textContent = formattedValue;
     document.getElementById('overtime-employees-count').textContent = formatNumber(totalEmployees);
@@ -587,12 +586,12 @@ async function calculateExpectedHoursAndPercentage(totalExtraMinutes) {
             if (percentageTitle && !percentageTitle.dataset.labeled) {
                 const label = document.createElement('span');
                 label.className = 'block text-[8px] opacity-60 normal-case font-normal mt-1';
-                label.textContent = unitFilter ? 'Carga vs Unidade' : 'Carga vs Frota Total';
+                label.textContent = unitFilter ? 'Carga vs Unidade' : 'Extras feitas';
                 percentageTitle.appendChild(label);
                 percentageTitle.dataset.labeled = 'true';
             } else if (percentageTitle) {
                 const label = percentageTitle.querySelector('span');
-                if (label) label.textContent = unitFilter ? 'Carga vs Unidade' : 'Carga vs Frota Total';
+                if (label) label.textContent = unitFilter ? 'Carga vs Unidade' : 'Extras feitas';
             }
             
         } else {
@@ -823,7 +822,7 @@ function updateUnitsTable() {
             <tr>
                 <td><strong>${unit}</strong></td>
                 <td>${formatNumber(data.records)}</td>
-                <td>${formatNumber(data.employees.size)}</td>
+                <td class="hidden">${formatNumber(data.employees.size)}</td>
                 <td><span class="time-badge">${formattedTime}</span></td>
                 <td><span class="value-badge">${formattedValue}</span></td>
             </tr>

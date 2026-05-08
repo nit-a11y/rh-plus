@@ -38,6 +38,7 @@
         .time-badge { font-family: monospace; font-weight: 700; color: #DC2626; background: #FEE2E2; padding: 4px 10px; border-radius: 6px; font-size: 12px; }
         .value-badge { font-weight: 700; color: #059669; background: #D1FAE5; padding: 4px 10px; border-radius: 6px; font-size: 12px; }
         .chart-container { background: white; border-radius: 1.5rem; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .analysis-table .hidden-col { display: none; }
     </style>
 </head>
 <body class="bg-nordeste-gray h-screen flex overflow-hidden">
@@ -151,13 +152,10 @@
 
                 <!-- Summary Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-4">
-                    <div class="summary-card records">
-                        <h3>Total de Registros</h3>
-                        <div class="value" id="total-records">0</div>
-                    </div>
                     <div class="summary-card hours">
                         <h3>Total de Horas</h3>
                         <div class="value" id="total-hours">00:00</div>
+                        <p class="text-[9px] text-gray-400 font-bold uppercase mt-1">Extras feitas</p>
                     </div>
                     <div class="summary-card value">
                         <h3>Valor Total</h3>
@@ -209,11 +207,18 @@
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Horas Extras por Unidade</h3>
                         <div class="overflow-x-auto">
                             <table class="analysis-table">
+                                <colgroup>
+                                    <col class="w-1/3">
+                                    <col class="w-1/6">
+                                    <col class="hidden">
+                                    <col class="w-1/5">
+                                    <col class="w-1/5">
+                                </colgroup>
                                 <thead>
                                     <tr>
                                         <th>Unidade</th>
                                         <th>Registros</th>
-                                        <th>Colaboradores</th>
+                                        <th class="hidden">Colaboradores</th>
                                         <th>Horas</th>
                                         <th>Valor Total</th>
                                     </tr>
