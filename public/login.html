@@ -5,95 +5,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Nordeste Locações</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/login.css">
     <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/login.css">
     <link rel="stylesheet" href="css/tutorial.css">
+    <!-- Fonte Moderna: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- BACKGROUND -->
-    <div class="nle-background-container" id="nle-background"></div>
-
-    <!-- CONTAINER PRINCIPAL -->
-    <main class="nle-login-container">
-        <div class="nle-card">
-            
-            <!-- CABEÇALHO -->
-            <header class="nle-header">
-                <div class="nle-logo">
-                    <h1><span>N</span>ordeste</h1>
-                    <h1><span>L</span>ocações</h1>
-                </div>
-                <p class="nle-header-subtitle">Sistema de Gestão RH+</p>
-            </header>
-
-            <!-- CORPO -->
-            <div class="nle-body">
-                <!-- FORMULÁRIO DE LOGIN DO SISTEMA -->
-                <form id="login-form" autocomplete="off">
-                    <div class="nle-input-group">
-                        <label for="username">Identificação</label>
-                        <input type="text" id="username" class="nle-input" name="username" placeholder="Digite seu usuário" required autocomplete="username">
-                    </div>
-                    <div class="nle-input-group">
-                        <label for="password">Acesso</label>
-                        <input type="password" id="password" class="nle-input" name="password" placeholder="Digite sua senha" required autocomplete="current-password">
-                    </div>
-                    <button type="submit" class="nle-btn nle-btn-primary">Entrar na Plataforma</button>
-                    <div id="error-message" class="nle-error-message"></div>
-                </form>
-
-                <!-- SEÇÃO INSTITUCIONAL -->
-                <div class="nle-institucional">
-                    <h4><a href="#" id="nle-essence-link" class="nle-essence-link">Nossa Essência</a></h4>
-                    <div class="nle-valores-grid">
-                        <div class="nle-valor-card">
-                            <div class="nle-valor-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                                </svg>
-                            </div>
-                            <h5 class="nle-valor-title">Missão</h5>
-                            <p class="nle-valor-description">Impactar positivamente o dia daqueles que se relacionam conosco.</p>
-                        </div>
-                        <div class="nle-valor-card">
-                            <div class="nle-valor-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                    <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                            </div>
-                            <h5 class="nle-valor-title">Visão</h5>
-                            <p class="nle-valor-description">Ser o principal parceiro em locação de equipamentos.</p>
-                        </div>
-                        <div class="nle-valor-card">
-                            <div class="nle-valor-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                                </svg>
-                            </div>
-                            <h5 class="nle-valor-title">Valores</h5>
-                            <ul class="nle-valor-list">
-                                <li>Ser protagonista para crescer</li>
-                                <li>Atendimento com vontade genuína</li>
-                                <li>Não há hierarquia para boas ideias</li>
-                                <li>Nos divertimos enquanto trabalhamos</li>
-                                <li>Fazemos o que é certo</li>
-                                <li>Gente faz a diferença</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+    <div class="scene" id="scene">
+        <!-- Elementos Flutuantes (Parallax Layers) -->
+        <!-- Container ID adicionado para permitir injeção de imagens customizadas do tema -->
+        <div id="login-floating-container">
+            <div class="layer" data-depth="0.1">
+                <div class="floating-item item-1"><img src="https://nordesteloc.com.br/wp-content/uploads/2024/10/FOTO-SITE.png" alt="Frota"></div>
+                <div class="floating-item item-2"><img src="https://nordesteloc.com.br/wp-content/smush-webp/2025/11/FOR.png.webp" alt="Logística"></div>
             </div>
-
-            <!-- RODAPÉ -->
-            <footer class="nle-footer">
-                <p>&copy; 2026 Nordeste Locações • Tecnologia & Inteligência</p>
-            </footer>
+            <div class="layer" data-depth="0.2">
+                <div class="floating-item item-4"><img src="https://nordesteloc.com.br/wp-content/smush-webp/2025/07/Captura-de-tela-2025-07-28-142939.png.webp" alt="Equipamentos"></div>
+                <div class="floating-item item-5"><img src="https://nordesteloc.com.br/wp-content/uploads/2024/10/FOTO_SITE-3.png" alt="Caminhão Munck"></div>
+            </div>
+            <div class="layer" data-depth="0.4">
+                <div class="floating-item item-7"><img src="https://nordesteloc.com.br/wp-content/smush-webp/2025/07/Captura-de-tela-2025-07-28-142758.png.webp" alt="Detalhe"></div>
+                <div class="floating-item item-8"><img src="https://nordesteloc.com.br/wp-content/uploads/2024/10/FOTO-SITE.png" alt="Frota Destaque"></div>
+            </div>
         </div>
-    </main>
+        
+        <!-- Card de Login -->
+        <div class="login-card">
+            <div class="logo-area">
+                <h1><span>N</span>ordeste</h1>
+                <h1><span>L</span>ocações</h1>
+            </div>
+            <p class="subtitle">Sistema de Gestão RH+</p>
+            
+            <form id="login-form" autocomplete="off">
+                <div class="input-group">
+                    <label for="username">Identificação</label>
+                    <input type="text" id="username" name="username" placeholder="Digite seu usuário" required autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label for="password">Acesso</label>
+                    <input type="password" id="password" name="password" placeholder="Digite sua senha" required autocomplete="current-password">
+                </div>
+                
+                <button type="submit" class="btn-login">Entrar na Plataforma</button>
+                <div id="error-message" class="error-message"></div>
+            </form>
+
+            <div class="card-footer">
+                <p>&copy; 2026 Nordeste Locações • Tecnologia & Inteligência</p>
+            </div>
+        </div>
+    </div>
     
     <script src="js/auth.js"></script>
     <script type="module" src="js/tutorial/engine.js"></script>
