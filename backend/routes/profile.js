@@ -32,10 +32,21 @@ router.get('/all-users', async (req, res) => {
     }
 });
 
+// Listar todos os usuários (endpoint principal para o frontend)
+router.get('/', async (req, res) => {
+    try {
+        const result = await query(`SELECT id, name, username, email, photoUrl, role, permissions, status, login_time, createdAt, updatedAt FROM users ORDER BY name ASC`);
+        res.json(result.rows || []);
+    } catch (err) {
+        console.error('[PROFILE] Erro:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Criar novo usuário
 router.post('/', async (req, res) => {
     try {
-        const { name, username, password, role, status } = req.body;
+        const { name, username, password, email, role, status, permissions, photoUrl } = req.body;
         if (!name || !username || !password) return res.status(400).json({ error: 'Campos obrigatórios ausentes' });
 
         const id = crypto.randomBytes(4).toString('hex');
@@ -43,8 +54,8 @@ router.post('/', async (req, res) => {
         const now = new Date().toISOString();
 
         await query(
-            `INSERT INTO users (id, name, username, password, role, permissions, status, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [id, name, username, hashedPassword, role || 'OPERADOR', '{}', status || 'active', now]
+            `INSERT INTO users (id, name, username, password, email, role, permissions, status, photoUrl, createdAt, updatedAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+            [id, name, username, hashedPassword, email || null, role || 'USER', permissions ? JSON.stringify(permissions) : '{}', status || 'ACTIVE', photoUrl || null, now, now]
         );
         
         res.json({ success: true, id });
@@ -70,16 +81,39 @@ router.put('/:id/permissions', async (req, res) => {
     }
 });
 
-// Atualizar usuário
+// Atualizar usuário (suporte a campos dinâmicos)
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, username, role, status } = req.body;
+        const { field, value, name, username, email, role, status, permissions } = req.body;
 
         const userResult = await query(`SELECT * FROM users WHERE id = $1`, [id]);
         if (!userResult.rows[0]) return res.status(404).json({ error: 'Usuário não encontrado' });
 
-        await query(`UPDATE users SET name = $1, username = $2, role = $3, status = $4 WHERE id = $5`, [name, username, role, status, id]);
+        // Atualização de campo único (inline edit)
+        if (field && value !== undefined) {
+            const validFields = ['name', 'username', 'email', 'role', 'status', 'permissions'];
+            if (!validFields.includes(field)) {
+                return res.status(400).json({ error: 'Campo inválido' });
+            }
+            
+            let updateValue = value;
+            if (field === 'permissions') {
+                updateValue = JSON.stringify(value);
+            }
+            
+            await query(`UPDATE users SET ${field} = $1, updatedAt = $2 WHERE id = $3`, [updateValue, new Date().toISOString(), id]);
+        } 
+        // Atualização completa (formulário)
+        else if (name || username || email || role || status !== undefined) {
+            await query(
+                `UPDATE users SET name = COALESCE($1, name), username = COALESCE($2, username), email = COALESCE($3, email), role = COALESCE($4, role), status = COALESCE($5, status), updatedAt = $6 WHERE id = $7`,
+                [name, username, email, role, status, new Date().toISOString(), id]
+            );
+        } else {
+            return res.status(400).json({ error: 'Nenhum campo válido fornecido' });
+        }
+
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });

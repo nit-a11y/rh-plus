@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadAllEmployees() {
     showLoadingState(true);
     try {
-        const res = await fetch('/api/employees');
+        const res = await fetch('/api/employees/simple');
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         
         employees = await res.json();
@@ -125,7 +125,7 @@ function updateEmployeeView(emp) {
 async function refreshCurrentEmployee() {
     if (!selectedId) return;
     try {
-        const res = await fetch('/api/employees');
+        const res = await fetch('/api/employees/simple');
         employees = await res.json();
         const emp = employees.find(e => e.id === selectedId);
         if (emp) {

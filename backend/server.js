@@ -55,6 +55,13 @@ const generalLimiter = rateLimit({
     message: { success: false, error: 'Muitas requisições. Tente novamente mais tarde.' }
 });
 
+// Rate limit específico para endpoints críticos (mais permissivo)
+const criticalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: NODE_ENV === 'production' ? 1000 : 10000, // limite maior para endpoints críticos
+    message: { success: false, error: 'Muitas requisições. Tente novamente mais tarde.' }
+});
+
 // Rate limit específico para APIs de população (mais permissivo)
 const populationLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
@@ -63,6 +70,11 @@ const populationLimiter = rateLimit({
 });
 
 app.use('/api/', generalLimiter);
+// Overrides para endpoints críticos
+app.use('/api/employees/simple', criticalLimiter);
+app.use('/api/employees', criticalLimiter);
+app.use('/api/roles', criticalLimiter);
+app.use('/api/career', criticalLimiter);
 app.use('/api/population', populationLimiter);
 
 // CORS

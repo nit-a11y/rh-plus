@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Nordeste Locações</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="nle-styles.css">
+</head>
+<body>
+  <!-- BACKGROUND -->
+  <div class="nle-background-container" id="nle-background"></div>
+
+  <!-- CONTAINER PRINCIPAL -->
+  <main class="nle-login-container">
+    <div class="nle-card">
+      
+      <!-- CABEÇALHO -->
+      <header class="nle-header">
+        <div class="nle-logo">
+          <img src="LOGO COLORIDA.png" alt="Nordeste Locações" class="nle-logo-img">
+        </div>
+        <p class="nle-header-subtitle">Acesso ao Sistema Corporativo</p>
+      </header>
+
+      <!-- CORPO -->
+      <div class="nle-body">
+        <!-- FORMULÁRIO DE LOGIN DO SISTEMA -->
+        <form id="nle-login-form">
+          <div class="nle-input-group">
+            <label for="nle-email">E-mail corporativo</label>
+            <input type="email" id="nle-email" class="nle-input" placeholder="seu.email@nordestelocacoes.com.br" required>
+          </div>
+          <div class="nle-input-group">
+            <label for="nle-password">Senha</label>
+            <input type="password" id="nle-password" class="nle-input" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="nle-btn nle-btn-primary">Entrar no Sistema</button>
+          <span class="nle-forgot-password">
+            <a href="#">Esqueceu sua senha?</a>
+          </span>
+        </form>
+
+        <!-- SEÇÃO INSTITUCIONAL -->
+        <div class="nle-institucional">
+          <h4><a href="#" id="nle-essence-link" class="nle-essence-link">Nossa Essência</a></h4>
+          <div class="nle-valores-grid">
+            <div class="nle-valor-card">
+              <div class="nle-valor-icon">
+                <img src="sobre-missao.svg" alt="Missão" class="nle-valor-svg">
+              </div>
+              <h5 class="nle-valor-title">Missão</h5>
+              <p class="nle-valor-description">Impactar positivamente o dia daqueles que se relacionam conosco.</p>
+            </div>
+            <div class="nle-valor-card">
+              <div class="nle-valor-icon">
+                <img src="sobre-visao.svg" alt="Visão" class="nle-valor-svg">
+              </div>
+              <h5 class="nle-valor-title">Visão</h5>
+              <p class="nle-valor-description">Ser o principal parceiro em locação de equipamentos, transformando máquinas em produtividade que impulsiona o crescimento do Nordeste.</p>
+            </div>
+            <div class="nle-valor-card">
+              <div class="nle-valor-icon">
+                <img src="sobre-valores.svg" alt="Valores" class="nle-valor-svg">
+              </div>
+              <h5 class="nle-valor-title">Valores</h5>
+              <ul class="nle-valor-list">
+                <li>Ser protagonista para crescer</li>
+                <li>Atendimento com vontade genuína de ajudar</li>
+                <li>Não há hierarquia para boas ideias</li>
+                <li>Nos divertimos enquanto trabalhamos</li>
+                <li>Fazemos o que é certo</li>
+                <li>Gente faz a diferença</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RODAPÉ -->
+      <footer class="nle-footer">
+        <p>&copy; 2026 Nordeste Locações - Todos os direitos reservados</p>
+      </footer>
+    </div>
+  </main>
+
+  <!-- MODAL DE CONFIGURAÇÃO DO TEMA -->
+  <div class="nle-modal-overlay" id="nle-config-modal">
+    <div class="nle-modal-content">
+      <button class="nle-modal-close" id="nle-modal-close">&times;</button>
+      
+      <h3>Configurações do Tema</h3>
+      <p>Personalize o visual da tela de login com cores e background.</p>
+
+      <div class="nle-error-message" id="nle-error-message">Credenciais incorretas.</div>
+      <div class="nle-success-message" id="nle-success-message">Configurações salvas com sucesso!</div>
+
+      <!-- AUTH DO PAINEL DE TEMAS -->
+      <div class="nle-input-group">
+        <label for="nle-auth-email">E-mail de Administrador</label>
+        <input type="email" id="nle-auth-email" class="nle-input" placeholder="interface@nordestelocacoes.com.br">
+      </div>
+      
+      <div class="nle-input-group">
+        <label for="nle-auth-password">Senha de Acesso</label>
+        <input type="password" id="nle-auth-password" class="nle-input" placeholder="Digite a senha de acesso">
+      </div>
+
+      <!-- SEÇÃO DE TEMAS -->
+      <div class="nle-theme-section" id="nle-theme-section">
+        <h4>Configurações do Tema</h4>
+        
+        <div class="nle-theme-grid">
+          <!-- COLUNA 1: CORES PRINCIPAIS -->
+          <div class="nle-theme-column">
+            <div class="nle-color-controls">
+              <h5>Cores Principais</h5>
+              
+              <div class="nle-color-item">
+                <label for="nle-card-bg-color">Cor do Fundo do Card</label>
+                <div class="nle-color-input-group">
+                  <input type="color" id="nle-card-bg-color" class="nle-color-picker" value="#ffffff">
+                  <input type="text" id="nle-card-bg-text" class="nle-color-text" value="#ffffff" placeholder="#ffffff">
+                  <button class="nle-eyedropper-btn" id="nle-card-bg-eyedropper" title="Conta-gotas">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M2 22l1-1h3l9-9M3 21v-3l9-9M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.586 7.586"/>
+                      <circle cx="11" cy="11" r="2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="nle-color-item">
+                <label for="nle-button-color">Cor dos Botões</label>
+                <div class="nle-color-input-group">
+                  <input type="color" id="nle-button-color" class="nle-color-picker" value="#b91c1c">
+                  <input type="text" id="nle-button-text" class="nle-color-text" value="#b91c1c" placeholder="#b91c1c">
+                  <button class="nle-eyedropper-btn" id="nle-button-eyedropper" title="Conta-gotas">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M2 22l1-1h3l9-9M3 21v-3l9-9M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.586 7.586"/>
+                      <circle cx="11" cy="11" r="2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- COLUNA 2: DETALHES -->
+          <div class="nle-theme-column">
+            <div class="nle-color-controls">
+              <h5>Detalhes</h5>
+              
+              <div class="nle-color-item">
+                <label for="nle-text-color">Cor do Texto</label>
+                <div class="nle-color-input-group">
+                  <input type="color" id="nle-text-color" class="nle-color-picker" value="#374151">
+                  <input type="text" id="nle-text-color-text" class="nle-color-text" value="#374151" placeholder="#374151">
+                  <button class="nle-eyedropper-btn" id="nle-text-eyedropper" title="Conta-gotas">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M2 22l1-1h3l9-9M3 21v-3l9-9M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.586 7.586"/>
+                      <circle cx="11" cy="11" r="2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="nle-color-item">
+                <label for="nle-card-border-color">Cor das Bordas dos Cards</label>
+                <div class="nle-color-input-group">
+                  <input type="color" id="nle-card-border-color" class="nle-color-picker" value="#b91c1c">
+                  <input type="text" id="nle-card-border-text" class="nle-color-text" value="#b91c1c" placeholder="#b91c1c">
+                  <button class="nle-eyedropper-btn" id="nle-card-border-eyedropper" title="Conta-gotas">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M2 22l1-1h3l9-9M3 21v-3l9-9M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.586 7.586"/>
+                      <circle cx="11" cy="11" r="2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- UPLOAD DE BACKGROUND -->
+            <div class="nle-upload-section">
+              <h5>Background da Tela</h5>
+              <div class="nle-upload-area disabled" id="nle-upload-area">
+                <svg class="nle-upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <h6>Clique ou arraste uma imagem</h6>
+                <p>Formatos: JPG, PNG, WebP (máx. 5MB)</p>
+                <input type="file" id="nle-file-input" class="nle-file-input" accept="image/jpeg,image/png,image/webp">
+              </div>
+
+              <div class="nle-preview-container" id="nle-preview-container">
+                <div class="nle-preview-wrapper">
+                  <div class="nle-preview-viewport" id="nle-preview-viewport">
+                    <img src="" alt="Preview" class="nle-preview-image" id="nle-preview-image">
+                  </div>
+                  <div class="nle-preview-controls">
+                    <div class="nle-control-group">
+                      <label>Enquadramento:</label>
+                      <select id="nle-background-size" class="nle-select">
+                        <option value="100% 100%" selected>STRETCH (100% tela)</option>
+                        <option value="cover">Cover (preencher)</option>
+                        <option value="contain">Contain (completo)</option>
+                        <option value="auto">Auto (original)</option>
+                      </select>
+                    </div>
+                    <div class="nle-control-group">
+                      <label>Posição:</label>
+                      <select id="nle-background-position" class="nle-select">
+                        <option value="center center">Centro</option>
+                        <option value="top center">Topo</option>
+                        <option value="bottom center">Base</option>
+                        <option value="left center">Esquerda</option>
+                        <option value="right center">Direita</option>
+                        <option value="top left">Topo Esquerda</option>
+                        <option value="top right">Topo Direita</option>
+                        <option value="bottom left">Base Esquerda</option>
+                        <option value="bottom right">Base Direita</option>
+                      </select>
+                    </div>
+                    <div class="nle-control-group">
+                      <label>Zoom:</label>
+                      <input type="range" id="nle-background-zoom" class="nle-range" min="50" max="200" value="100">
+                      <span id="nle-zoom-value">100%</span>
+                    </div>
+                    <div class="nle-control-group">
+                      <label>Repetir:</label>
+                      <select id="nle-background-repeat" class="nle-select">
+                        <option value="no-repeat">Não repetir</option>
+                        <option value="repeat">Repetir</option>
+                        <option value="repeat-x">Repetir X</option>
+                        <option value="repeat-y">Repetir Y</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="nle-preview-info">
+                  <span id="nle-file-name"></span>
+                  <button class="nle-remove-btn" id="nle-remove-btn">Remover</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTÕES DE AÇÃO -->
+        <div class="nle-modal-actions">
+          <button type="button" class="nle-btn nle-btn-secondary" id="nle-save-bg-btn">Salvar Background</button>
+          <button type="button" class="nle-btn nle-btn-primary" id="nle-save-theme-btn">Salvar Tema</button>
+          <button type="button" class="nle-btn nle-btn-outline" id="nle-reset-theme-btn">Redefinir</button>
+          <button type="button" class="nle-btn nle-btn-outline" id="nle-cancel-btn">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="nle-config.js"></script>
+  <script src="nle-script.js"></script>
+</body>
+</html>

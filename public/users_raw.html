@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raw User Manager | RH+</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/global.css">
+    <style>
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        .role-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .role-admin { background: #dc2626; color: white; }
+        .role-gestor { background: #ea580c; color: white; }
+        .role-dev { background: #0891b2; color: white; }
+        .role-user { background: #65a30d; color: white; }
+        
+        .status-active { background: #16a34a; color: white; }
+        .status-inactive { background: #6b7280; color: white; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-900 min-h-screen flex flex-col">
+    <header class="bg-gray-900 text-white p-4 shadow-md flex justify-between items-center">
+        <h1 class="text-xl font-bold uppercase tracking-tight">Raw <span class="text-red-500">User</span> Manager</h1>
+        <div class="flex gap-4">
+            <button onclick="openModal()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold text-xs uppercase transition-all">Novo Usuário</button>
+            <a href="/" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded font-bold text-xs uppercase transition-all">Dashboard</a>
+        </div>
+    </header>
+
+    <main class="flex-1 p-6 flex flex-col gap-6">
+        <div class="bg-white p-4 rounded-lg shadow-sm flex gap-4 items-center">
+            <input type="text" id="search" placeholder="Buscar por nome, usuário ou email..." class="flex-1 p-2 border rounded outline-none focus:ring-2 focus:ring-red-500">
+            <select id="role-filter" class="p-2 border rounded outline-none focus:ring-2 focus:ring-red-500">
+                <option value="">Todos os Níveis</option>
+                <option value="ADMIN">ADMIN</option>
+                <option value="GESTOR">GESTOR</option>
+                <option value="DEV">DEV</option>
+                <option value="USER">USER</option>
+            </select>
+            <select id="status-filter" class="p-2 border rounded outline-none focus:ring-2 focus:ring-red-500">
+                <option value="">Todos os Status</option>
+                <option value="ACTIVE">ATIVO</option>
+                <option value="INACTIVE">INATIVO</option>
+            </select>
+            <span id="counter" class="text-xs font-bold text-gray-500 uppercase">Carregando...</span>
+        </div>
+
+        <div class="flex-1 bg-white rounded-lg shadow-sm overflow-hidden flex flex-col">
+            <div class="overflow-x-auto custom-scroll">
+                <table class="w-full text-left border-collapse min-w-[1200px]">
+                    <thead class="bg-gray-50 border-b sticky top-0 z-10">
+                        <tr id="table-head">
+                            <!-- Colunas via JS -->
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y text-xs">
+                        <!-- Dados via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Inserção/Edição -->
+    <div id="modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden">
+            <header class="p-4 border-b bg-gray-50 flex justify-between items-center">
+                <h2 id="modal-title" class="font-bold uppercase">Inserir Novo Usuário</h2>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-black">✕</button>
+            </header>
+            
+            <!-- SMART PASTE AREA -->
+            <div class="p-4 bg-amber-50 border-b">
+                <label class="text-[10px] font-black uppercase text-amber-700 block mb-1">Smart Paste (Cole a linha do usuário aqui para preencher automaticamente)</label>
+                <textarea id="smart-paste" placeholder="Cole aqui os dados separados por TAB... (Nome\tUsuário\tSenha\tEmail\tRole)" class="w-full h-12 p-2 text-[10px] border border-amber-200 rounded outline-none focus:ring-1 focus:ring-amber-500 bg-white" oninput="processSmartPaste()"></textarea>
+            </div>
+
+            <form id="user-form" class="p-6 overflow-y-auto custom-scroll grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Inputs via JS -->
+            </form>
+            <footer class="p-4 border-t bg-gray-50 flex justify-end gap-3">
+                <button type="button" onclick="closeModal()" class="px-6 py-2 border rounded font-bold text-xs uppercase">Cancelar</button>
+                <button type="button" onclick="saveUser()" class="px-6 py-2 bg-red-600 text-white rounded font-bold text-xs uppercase shadow-lg">Salvar Usuário</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Modal de Reset de Senha -->
+    <div id="password-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <header class="p-4 border-b bg-gray-50 flex justify-between items-center">
+                <h2 class="font-bold uppercase">Resetar Senha</h2>
+                <button onclick="closePasswordModal()" class="text-gray-500 hover:text-black">✕</button>
+            </header>
+            <div class="p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Nova Senha</label>
+                    <input type="password" id="new-password" class="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-red-500" placeholder="Digite a nova senha">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Confirmar Senha</label>
+                    <input type="password" id="confirm-password" class="w-full p-2 border rounded outline-none focus:ring-2 focus:ring-red-500" placeholder="Confirme a nova senha">
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button onclick="closePasswordModal()" class="px-4 py-2 border rounded font-bold text-xs uppercase">Cancelar</button>
+                    <button onclick="resetPassword()" class="px-4 py-2 bg-red-600 text-white rounded font-bold text-xs uppercase">Resetar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const columns = [
+            'id', 'name', 'username', 'password', 'email', 'role', 'status', 
+            'permissions', 'photoUrl', 'login_time', 'createdAt', 'updatedAt'
+        ];
+
+        let allUsers = [];
+        let editingUserId = null;
+
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/users');
+                allUsers = await res.json();
+                renderTable();
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao carregar usuários');
+            }
+        }
+
+        function renderTable() {
+            const head = document.getElementById('table-head');
+            const body = document.getElementById('table-body');
+            const searchVal = document.getElementById('search').value.toLowerCase();
+            const roleFilter = document.getElementById('role-filter').value;
+            const statusFilter = document.getElementById('status-filter').value;
+            
+            // Header
+            head.innerHTML = '<th class="p-3 uppercase font-black text-gray-400 text-[10px] w-32">Ações</th>' + 
+                columns.filter(c => c !== 'password').map(c => `<th class="p-3 uppercase font-black text-gray-400 text-[10px] whitespace-nowrap">${c}</th>`).join('');
+
+            // Body
+            const filtered = allUsers.filter(u => {
+                const matchesSearch = 
+                    (u.name?.toLowerCase().includes(searchVal)) || 
+                    (u.username?.toLowerCase().includes(searchVal)) ||
+                    (u.email?.toLowerCase().includes(searchVal));
+                    
+                const matchesRole = !roleFilter || u.role === roleFilter;
+                const matchesStatus = !statusFilter || u.status === statusFilter;
+                
+                return matchesSearch && matchesRole && matchesStatus;
+            });
+
+            body.innerHTML = filtered.map(u => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="p-2 flex gap-1 flex-wrap">
+                        <button onclick="editUser('${u.id}')" class="bg-blue-100 text-blue-600 p-1 rounded hover:bg-blue-600 hover:text-white transition-all" title="Editar">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                        <button onclick="openPasswordModal('${u.id}')" class="bg-amber-100 text-amber-600 p-1 rounded hover:bg-amber-600 hover:text-white transition-all" title="Resetar Senha">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                        </button>
+                        <button onclick="toggleUserStatus('${u.id}')" class="bg-purple-100 text-purple-600 p-1 rounded hover:bg-purple-600 hover:text-white transition-all" title="Inverter Status">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                        </button>
+                        <button onclick="deleteUser('${u.id}')" class="bg-red-100 text-red-600 p-1 rounded hover:bg-red-600 hover:text-white transition-all" title="Excluir">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                    </td>
+                    ${columns.filter(c => c !== 'password').map(c => {
+                        let val = u[c];
+                        const isProtected = ['id', 'createdAt', 'updatedAt'].includes(c);
+                        
+                        let displayVal = val;
+                        if (c.toLowerCase().includes('time') && val) displayVal = new Date(val).toLocaleString('pt-BR');
+                        if (c === 'role' && val) displayVal = `<span class="role-badge role-${val.toLowerCase()}">${val}</span>`;
+                        if (c === 'status' && val) displayVal = `<span class="role-badge status-${val.toLowerCase()}">${val === 'ACTIVE' ? 'ATIVO' : 'INATIVO'}</span>`;
+                        if (val === null || val === undefined) displayVal = '';
+
+                        return `
+                            <td class="p-2 border-l max-w-[200px] truncate ${isProtected ? 'bg-gray-50 text-gray-400' : 'cursor-text focus:bg-white focus:ring-1 focus:ring-red-500'}" 
+                                ${isProtected ? '' : `contenteditable="true" onblur="updateField('${u.id}', '${c}', this)"`}
+                                title="${isProtected ? 'Protegido' : 'Clique para editar'}">
+                                ${displayVal}
+                            </td>
+                        `;
+                    }).join('')}
+                </tr>
+            `).join('');
+
+            document.getElementById('counter').innerText = `${filtered.length} Usuários Encontrados`;
+        }
+
+        async function updateField(id, field, el) {
+            let newValue = el.innerText.trim();
+            
+            // Tratamento especial para datas
+            if (field.toLowerCase().includes('time') && newValue.includes('/')) {
+                const [date, time] = newValue.split(' ');
+                if (date && time) {
+                    const [d, m, y] = date.split('/');
+                    if (d && m && y) newValue = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')} ${time}`;
+                }
+            }
+
+            try {
+                const res = await fetch(`/api/users/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ field, value: newValue })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    el.classList.add('bg-green-50');
+                    setTimeout(() => el.classList.remove('bg-green-50'), 1000);
+                    loadUsers(); // Recarregar para atualizar badges
+                } else {
+                    alert('Erro ao atualizar: ' + result.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro na conexão ao atualizar');
+            }
+        }
+
+        function openModal(userId = null) {
+            const form = document.getElementById('user-form');
+            const title = document.getElementById('modal-title');
+            document.getElementById('smart-paste').value = '';
+            
+            editingUserId = userId;
+            title.textContent = userId ? 'Editar Usuário' : 'Inserir Novo Usuário';
+            
+            form.innerHTML = columns.map(c => {
+                let type = 'text';
+                if (c === 'password') type = 'password';
+                if (c === 'email') type = 'email';
+                if (c === 'role') {
+                    return `
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[9px] font-black uppercase text-gray-400">${c}</label>
+                            <select name="${c}" id="inp-${c}" class="p-1.5 border rounded text-[10px] outline-none focus:ring-1 focus:ring-red-500">
+                                <option value="">Selecione...</option>
+                                <option value="ADMIN">ADMIN</option>
+                                <option value="GESTOR">GESTOR</option>
+                                <option value="DEV">DEV</option>
+                                <option value="USER">USER</option>
+                            </select>
+                        </div>
+                    `;
+                }
+                if (c === 'status') {
+                    return `
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[9px] font-black uppercase text-gray-400">${c}</label>
+                            <select name="${c}" id="inp-${c}" class="p-1.5 border rounded text-[10px] outline-none focus:ring-1 focus:ring-red-500">
+                                <option value="ACTIVE">ATIVO</option>
+                                <option value="INACTIVE">INATIVO</option>
+                            </select>
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[9px] font-black uppercase text-gray-400">${c}</label>
+                        <input name="${c}" id="inp-${c}" type="${type}" step="any" class="p-1.5 border rounded text-[10px] outline-none focus:ring-1 focus:ring-red-500">
+                    </div>
+                `;
+            }).join('');
+
+            // Se editando, carregar dados
+            if (userId) {
+                const user = allUsers.find(u => u.id === userId);
+                if (user) {
+                    columns.forEach(col => {
+                        const input = document.getElementById(`inp-${col}`);
+                        if (input && user[col] !== undefined) {
+                            input.value = user[col];
+                        }
+                    });
+                }
+            }
+
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function editUser(id) {
+            openModal(id);
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+            editingUserId = null;
+        }
+
+        function openPasswordModal(userId) {
+            editingUserId = userId;
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-password').value = '';
+            document.getElementById('password-modal').classList.remove('hidden');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.add('hidden');
+            editingUserId = null;
+        }
+
+        async function resetPassword() {
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (!newPassword || !confirmPassword) {
+                return alert('Preencha ambos os campos de senha');
+            }
+            
+            if (newPassword !== confirmPassword) {
+                return alert('As senhas não coincidem');
+            }
+            
+            try {
+                const res = await fetch(`/api/users/${editingUserId}/password`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: newPassword })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert('Senha resetada com sucesso!');
+                    closePasswordModal();
+                } else {
+                    alert('Erro ao resetar senha: ' + result.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro na conexão ao resetar senha');
+            }
+        }
+
+        async function toggleUserStatus(id) {
+            const user = allUsers.find(u => u.id === id);
+            if (!user) return;
+            
+            const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+            
+            if (!confirm(`Deseja alterar o status do usuário "${user.username}" para ${newStatus === 'ACTIVE' ? 'ATIVO' : 'INATIVO'}?`)) return;
+            
+            try {
+                const res = await fetch(`/api/users/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ field: 'status', value: newStatus })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    loadUsers();
+                } else {
+                    alert('Erro ao alterar status: ' + result.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro na conexão ao alterar status');
+            }
+        }
+
+        function processSmartPaste() {
+            const rawText = document.getElementById('smart-paste').value;
+            if (!rawText) return;
+
+            // Separar por TAB
+            const parts = rawText.split('\t');
+            
+            console.log('Smart Paste detectado:', parts.length, 'campos');
+
+            const fieldMap = ['name', 'username', 'password', 'email', 'role'];
+            
+            fieldMap.forEach((field, index) => {
+                const input = document.getElementById(`inp-${field}`);
+                if (!input) return;
+
+                let val = parts[index] ? parts[index].trim() : '';
+                input.value = val;
+            });
+        }
+
+        async function saveUser() {
+            const form = document.getElementById('user-form');
+            const data = {};
+            
+            columns.forEach(col => {
+                const input = document.getElementById(`inp-${col}`);
+                if (input && input.value !== '') {
+                    data[col] = input.value;
+                }
+            });
+
+            if (!data.name) return alert('Nome é obrigatório');
+            if (!data.username) return alert('Usuário é obrigatório');
+            if (!data.password && !editingUserId) return alert('Senha é obrigatória para novos usuários');
+
+            try {
+                const url = editingUserId ? `/api/users/${editingUserId}` : '/api/users';
+                const method = editingUserId ? 'PUT' : 'POST';
+                
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert('Usuário salvo com sucesso!');
+                    closeModal();
+                    loadUsers();
+                } else {
+                    alert('Erro ao salvar: ' + result.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro crítico ao salvar');
+            }
+        }
+
+        async function deleteUser(id) {
+            const user = allUsers.find(u => u.id === id);
+            if (!user) return;
+            
+            if (!confirm(`ATENÇÃO: Deseja excluir o usuário "${user.username}" PERMANENTEMENTE?`)) return;
+            
+            try {
+                const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+                const result = await res.json();
+                if (result.success) {
+                    loadUsers();
+                } else {
+                    alert('Erro ao excluir: ' + result.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro crítico ao excluir');
+            }
+        }
+
+        document.getElementById('search').oninput = renderTable;
+        document.getElementById('role-filter').onchange = renderTable;
+        document.getElementById('status-filter').onchange = renderTable;
+
+        // Inicialização
+        loadUsers();
+    </script>
+</body>
+</html>

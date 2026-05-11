@@ -1,252 +1,555 @@
 
-/* --- LOGIN SYSTEM NORDESTE RH+ --- */
+/**
+ * NLE LOGIN PLUGIN - ESTILOS INTEGRADOS COM RH PLUS
+ * Namespacing: nle-
+ * Mantém compatibilidade com sistema existente
+ */
 
-/* Sobrescrita de variáveis padrão para garantir visual Dark por padrão na Login */
 :root {
-    --primary: #D32F2F;
-    --primary-hover: #B71C1C;
-    --text-color: #ffffff;
-    --input-bg: rgba(255, 255, 255, 0.08);
-    --input-border: rgba(255, 255, 255, 0.15);
-    --input-focus: rgba(211, 47, 47, 0.5);
-    
-    /* Configuração Padrão de Fundo (Caso não tenha tema escolhido) */
-    --theme-bg-image: url('https://nordesteloc.com.br/wp-content/uploads/2024/10/FOTO-SITE.png');
-    --theme-overlay-color: #0f172a; /* Dark Blue/Slate */
-    --theme-overlay-opacity: 0.85;
-    --theme-blur: 4px;
+  --nle-rubi: #D32F2F;
+  --nle-vermelho: #dc2626;
+  --nle-cinza-escuro: #374151;
+  --nle-cinza: #6b7280;
+  --nle-cinza-claro: #f3f4f6;
+  --nle-branco: #ffffff;
+  --nle-preto: #111827;
+  --nle-borda-suave: #e5e7eb;
+  --nle-sombra: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --nle-sombra-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  /* Variáveis herdadas do sistema original */
+  --primary: #D32F2F;
+  --primary-hover: #B71C1C;
+  --text-color: #ffffff;
+  --input-bg: rgba(255, 255, 255, 0.08);
+  --input-border: rgba(255, 255, 255, 0.15);
+  --input-focus: rgba(211, 47, 47, 0.5);
+  --theme-bg-image: url('https://nordesteloc.com.br/wp-content/uploads/2024/10/FOTO-SITE.png');
+  --theme-overlay-color: #0f172a;
+  --theme-overlay-opacity: 0.85;
+  --theme-blur: 4px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-    margin: 0;
-    height: 100vh;
-    overflow: hidden;
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    background-color: #121212; /* Fallback */
-    color: var(--text-color);
+  font-family: "Inter", sans-serif;
+  margin: 0;
+  background: var(--nle-cinza-escuro);
+  min-height: 100vh;
+  line-height: 1.5;
+  overflow: visible;
 }
 
-/* O global.css injeta o ::before e ::after. 
-   Aqui reforçamos o visual do background para a tela de login especificamente. */
-
-/* ===== CENA 3D (PARALLAX) ===== */
-.scene {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10;
+/* ============================================
+   BACKGROUND - STRETCH (100% da tela)
+   ============================================ */
+.nle-background-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-image: var(--theme-bg-image);
+  background-size: 100% 100%;
+  background-position: top left;
+  background-repeat: no-repeat;
+  background-color: var(--theme-overlay-color);
 }
 
-/* ===== ITEMS FLUTUANTES (DECORAÇÃO) ===== */
-.layer {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
+.nle-background-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(17, 24, 39, 0.7) 0%, rgba(17, 24, 39, 0.4) 50%, rgba(17, 24, 39, 0.2) 100%);
+  z-index: 0;
+  pointer-events: none;
 }
 
-.floating-item {
-    position: absolute;
-    background: rgba(255, 255, 255, 0.05); 
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-    overflow: hidden; 
-    transition: transform 0.3s ease-out;
+/* ============================================
+   CONTAINER PRINCIPAL
+   ============================================ */
+.nle-login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  position: relative;
+  z-index: 10;
 }
 
-.floating-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0.8;
-    mix-blend-mode: overlay; /* Integra a imagem com o fundo */
-    transition: all 0.5s ease;
+/* ============================================
+   CARD DE LOGIN
+   ============================================ */
+.nle-card {
+  max-width: 480px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: var(--nle-sombra-lg);
+  overflow: visible;
+  position: relative;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: card-entry 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-/* Posicionamento Estratégico (Mantido) */
-.item-1 { width: 160px; height: 120px; top: -35%; left: -40%; opacity: 0.4; }
-.item-2 { width: 150px; height: 150px; bottom: -30%; right: -35%; opacity: 0.4; }
-.item-3 { width: 140px; height: 100px; top: -40%; right: -10%; opacity: 0.3; }
-.item-4 { width: 200px; height: 140px; top: 10%; left: -45%; }
-.item-5 { width: 180px; height: 180px; bottom: -40%; left: -20%; }
-.item-6 { width: 210px; height: 150px; top: -30%; right: -40%; }
-.item-7 { width: 240px; height: 160px; top: -15%; left: -38%; opacity: 0.6; }
-.item-8 { width: 220px; height: 220px; bottom: -25%; right: -42%; opacity: 0.6; }
-.item-9 { width: 190px; height: 190px; bottom: 15%; left: -48%; opacity: 0.5; }
-.item-10 { width: 280px; height: 180px; top: 25%; right: -48%; opacity: 0.5; }
-.item-11 { width: 300px; height: 200px; bottom: -42%; left: 15%; opacity: 0.4; }
-.item-12 { width: 180px; height: 180px; top: -42%; left: 25%; opacity: 0.4; }
-
-
-/* ===== LOGIN CARD (CENTRAL) ===== */
-.login-card {
-    position: relative;
-    z-index: 100;
-    width: 100%;
-    max-width: 420px;
-    padding: 3.5rem 3rem;
-    
-    /* Efeito Glassmorphism Premium */
-    background: rgba(15, 23, 42, 0.6); 
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    
-    border-radius: 2rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
-        0 25px 50px -12px rgba(0, 0, 0, 0.5),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-        
-    text-align: center;
-    animation: card-entry 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+/* Efeito de mesclagem para o card */
+.nle-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: -50px;
+  bottom: 0;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 70%, 
+    transparent 100%);
+  z-index: 1;
+  pointer-events: none;
 }
 
-/* Logo Area */
-.logo-area { margin-bottom: 2.5rem; }
-.logo-area h1 {
-    font-size: 2.5rem;
-    font-weight: 900;
-    margin: 0;
-    letter-spacing: -1px;
-    text-transform: uppercase;
-    font-style: italic;
-    line-height: 0.9;
-    background: linear-gradient(to right, #fff, #ccc);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 10px 20px rgba(0,0,0,0.2);
-}
-.logo-area span { 
-    color: var(--primary);
-    -webkit-text-fill-color: var(--primary);
+.nle-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -20px;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.6) 0%, 
+    rgba(255, 255, 255, 0.3) 50%, 
+    transparent 100%);
+  z-index: 0;
+  filter: blur(10px);
+  -webkit-filter: blur(10px);
+  opacity: 0.4;
 }
 
-.subtitle {
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 3rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 2px;
+.nle-card > * {
+  position: relative;
+  z-index: 2;
 }
 
-/* Formulário */
-.input-group {
-    position: relative;
-    margin-bottom: 1.25rem;
-    text-align: left;
+/* ============================================
+   CABEÇALHO
+   ============================================ */
+.nle-header {
+  padding: 32px 32px 24px;
+  text-align: center;
+  border-bottom: 1px solid var(--nle-borda-suave);
 }
 
-.input-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.8);
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-left: 0.5rem;
+.nle-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
-.input-group input {
-    width: 100%;
-    padding: 16px 20px;
-    background: var(--input-bg);
-    border: 1.5px solid var(--input-border);
-    border-radius: 1rem;
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 500;
-    outline: none;
-    transition: all 0.3s ease;
+.nle-logo h1 {
+  font-size: 2.5rem;
+  font-weight: 900;
+  margin: 0;
+  letter-spacing: -1px;
+  text-transform: uppercase;
+  font-style: italic;
+  line-height: 0.9;
+  background: linear-gradient(to right, #333, #666);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
-.input-group input::placeholder {
-    color: rgba(255, 255, 255, 0.3);
+.nle-logo span { 
+  color: var(--nle-rubi);
+  -webkit-text-fill-color: var(--nle-rubi);
 }
 
-.input-group input:focus {
-    background: rgba(0, 0, 0, 0.4);
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px var(--input-focus);
-    transform: translateY(-1px);
+.nle-header-subtitle {
+  color: var(--nle-cinza);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-/* Botão */
-.btn-login {
-    width: 100%;
-    padding: 18px;
-    border: none;
-    border-radius: 1rem;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-    color: #fff;
-    font-size: 0.95rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-top: 1.5rem;
-    box-shadow: 0 10px 20px -5px rgba(211, 47, 47, 0.4);
-    position: relative;
-    overflow: hidden;
+/* ============================================
+   CORPO DO LOGIN
+   ============================================ */
+.nle-body {
+  padding: 32px;
 }
 
-.btn-login:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 15px 30px -5px rgba(211, 47, 47, 0.5);
-    filter: brightness(1.1);
+/* ============================================
+   GRUPOS DE INPUT (NLE + RH Plus)
+   ============================================ */
+.nle-input-group {
+  margin-bottom: 20px;
+  text-align: left;
 }
 
-.btn-login:active {
-    transform: scale(0.98);
+.nle-input-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--nle-cinza-escuro);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* Mensagem de Erro */
-.error-message {
-    color: #ef4444;
-    font-size: 0.8rem;
-    margin-top: 1.5rem;
-    min-height: 20px;
-    font-weight: 700;
-    text-transform: uppercase;
-    background: rgba(239, 68, 68, 0.1);
-    padding: 0.5rem;
-    border-radius: 0.5rem;
-    display: none; /* Hidden by default */
-}
-.error-message:not(:empty) {
-    display: block;
-    animation: shake 0.4s ease-in-out;
+.nle-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid var(--nle-borda-suave);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--nle-preto);
+  background: var(--input-bg);
+  transition: all 0.3s ease;
+  outline: none;
 }
 
-/* Rodapé do Card */
-.card-footer {
-    margin-top: 2rem;
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.4);
+.nle-input:focus {
+  border-color: var(--nle-rubi);
+  box-shadow: 0 0 0 4px var(--input-focus);
+  transform: translateY(-1px);
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
 }
 
-/* ===== ANIMAÇÕES ===== */
-@keyframes float-y {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-15px); }
+.nle-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
 }
 
+/* ============================================
+   BOTÕES (NLE + RH Plus)
+   ============================================ */
+.nle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px 24px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  font-size: 15px;
+  width: 100%;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 10px 20px -5px rgba(211, 47, 47, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.nle-btn-primary {
+  background: linear-gradient(135deg, var(--nle-rubi) 0%, var(--primary-hover) 100%);
+  color: var(--nle-branco);
+}
+
+.nle-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -5px rgba(211, 47, 47, 0.5);
+  filter: brightness(1.1);
+}
+
+.nle-btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* ============================================
+   MENSAGENS DE ERRO (NLE + RH Plus)
+   ============================================ */
+.nle-error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 16px;
+  display: none;
+  animation: shake 0.4s ease-in-out;
+}
+
+.nle-error-message:not(:empty) {
+  display: block;
+}
+
+/* ============================================
+   SEÇÃO INSTITUCIONAL
+   ============================================ */
+.nle-institucional {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--nle-borda-suave);
+}
+
+.nle-institucional h4 {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--nle-cinza);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.nle-essence-link {
+  color: var(--nle-cinza);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  display: inline-block;
+}
+
+.nle-essence-link:hover {
+  color: var(--nle-rubi);
+  text-decoration: underline;
+}
+
+.nle-essence-link::after {
+  content: '⚙️';
+  position: absolute;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.nle-essence-link:hover::after {
+  opacity: 1;
+}
+
+/* ============================================
+   GRID DE VALORES (Missão, Visão, Valores)
+   ============================================ */
+.nle-valores-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  perspective: 1000px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  margin-right: -80px;
+  padding-right: 80px;
+  z-index: 10;
+}
+
+.nle-valor-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid var(--nle-rubi);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: visible;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+}
+
+.nle-valor-card:hover {
+  transform: scale(1.15) translateY(-8px);
+  box-shadow: 0 15px 30px rgba(185, 28, 28, 0.15);
+  z-index: 100;
+  border-color: var(--nle-rubi);
+  border-width: 3px;
+  padding: 24px;
+  min-width: 280px;
+  position: relative;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 1);
+}
+
+.nle-valor-card:hover::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  right: -25px;
+  bottom: -5px;
+  width: 35px;
+  background: linear-gradient(90deg, 
+    rgba(185, 28, 28, 0.3) 0%, 
+    rgba(185, 28, 28, 0.15) 60%, 
+    transparent 100%);
+  z-index: 9;
+  filter: blur(8px);
+  -webkit-filter: blur(8px);
+  opacity: 0.5;
+}
+
+.nle-valor-card:hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -15px;
+  bottom: 0;
+  width: 20px;
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.5) 0%, 
+    rgba(255, 255, 255, 0.3) 70%, 
+    transparent 100%);
+  z-index: 8;
+  filter: blur(5px);
+  -webkit-filter: blur(5px);
+  opacity: 0.3;
+}
+
+.nle-valores-grid:hover .nle-valor-card:not(:hover) {
+  transform: scale(0.85);
+  opacity: 0.7;
+  filter: blur(1px);
+}
+
+.nle-valor-icon {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: center;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nle-valor-card:hover .nle-valor-icon {
+  margin-bottom: 8px;
+  transform: scale(1.1);
+}
+
+.nle-valor-icon svg {
+  width: 48px;
+  height: 48px;
+  max-width: 100%;
+  height: auto;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--nle-rubi);
+}
+
+.nle-valor-card:hover .nle-valor-icon svg {
+  width: 52px;
+  height: 52px;
+}
+
+.nle-valor-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--nle-cinza-escuro);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nle-valor-card:hover .nle-valor-title {
+  margin-bottom: 12px;
+  font-size: 17px;
+}
+
+.nle-valor-description {
+  font-size: 0px;
+  line-height: 0;
+  color: transparent;
+  margin: 0;
+  max-height: 0;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.nle-valor-card:hover .nle-valor-description {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--nle-cinza);
+  max-height: 200px;
+  opacity: 1;
+  margin: 0 4px;
+  text-align: left;
+}
+
+.nle-valor-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 24px;
+}
+
+.nle-valor-card:hover .nle-valor-list {
+  max-height: 300px;
+  opacity: 1;
+}
+
+.nle-valor-list li {
+  font-size: 0px;
+  line-height: 0;
+  color: transparent;
+  margin-bottom: 0px;
+  position: relative;
+  padding-left: 18px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nle-valor-card:hover .nle-valor-list li {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--nle-cinza);
+  margin-bottom: 6px;
+}
+
+.nle-valor-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--nle-rubi);
+  font-weight: 700;
+}
+
+/* ============================================
+   RODAPÉ
+   ============================================ */
+.nle-footer {
+  padding: 16px 32px 24px;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--nle-cinza);
+}
+
+/* ============================================
+   ANIMAÇÕES
+   ============================================ */
 @keyframes card-entry {
-    from { opacity: 0; transform: translateY(40px) scale(0.95); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes shake {
@@ -255,8 +558,108 @@ body {
   75% { transform: translateX(5px); }
 }
 
-/* Responsivo */
+/* ============================================
+   RESPONSIVIDADE
+   ============================================ */
+@media (max-width: 1024px) {
+  .nle-login-container {
+    padding: 20px;
+  }
+  
+  .nle-card {
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
-    .item-1, .item-2, .item-3, .item-10, .item-11, .item-12 { display: none; }
-    .login-card { width: 90%; padding: 2.5rem 1.5rem; }
+  .nle-login-container {
+    padding: 20px;
+    justify-content: center;
+  }
+  
+  .nle-card {
+    max-width: 100%;
+  }
+  
+  .nle-valores-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    perspective: none;
+    margin-right: 0;
+    padding-right: 0;
+  }
+  
+  .nle-valor-card {
+    padding: 16px;
+    min-height: 120px;
+  }
+  
+  .nle-valor-card:hover {
+    transform: scale(1.02) translateY(-4px);
+    padding: 20px;
+    min-width: auto;
+    background: rgba(255, 255, 255, 1);
+  }
+  
+  .nle-valores-grid:hover .nle-valor-card:not(:hover) {
+    transform: scale(0.98);
+    opacity: 0.85;
+    filter: none;
+  }
+  
+  .nle-valor-icon svg {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .nle-valor-card:hover .nle-valor-icon svg {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .nle-valor-title {
+    font-size: 14px;
+  }
+  
+  .nle-valor-card:hover .nle-valor-title {
+    font-size: 15px;
+  }
+  
+  .nle-valor-description {
+    font-size: 0px;
+  }
+  
+  .nle-valor-card:hover .nle-valor-description {
+    font-size: 12px;
+  }
+  
+  .nle-valor-list li {
+    font-size: 0px;
+  }
+  
+  .nle-valor-card:hover .nle-valor-list li {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nle-login-container {
+    padding: 16px;
+  }
+  
+  .nle-card {
+    padding: 24px 20px;
+  }
+  
+  .nle-header {
+    padding: 24px 20px 20px;
+  }
+  
+  .nle-body {
+    padding: 24px 20px;
+  }
+  
+  .nle-footer {
+    padding: 12px 20px 20px;
+  }
 }

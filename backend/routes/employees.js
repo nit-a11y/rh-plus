@@ -21,6 +21,21 @@ const dbRun = async (sql, params = []) => {
     return result;
 };
 
+// Endpoint simplificado para listagem (sem dados relacionados) - evita erro 429
+router.get('/simple', async (req, res) => {
+    try {
+        const rows = await dbAll(`
+            SELECT id, name, registrationNumber, role, sector, type, admissionDate, 
+                   currentSalary, photoUrl, cbo, status 
+            FROM employees 
+            ORDER BY name ASC
+        `);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 router.get('/', async (req, res) => {
     try {
         const rows = await dbAll(`SELECT * FROM employees ORDER BY name ASC`);
